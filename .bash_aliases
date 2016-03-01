@@ -268,6 +268,8 @@ function kcn () {
    fi
 }
 
+# THIS IS COMMENTED OUT BECAUSE IT WAS FOR A PREVIOUS PLACE OF EMPLOYMENT USING INFORMIX
+# TODO: UPDATE FOR MYSQL AND UNCOMMENT
 ##function dbgrep () {	# TOOL
 ### search/grep informix DB for patterns in tables/column names
 ### OPTIONS
