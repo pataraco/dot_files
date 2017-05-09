@@ -1,101 +1,589 @@
-# .bash_aliases - sourced by ~/.bashrc
-# 
+#!bash - ~/.bash_aliases - sourced by ~/.bashrc
 
-echo "sourcing '.bash_aliases'"
-
+# if interactive shell - display message
+[ -n "$PS1" ] && echo "sourcing '.bash_aliases'"
 # some ansi colorizatioin escape sequences
 D2E="\e[K"              # to delete the rest of the chars on a line
 BLD="\e[1m"             # bold
-RED="\e[31m"            # red color
-GRN="\e[32m"            # green color
-YLW="\e[33m"            # yellow color
-BLU="\e[34m"            # blue color
-CYN="\e[36m"            # cyan color
+ULN="\e[4m"             # underlined
+BLK="\e[30m"            # black FG
+RED="\e[31m"            # red FG
+GRN="\e[32m"            # green FG
+YLW="\e[33m"            # yellow FG
+BLU="\e[34m"            # blue FG
+MAG="\e[35m"            # magenta FG
+CYN="\e[36m"            # cyan FG
+RBG="\e[41m"            # red BG
+GBG="\e[42m"            # green BG
+YBG="\e[43m"            # yellow BG
+BBG="\e[44m"            # blue BG
+MBG="\e[45m"            # magenta BG
+CBG="\e[46m"            # cyan BG
 NRM="\e[m"              # to make text normal
-
 # turn on `vi` command line editing - oh yeah!
 set -o vi
-
 # set xterm defaults
 XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
-
+# set bash prompt command (and bash prompt)
+ORIG_PS1=$PS1
+export PROMPT_DIRTRIM=3
+# # change grep color to light yelow highlighting with black fg
+# export GREP_COLOR="5;43;30"
+# change grep color to light green fg on black bg
+export GREP_COLOR="1;40;32"
+# for changing prompt colors
+PRED='\[\e[1;31m\]'      # red (bold)
+PGRN='\[\e[1;32m\]'      # green (bold)
+PYLW='\[\e[1;33m\]'      # yellow (bold)
+PBLU='\[\e[1;34m\]'      # blue (bold)
+PMAG='\[\e[1;35m\]'      # magenta (bold)
+PCYN='\[\e[1;36m\]'      # cyan (bold)
+PNRM='\[\e[m\]'          # to make text normal
 # some bind settings
 bind Space:magic-space
-
 # update change the title bar of the terminal
 echo -ne "\033]0;`whoami`@`hostname`\007"
-
-#CHEF_REPO=/opt/repo
-CHEF_REPO=$HOME/repos
+# set up some globals
 REPO_DIR=$HOME/repos
 
-# set value of OTHERVM for .bash_aliases syncing
-[ `hostname` == "racos" ] && export OTHERVM=racovm || export OTHERVM=racos
+# define functions
+function _tmux_send_keys_all_panes () {
+# send keys to all tmux panes
+   for _pane in $(tmux list-panes -F '#P'); do
+      tmux send-keys -t ${_pane} "$@" Enter
+   done
+}
 
-# User specific aliases and functions
+function awssnsep () {
+# AWS SNS list platform application endpoints
+   local _USAGE="usage: awssnsep APPLICATION [REGION]"
+   local _app=$1
+   [ -z "$_app" ] && { echo "$_USAGE"; return; }
+   local _region=$2
+   [ -n "$_region" ] && _region="--region $_region"
+   if [ "$_app" == "all" ]; then
+      echo "all platform applications found:"
+      aws sns list-platform-applications $_region | grep PlatformApplicationArn | awk '{print $2}' | tr -d '"'
+      return
+   fi
+   local _app_arn=$(aws sns list-platform-applications $_region | grep "arn:.*$_app" | awk '{print $2}' | tr -d '"')
+   [ -z "$_app_arn" ] && { echo "none found"; return; }
+   local _noa=$(echo "$_app_arn" | wc -l)
+   if [ $_noa -gt 1 ]; then
+      echo "found more than one app, please be more specific:"
+      echo "$_app_arn" | grep $_app
+      return
+   fi
+   local _app_eps=$(aws sns list-endpoints-by-platform-application $_region --platform-application-arn $_app_arn)
+   local _enabled=$(echo $_app_eps | jq .Endpoints[].Attributes.Enabled | tr -d '"')
+   local _token=$(echo $_app_eps | jq .Endpoints[].Attributes.Token | tr -d '"')
+   echo "$_app | $_app_arn | $_enabled | $_token"
+}
 
-function atf () {	# TOOL # DEPRECATED with `hg` or `git`
-# Archive This File
-   if [ $# -eq 1 ]; then
-      file=$1
-      moddate=`stat -c %y $file | awk '{print $1}'`
-      ext=`date --date "$moddate" +'%m%d%y'`
-      ls $file.* > /dev/null 2>&1
-      if [ $? -eq 0 ]; then
-         [ -d archive ] || mkdir archive
-         mv -i $file.* archive
-      fi
-      [ -s $file ] && cp -ip $file $file.$ext
+function awsasgcp () {
+# suspend/resume ALL AWS AutoScaling processes
+# (optional: only for a specified autoscaling group name or those matching a reg-ex)
+# defaults to "dry-run" - must use "--no-dry-run" option to perform
+   local _USAGE="usage: awsasgcp --resume|suspend [--region REGION] [--no-dry-run] [AutoScalingGroupName|RegEx]"
+   local _dryrun=dry-run
+   local _pc_cmd
+   local _region
+   while true; do
+      case "$1" in
+             --resume) _pc_cmd=resume-processes ; shift  ;;
+            --suspend) _pc_cmd=suspend-processes; shift  ;;
+             --region) _region="--region $2"    ; shift 2;;
+         --no-dry-run) _dryrun=running          ; shift  ;;
+                    *) break                             ;;
+      esac
+   done
+   [ -z "$_pc_cmd" ] && { echo "$_USAGE"; return; }
+   asgn_pattern=$*
+   asg_names=$(aws $_region autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4 | grep "$asgn_pattern")
+   if [ -n "$asg_names" ]; then
+      for asg_name in $asg_names; do
+         echo "$_dryrun: aws $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name"
+         if [ $_dryrun == "running" ]; then
+            aws $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name
+         fi
+      done
    else
-      echo "you didn't specify a file to archive"
+      echo "no matching AWS Auto Scaling Group names found"
    fi
 }
 
-function bon () {	# TOOL
-# Bootstrap OpenStack Node
-   if knife_env_set; then
-      update_spiceweasel_repo
-      sgp=$1
-      nip=$2
-      nn=$3
-      if [ -n "$sgp" -a -n "$nip" ]; then
-         orig_cmd=`spiceweasel $SW_YAML_FILE | \grep -w $sgp | sort -u`
-         case $KNIFTLA in
-            dtu|pew|pms|pue|puw|pte|ptu|rou)
-               #kbc=`echo "$orig_cmd" | awk '{for (i=1;i<=NF;i++) {if ($i =="-r") {role=$(i+1)}; if ($i =="-N") {iname=$(i+1)}}; {print "knife bootstrap '"$nip"' -r "role" -c $KNIFERB -i ~/.ssh/Red5China.pem -x ubuntu -N "iname"'"$nn"' --sudo"}}'`
-               kbc=`echo "$orig_cmd" | awk '{for (i=1;i<=NF;i++) {if ($i =="-r") {role=$(i+1)}; if ($i =="-N") {iname=$(i+1)}}; {print "knife bootstrap '"$nip"' -r "role" -c $KNIFERB -x praco -N "iname"'"$nn"' --sudo"}}'`
-               ##kbc="${kbc} --bootstrap-url http://115.182.10.10:8080/chef/install.sh"
-               ;;
-            ccd|dts|pek|w11|w12|w13)
-               if [ -n "$nn" ]; then
-                  kbc=`echo "$orig_cmd" | awk '{for (i=1;i<=NF;i++) {if ($i =="-r") {role=$(i+1)}; if ($i =="-N") {iname=$(i+1)}}; {print "knife bootstrap '"$nip"' -r "role" -c $KNIFERB -i ~/.ssh/Red5China.pem -x ubuntu -N "iname"'"$nn"' --sudo"}}'`
-                  kbc="${kbc} --bootstrap-url http://221.228.92.21:8080/chef/install.sh"
-               else
-                  echo -e "\t-----------------------------------------------------------------------"
-                  echo "need to specify a <spiceweasel grep pattern>, <IP> and <node number>"
-                  return 2
-               fi
-               ;;
-            dts|sna)
-               kbc=`echo "$orig_cmd" | awk '{for (i=1;i<=NF;i++) {if ($i =="-r") {role=$(i+1)}; if ($i =="-N") {iname=$(i+1)}}; {print "knife bootstrap '"$nip"' -r "role" -c $KNIFERB -i ~/.ssh/Red5China.pem -x ubuntu -N "iname"'"$nn"' --sudo"}}'`
-               kbc="${kbc} --bootstrap-url http://115.182.10.10:8080/chef/install.sh"
-               ;;
-            *)
-               echo "error: not sure how I got here"; return 2;;
-         esac
-         compare_lines "$orig_cmd" "$kbc"
-         echo -e "\t-----------------------------------------------------------------------"
-         read -p "is this correct - do you want to run it (y/n)? " ans
-         if [ "$ans" = "y" ]; then
-            echo "ok, running the command"
-            eval "$kbc"
+function awsdami () {
+# some 'aws ec2 describe-images' hacks
+   local _USAGE="usage: \
+awsdami [OPTIONS]
+  -a  ARCH      # Architecture (e.g. i386, x86_64)
+  -ht HYPE_TYPE # Hypervisor Type (e.g. ovm, xen)
+  -i  ID        # Image ID (RegEx)
+  -it IMG_TYPE  # Image Type (e.g. machine, kernel, ramdisk)
+  -n  NAME      # Image Name (RegEx)
+  -o  OWNERS    # Owners (e.g. amazon, aws-marketplace, AWS ID. default: self)
+  -p  PROJECT   # Project
+  -r  REGION    # Region (default: us-west-2)
+  -s  STATE     # State
+  -v  VIRT_TYPE # Virtualization Type (e.g. paravirtual, hvm)
+  -vs VOL_SIZE  # Volume Size (in GiB)
+  -vt VOL_TYPE  # Volume Type (e.g. gp2, io1, st1, sc1, standard)
+  +a            # show Architecture
+  +cc           # show Charge Code
+  +cd           # show Creation Date
+  +ht           # show Hypervisor Type
+  +it           # show Image Type
+  +o            # show Owner ID
+  +p            # show Project
+  +ps           # show Public Status
+  +rn           # show Root Device Name
+  +rt           # show Root Device Type
+  +v            # show Virtualization Type
+  +vs           # show Volume Size
+  +vt           # show Volume Type
+  -h            # help (show this message)
+default display:
+  Image Name | Image ID | State"
+   local _awsec2dami_cmd="aws ec2 describe-images"
+   local _owners="self"
+   local _region="us-west-2"
+   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
+   local _filters=""
+   local _queries="Tags[?Key=='Name'].Value|[0],ImageId,State"
+   local _more_qs=""
+   local _query="Images[]"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -a) _filters="Name=architecture,Values=*$2* $_filters"                    ; shift 2;;
+         -ht) _filters="Name=hypervisor,Values=*$2* $_filters"                      ; shift 2;;
+          -i) _filters="Name=image-id,Values=*$2* $_filters"                        ; shift 2;;
+         -it) _filters="Name=image-type,Values=*$2* $_filters"                      ; shift 2;;
+          -n) _filters="Name=tag:Name,Values=*$2* $_filters"                        ; shift 2;;
+          -o) _owners="$2"                                                          ; shift 2;;
+          -p) _filters="Name=tag:Project,Values=*$2* $_filters"                     ; shift 2;;
+          -s) _filters="Name=state,Values=*$2* $_filters"                           ; shift 2;;
+          -v) _filters="Name=virtualization-type,Values=*$2* $_filters"             ; shift 2;;
+         -vs) _filters="Name=block-device-mapping.volume-size,Values=*$2* $_filters"; shift 2;;
+         -vt) _filters="Name=block-device-mapping.volume-type,Values=*$2* $_filters"; shift 2;;
+          -r) _region=$2                                                            ; shift 2;;
+          +a) _more_qs="Architecture,$_more_qs"                                     ; shift  ;;
+         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"               ; shift  ;;
+         +cd) _more_qs="CreationDate,$_more_qs"                                     ; shift  ;;
+         +ht) _more_qs="Hypervisor,$_more_qs"                                       ; shift  ;;
+         +it) _more_qs="ImageType,$_more_qs"                                        ; shift  ;;
+          +o) _more_qs="OwnerId,$_more_qs"                                          ; shift  ;;
+          +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"                  ; shift  ;;
+         +ps) _more_qs="Public,$_more_qs"                                           ; shift  ;;
+         +rn) _more_qs="RootDeviceName,$_more_qs"                                   ; shift  ;;
+         +rt) _more_qs="RootDeviceType,$_more_qs"                                   ; shift  ;;
+          +v) _more_qs="VirtualizationType,$_more_qs"                               ; shift  ;;
+         +vs) _more_qs="BlockDeviceMappings[0].Ebs.VolumeSize,$_more_qs"            ; shift  ;;
+         +vt) _more_qs="BlockDeviceMappings[0].Ebs.VolumeType,$_more_qs"            ; shift  ;;
+          -h) echo "$_USAGE"                                                        ; return ;;
+           *) echo "$_USAGE"                                                        ; return ;;
+      esac
+   done
+   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   if [ "$_region" == "all" ]; then
+      for _region in $_regions; do
+         $_awsec2dami_cmd --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      done
+   else
+      $_awsec2dami_cmd --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+   fi
+}
+
+function awsdasg () {
+# some 'aws autoscaling describe-auto-scaling-groups' hacks
+  local _USAGE="usage: \
+awsdasg [OPTIONS]
+  -n NAME      # filter results by this Auto Scaling Group Name
+  -m MAX       # the maximum number of items to display
+  -r REGION    # the Region to query (default: us-west-2)
+  +bt          # show Branch Tag
+  +cc          # show Charge Code
+  +c           # show Cluster
+  +e           # show Env (Environment)
+  +ht          # show Health Check Type
+  +ii          # show Instance Id(s)
+  +ih          # show Instance Health Status
+  +lb          # show Load Balancer name
+  +mr          # show Machine Role
+  +p           # show Project
+  +v           # show VPC Name
+  -h           # help (show this message)
+default display:
+  ASG name | Launch Config Name | Instances | Desired | Min | Max | Region"
+   local _awsasdasg_cmd="aws autoscaling describe-auto-scaling-groups"
+   local _max_items=""
+   local _region="us-west-2"
+   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
+   local _reg_exp=""
+   local _queries="AutoScalingGroupName,LaunchConfigurationName,length(Instances),DesiredCapacity,MinSize,MaxSize"
+   local _more_qs=""
+   local _query="AutoScalingGroups[]"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -n) _reg_exp="$2"                                             ; shift 2;;
+          -m) _max_items="--max-items $2"                               ; shift 2;;
+          -r) _region=$2                                                ; shift 2;;
+         +bt) _more_qs="Tags[?Key=='BranchTag'].Value|[0],$_more_qs"    ; shift  ;;
+         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"   ; shift  ;;
+          +c) _more_qs="Tags[?Key=='Cluster'].Value|[0],$_more_qs"      ; shift  ;;
+          +e) _more_qs="Tags[?Key=='Env'].Value|[0],$_more_qs"          ; shift  ;;
+         +ht) _more_qs="HealthCheckType,$_more_qs"                      ; shift  ;;
+         +ii) _more_qs="Instances[].InstanceId|join(', ',@),$_more_qs"  ; shift  ;;
+         +ih) _more_qs="Instances[].HealthStatus|join(', ',@),$_more_qs"; shift  ;;
+         +lb) _more_qs="LoadBalancerNames[0],$_more_qs"                 ; shift  ;;
+         +mr) _more_qs="Tags[?Key=='MachineRole'].Value|[0],$_more_qs"  ; shift  ;;
+          +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"      ; shift  ;;
+          +v) _more_qs="Tags[?Key=='VPCName'].Value|[0],$_more_qs"      ; shift  ;;
+          -h) echo "$_USAGE"                                            ; return ;;
+           *) echo "$_USAGE"                                            ; return ;;
+      esac
+   done
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   if [ "$_region" == "all" ]; then
+      for _region in $_regions; do
+         if [ -z "$_reg_exp" ]; then
+            $_awsasdasg_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          else
-            echo "ok, NOT running the command"
+            $_awsasdasg_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          fi
+      done
+   else
+      if [ -z "$_reg_exp" ]; then
+         $_awsasdasg_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       else
-         echo "need to specify a <spiceweasel grep pattern> and <IP>"
+         $_awsasdasg_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
    fi
+}
+
+function awsdi () {
+# some 'aws ec2 describe-instances' hacks
+   local _USAGE="usage: \
+awsdi [OPTIONS]
+  -e ENVIRON   # filter results by this Environment (e.g. production, staging)
+  -n NAME      # filter results by this Instance Name
+  -p PROJECT   # filter results by this Project
+  -s STATE     # filter results by this State (e.g. running, terminated, etc.)
+  -m MAX       # the maximum number of items to display
+  -r REGION    # the Region to query (default: us-west-2)
+  +az          # show Availability Zone
+  +a           # show AMI (ImageId)
+  +bt          # show Branch Tag
+  +cc          # show Charge Code
+  +c           # show Cluster
+  +e           # show Env (Environment)
+  +it          # show Instance Type
+  +mr          # show Machine Role
+  +p           # show Project
+  +pi          # show Public IP
+  +si          # show Security Group Id(s)
+  +sn          # show Security Group Name(s)
+  +v           # show VPC Name
+  -h           # help (show this message)
+default display:
+  Inst name | Private IP | Instance ID | State"
+   local _awsec2di_cmd="aws ec2 describe-instances"
+   local _max_items=""
+   local _region="us-west-2"
+   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
+   local _filters=""
+   local _queries="Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name"
+   local _more_qs=""
+   local _query="Reservations[].Instances[]"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -p) _filters="Name=tag:Project,Values=*$2* $_filters"         ; shift 2;;
+          -n) _filters="Name=tag:Name,Values=*$2* $_filters"            ; shift 2;;
+          -s) _filters="Name=instance-state-name,Values=*$2* $_filters" ; shift 2;;
+          -e) _filters="Name=tag:Env,Values=*$2* $_filters"             ; shift 2;;
+          -m) _max_items="--max-items $2"                               ; shift 2;;
+          -r) _region=$2                                                ; shift 2;;
+          +a) _more_qs="ImageId,$_more_qs"                              ; shift  ;;
+         +az) _more_qs="Placement.AvailabilityZone,$_more_qs"           ; shift  ;;
+         +bt) _more_qs="Tags[?Key=='BranchTag'].Value|[0],$_more_qs"    ; shift  ;;
+         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"   ; shift  ;;
+          +c) _more_qs="Tags[?Key=='Cluster'].Value|[0],$_more_qs"      ; shift  ;;
+          +e) _more_qs="Tags[?Key=='Env'].Value|[0],$_more_qs"          ; shift  ;;
+         +it) _more_qs="InstanceType,$_more_qs"                         ; shift  ;;
+         +mr) _more_qs="Tags[?Key=='MachineRole'].Value|[0],$_more_qs"  ; shift  ;;
+          +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"      ; shift  ;;
+         +pi) _more_qs="PublicIpAddress,$_more_qs"                      ; shift  ;;
+         +si) _more_qs="SecurityGroups[].GroupId|join(', ',@),$_more_qs"; shift  ;;
+         +sn) _more_qs="SecurityGroups[].GroupName|join(', ',@),$_more_qs"; shift  ;;
+          +v) _more_qs="Tags[?Key=='VPCName'].Value|[0],$_more_qs"      ; shift  ;;
+          -h) echo "$_USAGE"                                            ; return ;;
+           *) echo "$_USAGE"                                            ; return ;;
+      esac
+   done
+   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   if [ "$_region" == "all" ]; then
+      for _region in $_regions; do
+         $_awsec2di_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      done
+   else
+      $_awsec2di_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+   fi
+}
+
+function awsdlb () {
+# some 'aws elb describe-load-balancer' hacks
+   local _USAGE="usage: \
+awsdlb [OPTIONS]
+  -n NAME      # filter results by this Launch Config Name
+  -m MAX       # the maximum number of items to display
+  -r REGION    # the Region to query (default: us-west-2)
+  +az          # show Availability Zones
+  +d           # show DNS Name
+  +hc          # show Health Check info (HTH, Int, T, TO, UTH)
+  +i           # show Instances
+  +li          # show Listeners (LB Port/Proto, Inst Port/Proto)
+  +s           # show Scheme
+  +sg          # show Security Groups
+  +sn          # show Subnets
+  -h           # help (show this message)
+default display:
+  Load Balancer name"
+   local _awselbdlb_cmd="aws elb describe-load-balancers"
+   local _max_items=""
+   local _region="us-west-2"
+   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
+   local _reg_exp=""
+   local _queries="LoadBalancerName"
+   local _more_qs=""
+   local _query="LoadBalancerDescriptions[]"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -n) _reg_exp="$2"                                          ; shift 2;;
+          -m) _max_items="--max-items $2"                            ; shift 2;;
+          -r) _region=$2                                             ; shift 2;;
+         +az) _more_qs="AvailabilityZones[]|join(', '@),$_more_qs"   ; shift  ;;
+          +d) _more_qs="DNSName,$_more_qs"                           ; shift  ;;
+         +hc) _more_qs="HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold,$_more_qs"; shift;;
+          +i) _more_qs="Instances[].InstanceId|join(', '@),$_more_qs"; shift;;
+         +li) _more_qs="ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol,$_more_qs"; shift;;
+          +s) _more_qs="Scheme,$_more_qs"                            ; shift  ;;
+         +sg) _more_qs="SecurityGroups|join(', ',@),$_more_qs"       ; shift  ;;
+         +sn) _more_qs="Subnets[]|join(', '@),$_more_qs"             ; shift  ;;
+          -h) echo "$_USAGE"                                         ; return ;;
+           *) echo "$_USAGE"                                         ; return ;;
+      esac
+   done
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   if [ "$_region" == "all" ]; then
+      for _region in $_regions; do
+         if [ -z "$_reg_exp" ]; then
+            $_awselbdlb_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         else
+            $_awselbdlb_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         fi
+      done
+   else
+      if [ -z "$_reg_exp" ]; then
+         $_awselbdlb_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      else
+         $_awselbdlb_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      fi
+   fi
+}
+
+function awsdlc () {
+# some 'aws autoscaling describe-launch-configurations' hacks
+   local _USAGE="usage: \
+awsdlc [OPTIONS]
+  -n NAME      # filter results by this Launch Config Name
+  -m MAX       # the maximum number of items to display
+  -r REGION    # the Region to query (default: us-west-2)
+  +ip          # show IAM Instance Profile
+  +kn          # show Key Name
+  +pt          # show Placement Tenancy
+  +sg          # show Security Groups
+  -h           # help (show this message)
+default display:
+  Launch Config name | AMI ID | Instance Type | Region"
+   local _awsasdlc_cmd="aws autoscaling describe-launch-configurations"
+   local _max_items=""
+   local _region="us-west-2"
+   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
+   local _reg_exp=""
+   local _queries="LaunchConfigurationName,ImageId,InstanceType"
+   local _more_qs=""
+   local _query="LaunchConfigurations[]"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -n) _reg_exp="$2"                                   ; shift 2;;
+          -m) _max_items="--max-items $2"                     ; shift 2;;
+          -r) _region=$2                                      ; shift 2;;
+         +ip) _more_qs="IamInstanceProfile,$_more_qs"         ; shift  ;;
+         +kn) _more_qs="KeyName,$_more_qs"                    ; shift  ;;
+         +pt) _more_qs="PlacementTenancy,$_more_qs"           ; shift  ;;
+         +sg) _more_qs="SecurityGroups|join(', ',@),$_more_qs"; shift  ;;
+          -h) echo "$_USAGE"                                  ; return ;;
+           *) echo "$_USAGE"                                  ; return ;;
+      esac
+   done
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   if [ "$_region" == "all" ]; then
+      for _region in $_regions; do
+         if [ -z "$_reg_exp" ]; then
+            $_awsasdlc_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         else
+            $_awsasdlc_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         fi
+      done
+   else
+      if [ -z "$_reg_exp" ]; then
+         $_awsasdlc_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      else
+         $_awsasdlc_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      fi
+   fi
+}
+
+function awsdni () {
+# some 'aws ec2 describe-network-interfaces' hacks
+   local _USAGE="usage: \
+awsdni [OPTIONS]
+  -a  AZ       # filter by Availability Zone (RegEx)
+  -d  DESC     # filter by Description
+  -i  IP_PRIV  # filter by Private IP
+  -id ID       # filter by Interface ID
+  -p  IP_PUB   # filter by Public IP
+  -r  REGION   # the Region to query (default: us-west-2)
+  -s  STATUS   # filter by Status (e.g. in-use, etc.)
+  +az          # show Availability Zone
+  +m           # show MAC Address
+  +p           # show Public IPs
+  +s           # show Subnet ID
+  +si          # show Security Group Id(s)
+  +sn          # show Security Group Name(s)
+  +v           # show VPC ID
+  -h           # help (show this message)
+default display:
+  ID | Description | Private IP | Status"
+   local _awsec2dni_cmd="aws ec2 describe-network-interfaces"
+   local _max_items=""
+   local _region="us-west-2"
+   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
+   local _filters=""
+   local _queries="NetworkInterfaceId,Description,PrivateIpAddress,Status"
+   local _more_qs=""
+   #local _query="NetworkInterfaces[].Instances[]"
+   local _query="NetworkInterfaces[]"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -a) _filters="Name=availability-zone,Values=*$2* $_filters"; shift 2;;
+          -d) _filters="Name=description,Values=*$2* $_filters"; shift 2;;
+          -i) _filters="Name=addresses.private-ip-address,Values=*$2* $_filters"; shift 2;;
+         -id) _filters="Name=network-interface-id,Values=*$2* $_filters"; shift 2;;
+          -p) _filters="Name=association.public-ip,Values=*$2* $_filters"; shift 2;;
+          -r) _region=$2                                                ; shift 2;;
+          -s) _filters="Name=status,Values=*$2* $_filters"; shift 2;;
+         +ai) _more_qs="PrivateIpAddresses[].PrivateIpAddress|join(', ',@),$_more_qs"; shift  ;;
+         +az) _more_qs="AvailabilityZone,$_more_qs"                     ; shift  ;;
+          +m) _more_qs="MacAddress,$_more_qs"                     ; shift  ;;
+          +p) _more_qs="Association.PublicIp,$_more_qs"; shift  ;;
+          +s) _more_qs="SubnetId,$_more_qs"                     ; shift  ;;
+         +si) _more_qs="Groups[].GroupId|join(', ',@),$_more_qs"; shift  ;;
+         +sn) _more_qs="Groups[].GroupName|join(', ',@),$_more_qs"; shift  ;;
+          +v) _more_qs="VpcId,$_more_qs"                     ; shift  ;;
+          -h) echo "$_USAGE"                                            ; return ;;
+           *) echo "$_USAGE"                                            ; return ;;
+      esac
+   done
+   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   if [ "$_region" == "all" ]; then
+      for _region in $_regions; do
+         #$_awsec2dni_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_awsec2dni_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$/|'"$_region"'/' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      done
+   else
+      $_awsec2dni_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$//g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+   fi
+}
+
+function awsrlrrs () {
+# some 'aws route53 list-resource-record-sets' hacks
+   local _USAGE="usage: \
+awsrlrrs DNS_NAME [OPTIONS]
+  -d DNS_NAME # the DNS Name or Hosted Zone to query
+  -m MAX      # the maximum number of items to display
+  -n NAME     # filter results by this Record Name
+  -t TYPE     # record TYPE to display
+  +s          # show Set Identifier
+  +t          # show TTL
+  +w          # show Weight
+  -h          # help (show this message)
+default display:
+  Record Name | Type | Record Value"
+   local _awsrlrrs_cmd="aws route53 list-resource-record-sets"
+   local _max_items=""
+   local _rec_type="*"
+   local _queries="Name,Type,ResourceRecords[].Value|[0]"
+   local _reg_exp=""
+   local _more_qs=""
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -d) _dns_name="$2"                    ; shift 2;;
+          -m) _max_items="--max-items $2"       ; shift 2;;
+          -n) _reg_exp="$2"                     ; shift 2;;
+          -t) _rec_type="?Type=='$2'"           ; shift 2;;
+          +s) _more_qs="SetIdentifier,$_more_qs"; shift  ;;
+          +t) _more_qs="TTL,$_more_qs"          ; shift  ;;
+          +w) _more_qs="Weight,$_more_qs"       ; shift  ;;
+          -h) echo "$_USAGE"                    ; return ;;
+           *) echo "$_USAGE"                    ; return ;;
+      esac
+   done
+   [ -z "$_dns_name" ] && { echo "error: did not specify DNS_NAME"; echo "$_USAGE"; return; }
+   local _query="ResourceRecordSets[$_rec_type]"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   # get the Hosted Zone Id
+   hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name $_dns_name --max-items 1 | jq -r .HostedZones[].Id)
+   if [ -z "$_reg_exp" ]; then
+      $_awsrlrrs_cmd --hosted-zone-id $hosted_zone_id --query "$_query" --output table | egrep -v '^[-+]|ListResourceRecordSets' | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+   else
+      $_awsrlrrs_cmd --hosted-zone-id $hosted_zone_id --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+   fi
+}
+
+function bash_prompt () {
+   # get Ansible version
+   ansible_version=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
+   PS_ANS="${PCYN}Ans:$ansible_version$PNRM"
+   # get Python version
+   python_version=$(python --version 2>&1 | awk '{print $NF}')
+   PS_PY="${PMAG}Py:$python_version$PNRM"
+   # get git info
+   local git_branch=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
+   git_status=$(git status --porcelain 2> /dev/null)
+   # for the future to get fancy
+   ##if [[ $git_status =~ ($'\n'|^).M ]]; then local has_modifications=true; fi
+   ##if [[ $git_status =~ ($'\n'|^)M ]]; then local has_modifications_cached=true; fi
+   ##if [[ $git_status =~ ($'\n'|^)A ]]; then local has_adds=true; fi
+   ##if [[ $git_status =~ ($'\n'|^).D ]]; then local has_deletions=true; fi
+   ##if [[ $git_status =~ ($'\n'|^)D ]]; then local has_deletions_cached=true; fi
+   ##if [[ $git_status =~ ($'\n'|^)[MAD] && ! $git_status =~ ($'\n'|^).[MAD\?] ]]; then local ready_to_commit=true; fi
+   if [ -n "$git_status" ]; then
+      PS_GIT="$PYLW$git_branch$PNRM"
+   else
+      PS_GIT="$PNRM$git_branch$PNRM"
+   fi
+   PS_PATH="$PGRN\w$PNRM [$PS_GIT]"
+   PS_WHO="$PBLU\u@\h$PNRM"
+   # different themes
+   ##PS1="$PS_PROJ $PS_GIT $PS_ANS $PS_PY $PGRN\w$PBLU\n\u@\h$PNRM|$PS_COL$ $PNRM"
+   ##PS1="$PS_GIT $PS_ANS $PS_PY $PGRN\w$PBLU\n$PS_PROJ\u@\h$PNRM|$PS_COL$ $PNRM"
+   ##PS1="$PGRN\w$PNRM [$PS_GIT]  $PS_ANS  $PS_PY\n$PS_PROJ$PBLU\u@\h$PNRM|$PS_COL$ $PNRM"
+   ##PS1="\n$PS_PATH $PS_ANS $PS_PY\n$PS_PROJ$PS_WHO|$PS_COL$ $PNRM"
+   ##PS1="\n$PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO|$PS_COL$ $PNRM"
+   PS1="\n$PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO[\j]$PS_COL$ $PNRM"
 }
 
 function ccc () {
@@ -165,107 +653,10 @@ function compare_lines () {
       line2diffs="$line2diffs $newword"
    done
    line2diffs=`echo "$line2diffs" | sed 's/^ //'`
-   #echo -e "\t--------------------- here's the original command ---------------------"
    echo -e "\t--------------------- missing in red ---------------------"
    echo -e "$line1diffs"
-   #echo -e "\t--------------------- here's the modified command ---------------------"
    echo -e "\t--------------------- added in green ---------------------"
    echo -e "$line2diffs"
-}
-
-function kcn () {
-# knife Create Node - using spiceweasel
-   sgp=$1
-   shift
-   arg=$1
-   while [ -n "$arg" ]; do
-      shift
-      case $arg in
-         '-b') build=$1 ;;
-         '-n') nn=$1 ;;
-         '-z') zone=$1 ;;
-      esac
-      shift
-      arg=$1
-   done
-   if knife_env_set; then
-      update_spiceweasel_repo
-      if [ -n "$sgp" ]; then
-         orig_cmd=`spiceweasel $SW_YAML_FILE | \grep -w $sgp | sort -u`
-         case $KNIFTLA in
-            dtu|pte|ptu|rou)
-               kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":"`
-               #kscc="${kscc} --bootstrap-url http://115.182.10.10:8080/chef/install.sh"
-               echo $sgp | grep -q "game"
-               if [ $? -eq 0 ]; then
-                  if [ -n "$build" ]; then
-                     kscc=`echo "$kscc" | sed "s:XXXX:$build:g;s:$sgp-$nn$build-:$sgp-$build-$nn:"`
-                  else
-                     echo -e "\t-----------------------------------------------------------------------"
-                     echo "need to specify a <spiceweasel grep pattern> and <build number>"
-                     return 2
-                  fi
-               fi
-               ;;
-            pew|pms|pue|puw)
-               kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":"`
-               #kscc="${kscc} --bootstrap-version 10.34.6"
-               echo $sgp | grep -q "game"
-               if [ $? -eq 0 ]; then
-                  if [ -n "$build" ]; then
-                     kscc=`echo "$kscc" | sed "s:XXXX:$build:g;s:$sgp-$nn$build-:$sgp-$build-$nn:"`
-                  else
-                     echo -e "\t-----------------------------------------------------------------------"
-                     echo "need to specify a <spiceweasel grep pattern> and <build number>"
-                     return 2
-                  fi
-               fi
-               ;;
-            ccd|dts|pek|sna|w11|w12|w13)
-               if [ -n "$nn" -a -n "$zone" ]; then
-                  kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":;s:$sgp-:$sgp-$nn:;s: -T Group=Internal::;s: -g: -G:;s:vNN-ZONE-X:$zone:"`
-                  #kscc="${kscc} --bootstrap-url http://115.182.10.10:8080/chef/install.sh"
-               else
-                  echo $sgp | grep -q "matchdirector"
-                  if [ $? -eq 0 -a -n "$zone" ]; then
-                     kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":;s: -T Group=Internal::;s: -g: -G:;s:vNN-ZONE-X:$zone:"`
-                  else
-                     echo -e "\t-----------------------------------------------------------------------"
-                     echo "need to specify a <spiceweasel grep pattern>, <node number> and <zone-id>"
-                     return 2
-                  fi
-               fi
-               echo $sgp | grep -q "game"
-               if [ $? -eq 0 ]; then
-                  if [ -n "$build" ]; then
-                     kscc=`echo "$kscc" | sed "s:XXXX:$build:g;s:$sgp-$nn$build-:$sgp-$build-$nn:"`
-                  else
-                     echo -e "\t-----------------------------------------------------------------------"
-                     echo "need to specify a <spiceweasel grep pattern>, <node number>, <zone-id> and <build number>"
-                     return 2
-                  fi
-               fi
-               ;;
-            *)
-               echo "error: not sure how I got here"; return 2;;
-         esac
-         compare_lines "$orig_cmd" "$kscc"
-         echo -e "\t-----------------------------------------------------------------------"
-         read -p "is this correct - do you want to run it (y/n/x)? " ans
-         if [ "$ans" = "y" ]; then
-            echo "ok, running the command"
-            eval "$kscc"
-         elif [ "$ans" = "x" ]; then
-            echo "ok, running the command in a xterm window"
-            #xterm -e "echo $kscc;eval $kscc;echo $kscc;bash" &
-            $XTERM -e 'echo '"$kscc"';eval '"$kscc"';echo '"$kscc"';bash' &
-         else
-            echo "ok, NOT running the command"
-         fi
-      else
-         echo "need to specify a <spiceweasel grep pattern>"
-      fi
-   fi
 }
 
 # THIS IS COMMENTED OUT BECAUSE IT WAS FOR A PREVIOUS PLACE OF EMPLOYMENT USING INFORMIX
@@ -355,27 +746,27 @@ function kcn () {
 ##   fi
 ##}
 
-function decimal_to_base32() {
+function decimal_to_base32 () {
 # convert a decimal number to base 32
- BASE32=($(echo {0..9} {a..v}))
+   BASE32=($(echo {0..9} {a..v}))
    arg1=$@
    for i in $(bc <<< "obase=32; $arg1"); do
       echo -n ${BASE32[$(( 10#$i ))]}
    done && echo
 }
 
-function decimal_to_base36() {
+function decimal_to_base36 () {
 # convert a decimal number to base 36
- BASE36=($(echo {0..9} {a..z}))
+   BASE36=($(echo {0..9} {a..z}))
    arg1=$@
    for i in $(bc <<< "obase=36; $arg1"); do
       echo -n ${BASE36[$(( 10#$i ))]}
    done && echo
 }
 
-function decimal_to_baseN() {
+function decimal_to_baseN () {
 # convert a decimal number to any base
- DIGITS=($(echo {0..9} {a..z}))
+   DIGITS=($(echo {0..9} {a..z}))
    if [ $# -eq 2 ]; then
       base=$1
       if [ $base -lt 2 -o $base -gt 36 ]; then
@@ -397,34 +788,38 @@ function decimal_to_baseN() {
    return 0
 }
 
-function frlic () {
-# find roles that I've changed
-   cd $CHEF_REPO/cookbooks
-   for cookbook_dir in `/bin/ls`; do
-      echo " ------- $cookbook_dir	-------"
-      (cd $cookbook_dir; hg stat; hg shelve -l)
-   done
-   cd -
+function elbinsts () {
+# convert instance ids to instance names that are attached to an AWS ELB
+   local _elb_name=$1
+   local _region=$2
+   local _inst_id
+   local _inst_id_states=$(aws elb describe-instance-health --region $_region --load-balancer-name $_elb_name --query "InstanceStates[].[InstanceId,State,Reasoncode]" --output table | \grep '^|.*i-[0-9a-z]' | sed 's/|  /| /g;s/^| //;s/ \+|$//')
+   local _inst_ids=$(echo "$_inst_id_states" | awk '{print $1}')
+   if [ -n "$_inst_ids" ]; then
+      while read line; do
+         _inst_id=$(echo "$line" | awk '{print $3}')
+         _inst_id_state=$(echo "$_inst_id_states" | grep $_inst_id)
+         echo "$line" | sed "s/$_inst_id/$_inst_id_state/"
+      done <<< "`aws ec2 describe-instances --region $_region --instance-ids $_inst_ids --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],InstanceId]" --output table | egrep -v '^[-+]|Describe' | sort | sed 's/|  /| /g;s/^| //;s/ \+|$//'`"
+   else
+      echo "not found"
+   fi
 }
 
-function fsic () {
-# find stuff that I've changed in the sub dirs of the cwd
-   for sub_dir in `/bin/ls`; do
-      if [ -d $sub_dir ]; then
-         echo " ------- $sub_dir	-------"
-         (cd $sub_dir; hg stat; hg shelve -l)
-      fi
-   done
+function gdate () {
+# convert hex date value to date
+   date --date=@`printf "%d\n" 0x$1`
 }
 
-function fsip () {
-# find stuff that I've pushed in the sub dirs of the cwd
-   for sub_dir in `/bin/ls`; do
-      if [ -d $sub_dir ]; then
-         echo " ------- $sub_dir	-------"
-         (cd $sub_dir; hg slog | grep Raco)
-      fi
-   done
+function getpubkey () {	# CTCS
+# get user's public key from cloud_automation users role
+   local _USERS_ROLE_PATH=~/cloud_automation/ansible/roles/users
+   local _user=$1
+   if [ "$_user" ]; then
+      grep -r "ssh.*$_user" $_USERS_ROLE_PATH | cut -d'"' -f2
+   else
+      echo "usage: getpubkey USER"
+   fi
 }
 
 ##function getramsz () {	# TOOL
@@ -484,639 +879,106 @@ function fsip () {
 ##   done
 ##}
 
-##function gftf () {	# TOOL # DEPRECATED with SCCS
-### grandfather a file
-##   [ -s $1.save ] && mv -i $1.save $1.bak
-##   [ -s $1.old ] && mv -i $1.old $1.save
-##   [ -s $1.orig ] && mv -i $1.orig $1.old
-##   [ -s $1 ] && cp -ip $1 $1.orig
-##}
-
-function hgd () {
-   local rev=$1
-   echo "hg diff -r $((--rev)) -r $((++rev))"
-   hg diff -r $((--rev)) -r $((++rev))
-}
-
-function kcl () {
-# preform a knife node list (and optionally grep for a pattern)
-   if knife_env_set; then
-      if [ -n "$1" ]; then
-         chef_clients=`/usr/bin/knife client list -c $KNIFERB | grep $*`
-         if [ -n "$chef_clients" ]; then
-            echo "$chef_clients"
-         else
-            echo "did not find any nodes matching '$1' in the client list"
-         fi
-      else
-         chef_clients_nc=`/usr/bin/knife client list -c $KNIFERB`
-         if [ -n "$chef_clients_nc" ]; then
-            echo "$chef_clients_nc"
-         else
-            echo "could not find any clients to list"
-         fi
-      fi
-   fi
-}
-
-function kcssh () {
-# cssh to servers matching PATTERN provided by user via `knife ssh` and internal FQDN's
-   if knife_env_set; then
-      source_ssh_env 
-      servers=$1
-      #for server in `knife node list -c $KNIFERB | \grep $servers`; do
-      #   svr_ifqdn=`knife node show $server -a internal_fqdn -c $KNIFERB`
-      #   ssh-keygen -f "/home/praco/.ssh/known_hosts" -R $svr_ifqdn
-      #done
-      #eval knife ssh "name:*${servers}*" -a ipaddress cssh -c $KNIFERB
-      eval knife ssh "name:*${servers}*" -a internal_fqdn cssh -c $KNIFERB
-   fi
-}
-
-function kcssha () {
-# cssh to servers matching multiple PATTERNs provided via `knife node list` and `cssh`
- local fqdn_srvr_list
-   if knife_env_set; then
-      knife_node_list=`mktemp /tmp/knl.XXXX`
-      /usr/bin/knife node list -c $KNIFERB > $knife_node_list
-      for server_pattern in $*; do
-         #echo "server_pattern=$server_pattern"
-         echo "looking for servers matching '$server_pattern'"
-         #for actual_server in `/usr/bin/knife node list -c $KNIFERB | \grep $server_pattern`; do
-         for actual_server in `\grep $server_pattern $knife_node_list`; do
-            actual_server_ifqdn=`knife node show -a internal_fqdn -c $KNIFERB $actual_server | \grep fqdn | awk '{print $2}'`
-            #echo "actual_server=$actual_server ($actual_server_ifqdn)"
-            echo "found: $actual_server ($actual_server_ifqdn)"
-            fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
-         done
-      done
-      if [ -n "$fqdn_srvr_list" ]; then
-         # get rid of dups
-         fqdn_srvr_list=`for fqdns in $fqdn_srvr_list;do echo $fqdns;done|sort -u`
-         cssh $fqdn_srvr_list &
-      else
-         echo "no servers found"
-      fi
-      rm -f $knife_node_list
-   fi
-}
-
-function kcsshau () {
-# cssh to servers matching multiple PATTERNs provided via `knife node list` and `cssh`
- local fqdn_srvr_list
-   if knife_env_set; then
-      knife_node_list=`mktemp /tmp/knl.XXXX`
-      /usr/bin/knife node list -c $KNIFERB > $knife_node_list
-      for server_pattern in $*; do
-         echo "looking for servers matching '$server_pattern'"
-         for actual_server in `\grep $server_pattern $knife_node_list`; do
-            actual_server_ifqdn=`knife node show -a internal_fqdn -c $KNIFERB $actual_server | \grep fqdn | awk '{print $2}'`
-            echo "found: $actual_server ($actual_server_ifqdn)"
-            fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
-         done
-      done
-      case $KNIFTLA in
-         ccd|pek|w11|w12|w13) ssh_identy_file=~/.ssh/Red5China.pem     ;;
-                           *) ssh_identy_file=~/.ssh/Red5Community.pem ;;
-      esac
-      if [ -n "$fqdn_srvr_list" ]; then
-         fqdn_srvr_list=`for fqdns in $fqdn_srvr_list;do echo $fqdns;done|sort -u`
-         #cssh $fqdn_srvr_list -l ubuntu -o "-i $ssh_identy_file" &
-         cssh -l ubuntu -o "-i $ssh_identy_file" $fqdn_srvr_list &
-      else
-         echo "no servers found"
-      fi
-      rm -f $knife_node_list
-   fi
-}
-
-function kcsshi () {
-# cssh to servers matching PATTERN provided by user via `knife ssh` and IP addresses
-   if knife_env_set; then
-      source_ssh_env 
-      servers=$1
-      #for server in `knife node list -c $KNIFERB | \grep $servers`; do
-      #   svr_ifqdn=`knife node show $server -a internal_fqdn -c $KNIFERB`
-      #   ssh-keygen -f "/home/praco/.ssh/known_hosts" -R $svr_ifqdn
-      #done
-      eval knife ssh "name:*${servers}*" -a ipaddress cssh -c $KNIFERB
-      #eval knife ssh "name:*${servers}*" -a internal_fqdn cssh -c $KNIFERB
-   fi
-}
-
-function kcsshu () {
-# cssh to servers matching PATTERN provided by user via `knife ssh` and as ubuntu
-   if knife_env_set; then
-      source_ssh_env 
-      servers=$1
-      #eval knife ssh "name:*${servers}*" -u ubuntu -i ~/.ssh/Red5Community.pem -a internal_fqdn cssh -c $KNIFERB &
-      #eval knife ssh "name:*${servers}*" -u ubuntu -i ~/.ssh/Red5China.pem -a internal_fqdn cssh -c $KNIFERB
-      case $KNIFTLA in
-         ccd|pek|w11|w12|w13) ssh_identy_file=~/.ssh/Red5China.pem     ;;
-                         sna) ssh_identy_file=~/.ssh/Red5Community.pem ;;
-                         dts) ssh_identy_file=~/.ssh/Red5DevTest.pem   ;;
-                           *) ssh_identy_file=~/.ssh/Red5Community.pem ;;
-      esac
-      #eval knife ssh "name:*${servers}*" -u ubuntu -i ~/.ssh/Red5China.pem -a ipaddress cssh -c $KNIFERB
-      eval knife ssh "name:*${servers}*" -u ubuntu -i $ssh_identy_file -a ipaddress cssh -c $KNIFERB
-   fi
-}
-
-function kcurla () {
-# curl to servers matching multiple PATTERNs provided via `knife node list` to check their health/build status
-# usage: kcurla PATTERN
- local fqdn_srvr_list
-   if knife_env_set; then
-      knife_node_list=`mktemp /tmp/knl.XXXX`
-      /usr/bin/knife node list -c $KNIFERB > $knife_node_list
-      for server_pattern in $*; do
-         #echo "looking for servers matching '$server_pattern'"
-         for actual_server in `\grep $server_pattern $knife_node_list`; do
-            actual_server_ifqdn=`knife node show -a internal_fqdn -c $KNIFERB $actual_server | \grep fqdn | awk '{print $2}'`
-            #echo "found: $actual_server ($actual_server_ifqdn)"
-            fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
-         done
-      done
-      if [ -n "$fqdn_srvr_list" ]; then
-         fqdn_srvr_list=`for fqdns in $fqdn_srvr_list;do echo $fqdns;done|sort -u`
-         for srvr in $fqdn_srvr_list; do
-            echo -n "$srvr: "
-            eval curl -qs $fqdn_srvr_list/health | sed 's/<.*>//'
-            echo -n ": "
-            eval curl -qs $fqdn_srvr_list/build_info | sed 's/<.*>//'; echo
-         done
-      else
-         echo "no servers found"
-      fi
-      rm -f $knife_node_list
-   fi
-}
-
-function kesd () {
-# knife ec2 server delete
-   if knife_env_set; then
-      ans="n"
-      if [ -n "$1" ]; then
-         if [ "$1" == "-y" ]; then
-            ans="y"
-            shift
-            if [ -n "$1" ]; then
-               server=$1
-            else
-               echo "you need to specify a server to delete"
-               return 1
-            fi
-         else
-            server=$1
-         fi
-         inst_id=`knife node show $server -a ec2.instance_id -c $KNIFERB | \fgrep "instance_id:" | awk '{print $2}'`
-         if [ -z "$inst_id" ]; then
-            inst=`echo $server | cut -d- -f3`
-            inst_id="i-$inst"
-         fi
-         echo "here's the command:"
-         echo "	knife ec2 server delete -y -R --purge --node $server $inst_id -c \$KNIFERB"
-         [ "$ans" == "n" ] && read -p "is this correct? " ans
-         if [ "$ans" = "y" ]; then
-            echo "ok, running the command"
-            knife ec2 server delete -y -R --purge --node $server $inst_id -c $KNIFERB
-         else
-            echo "ok, NOT running the command"
-         fi
-      else
-         echo "you need to specify a server to delete"
-      fi
-   fi
-}
-
-function kf () {
-# `knife` command wrapper to use my dynamically set knife.rb file
-   if [ -z "$KNIFERB" ]; then
-      echo "chef/knife environment NOT set - use 'ske'"
+function gh () {	# TOOL
+   if [[ $1 =~ ^\^.* ]]; then
+      pattern=$(echo "$*" | tr -d '^')
+      #echo "looking for: ^[0-9]*  $pattern"
+      history | grep "^[0-9]*  $pattern" | grep $pattern
    else
-      eval knife '$*' -c $KNIFERB
+      #echo "looking for: $*"
+      history | grep "$*"
    fi
 }
 
-function knife_env_set () {
-# check if knife environment set (specifically the knife.rb file)
-   if [ -z "$KNIFERB" ]; then
-      echo "chef/knife environment NOT set - use 'ske'"
-      return 1
+function listcrts () {
+# list all info in a crt bundle
+# usage:
+#    listcrts [cert_file] [openssl_options]
+#       cert_file       (arg 1) - name of cert file
+#         (optional - otherwise all *.crt files)
+#       openssl_options (arg 2) - openssl options
+#         (e.g. -subject|dates|text|serial|pubkey|modulus
+#               -purpose|fingerprint|alias|hash|issuer_hash)
+#    (default options: -subject -dates -issuer and always: -noout)
+   local _DEFAULT_OPENSSL_OPTS="-subject -dates -issuer"
+   local _cbs _cb
+   local _cert_bundle=$1
+   if [ "${_cert_bundle: -3}" == "crt" ]; then
+      shift
    else
-      #if [ "$QUIET" != "true" ]; then
-      #   echo "$KNIFENV (KNIFERB='$KNIFERB')"
-      #fi
-      return 0
+      unset _cert_bundle
    fi
-}
-
-function knl () {
-# preform a knife node list (and optionally grep for a pattern)
-   if knife_env_set; then
-      if [ -n "$1" ]; then
-         chef_nodes=`/usr/bin/knife node list -c $KNIFERB | grep $*`
-         if [ -n "$chef_nodes" ]; then
-            echo "$chef_nodes"
-         else
-            echo "did not find any nodes matching '$1' in the node list"
-         fi
-      else
-         chef_nodes_nc=`/usr/bin/knife node list -c $KNIFERB`
-         if [ -n "$chef_nodes_nc" ]; then
-            echo "$chef_nodes_nc"
-         else
-            echo "could not find any nodes to list"
-         fi
-      fi
+   local _openssl_opts=$*
+   echo "$_openssl_opts" | grep -q '+[a-z].*'
+   if [ $? -eq 0 ]; then
+      _openssl_opts="$_DEFAULT_OPENSSL_OPTS $(echo "$_openssl_opts" | sed 's/+/-/g')"
    fi
-}
-
-function kns () {
-# perform knife node show for one or more node and optional specify an attribute
-# you can give -a option to show only one attribute
-   if knife_env_set; then
-      local _chef_node_nc
-      local _chef_node
-      local attrib
-      local l_opt
-      if [ "$1" = "-a" ]; then
-         case $2 in
-             az) attrib=firefall.availability_zone ;;
-             bn) attrib=r5_build_number ;;
-             fq) attrib=fqdn ;;
-            ifq) attrib=internal_fqdn ;;
-             ip) attrib=ipaddress ;;
-              *) attrib=$2 ;;
-         esac
-         shift 2
-      elif [ "$1" = "-l" ]; then
-         l_opt="$1"
-         shift
-      fi
-      if [ -n "$1" ]; then
-         chef_nodes_nc=`/usr/bin/knife node list -c $KNIFERB | \grep $*`
-      else
-         chef_nodes_nc=`/usr/bin/knife node list -c $KNIFERB`
-      fi
-      if [ -n "$chef_nodes_nc" ]; then
-         for _chef_node_nc in $chef_nodes_nc; do
-            [ -n "$*" ] && _chef_node=`echo "$_chef_node_nc" | grep $*`
-            echo -e "\t\t\t-----  $_chef_node  -----"
-            #/usr/bin/knife node show -c $KNIFERB $_chef_node_nc | grep -v ^"Node Name"
-            if [ -n "$attrib" ]; then
-               /usr/bin/knife node show -c $KNIFERB $_chef_node_nc -a $attrib
-            else
-               /usr/bin/knife node show -c $KNIFERB $_chef_node_nc $l_opt
-            fi
-         done
-      else
-         if [ -n "$1" ]; then
-            echo "did not find any nodes matching '$1' to show"
-         else
-            echo "could not find any nodes to show"
-         fi
-      fi
-   fi
-}
-
-function knsc () {
-# find the creator of one or more nodes
-   if knife_env_set; then
-      for srvr in `knife node list -c $KNIFERB | \grep $1`; do
-         echo -n "$srvr:	"
-         /usr/bin/knife node show $srvr -c $KNIFERB -a Creator
-      done
-   fi
-}
-
-function kosd () {
-# knife openstack server delete
-   if knife_env_set; then
-      if [ -n "$1" ]; then
-         server=$1
-         #echo "here's the command:"
-         echo -n "run this?: 'knife openstack server delete $server -y --purge -c \$KNIFERB' [y/n]: "
-         #read -p "is this correct? " ans
-         read ans
-         if [ "$ans" = "y" ]; then
-            echo "ok, running the command"
-            knife openstack server delete $server -y --purge -c $KNIFERB
-         else
-            echo "ok, NOT running the command"
-         fi
-      else
-         echo "you need to specify a server to delete"
-      fi
-   fi
-}
-
-function kscp () {
-# perform `scp` using knife to get IP's of hosts given via a pattern
-   declare -A from_servers_ips
-   declare -A to_servers_ips
-   local multiple_froms=false
-   local multiple_tos=false
-   if knife_env_set; then
-      echo "$*" | \grep -q :
+   _openssl_opts=${_openssl_opts:=$_DEFAULT_OPENSSL_OPTS}
+   _openssl_opts="$_openssl_opts -noout"
+echo "opts: '$_openssl_opts'"
+   if [ -z "$_cert_bundle" ]; then
+      ls *.crt > /dev/null 2>&1
       if [ $? -eq 0 ]; then
-         knife_node_list=`mktemp /tmp/knl.XXXX`
-         /usr/bin/knife node list -c $KNIFERB > $knife_node_list
-      fi
-      if [ -n "$1" -a -n "$2" ]; then
-         echo "$1" | \grep -q :
-         if [ $? -eq 0 ]; then
-            fromserver=`echo $1 | cut -d: -f1`
-            from_server_nc=`\grep $fromserver $knife_node_list | awk '{print $1}'`
-            nos=`echo "$from_server_nc" | wc -w`
-            if [ $nos -gt 1 ]; then
-               multiple_froms=true
-               for _fs in $from_server_nc; do
-                  from_servers_ips[$_fs]=`/usr/bin/knife node show -a ipaddress $_fs -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
-               done
-            else
-               multiple_froms=false
-               from_server=$from_server_nc
-               from_server_ip=`/usr/bin/knife node show -a ipaddress $from_server -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
-            fi
-            from_file=`echo $1 | cut -d: -f2`
-            ffc=":"
-         else
-            from_server=""
-            from_server_ip=""
-            from_file="$1"
-            ffc=""
-         fi
-         echo "$2" | grep -q :
-         if [ $? -eq 0 ]; then
-            toserver=`echo $2 | cut -d: -f1`
-            to_server_nc=`\grep $toserver $knife_node_list | awk '{print $1}'`
-            nos=`echo "$to_server_nc" | wc -l`
-            if [ $nos -gt 1 ]; then
-               multiple_tos=true
-               for _ts in $to_server_nc; do
-                  to_servers_ips[$_ts]=`/usr/bin/knife node show -a ipaddress $_ts -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
-               done
-            else
-               multiple_tos=false
-               to_server=$to_server_nc
-               to_server_ip=`/usr/bin/knife node show -a ipaddress $to_server -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
-            fi
-            to_file=`echo $2 | cut -d: -f2`
-            tfc=":"
-         else
-            to_server=""
-            to_server_ip=""
-            to_file="$2"
-            tfc=""
-         fi
-         if [ "$multiple_froms" = "true" -a "$multiple_tos" = "true" ]; then
-            for _fs in $from_server_nc; do
-               for _ts in $to_server_nc; do
-                  echo "scp $_fs(${from_servers_ips[$_fs]}):$from_file $_ts(${to_servers_ips[$_ts]}):$to_file.$_fs" | egrep "$fromserver|$toserver"
-                  /usr/bin/scp ${from_servers_ips[$_fs]}:$from_file ${to_servers_ips[$_ts]}:$to_file.$_fs
-               done
-            done
-         elif [ "$multiple_froms" = "true" ]; then
-            for _fs in $from_server_nc; do
-               if [ -n "$to_server" ]; then
-                  echo "scp $_fs(${from_servers_ips[$_fs]}):$from_file $to_server($to_server_ip):$to_file.$_fs" | egrep "$fromserver|$toserver"
-                  /usr/bin/scp ${from_servers_ips[$_fs]}:$from_file $to_server_ip:$to_file.$_fs
-               else
-                  echo "scp $_fs(${from_servers_ips[$_fs]}):$from_file $to_file.$_fs" | grep $fromserver
-                  /usr/bin/scp ${from_servers_ips[$_fs]}:$from_file $to_file.$_fs
-               fi
-            done
-         elif [ "$multiple_tos" = "true" ]; then
-            for _ts in $to_server_nc; do
-               if [ -n "$from_server" ]; then
-                  echo "scp $from_server($from_server_ip):$from_file $_ts(${to_servers_ips[$_ts]}):$to_file" | egrep "$toserver|$toserver"
-                  /usr/bin/scp $from_server_ip:$from_file ${to_servers_ips[$_ts]}:$to_file
-               else
-                  echo "scp $from_file $_ts(${to_servers_ips[$_ts]}):$to_file" | grep $toserver
-                  /usr/bin/scp $from_file ${to_servers_ips[$_ts]}:$to_file
-               fi
-            done
-         else
-            if [ -n "$from_server" -a -n "$to_server" ]; then
-               echo "scp $from_server($from_server_ip):$from_file $to_server($to_server_ip):$to_file" | egrep "$fromserver|$toserver"
-            elif [ -n "$from_server" ]; then
-               echo "scp $from_server($from_server_ip):$from_file $to_file" | grep $fromserver
-            elif [ -n "$to_server" ]; then
-               echo "scp $from_file $to_server($to_server_ip):$to_file" | grep $toserver
-            else
-               echo "scp $from_file $to_file"
-            fi
-            /usr/bin/scp $from_server_ip$ffc$from_file $to_server_ip$tfc$to_file 
-         fi
-         rm -f $knife_node_list
+         echo "certificate(s) found"
+         _cbs=$(ls *.crt)
       else
-         echo "error: you have to specify a SOURCE and DEST"
-      fi
-  fi
-}
-
-function kssh () {
-# ssh into a server matching a pattern or run a command on it if given
-   if knife_env_set; then
-      serverpattern=$1
-      shift
-      cmd="$*"
-      source_ssh_env 
-      server=`/usr/bin/knife node list -c $KNIFERB | \grep $serverpattern`
-      if [ $? -eq 1 ]; then
-         echo "server not found (via 'knife node list')"
-         return 2
-      fi
-      nos=`echo "$server" | wc -l`
-      if [ $nos -gt 1 ]; then
-         sai=0
-         echo "which server?"
-         for srvr in $server; do
-            ((sai++))
-            echo "	$sai: $srvr"
-            server_array[$sai]=$srvr
-         done
-         #echo "	a: all of the above; n-m: servers n-m; a,b,c,etc: servers a,b,c,etc."
-         echo "	a: all | n-m: range | x,y: select"
-         read -p "enter choice (1-$sai|a|n-m|x,y): " choice
-         if [ -n "$choice" ]; then
-            if [ $choice = a ]; then
-               kssha -l "$server" "$cmd"
-               return 0
-            elif [[ $choice =~ ^[0-9]+-[0-9]+$ ]]; then
-               s_n=${choice%-*}
-               s_m=${choice#*-}
-               tsl=""		# the server list
-               for i in `seq $s_n $s_m`; do
-                  [ -z "$tsl" ] && tsl="${server_array[$i]}" || tsl="$tsl ${server_array[$i]}"
-               done
-               #echo "debug: 'kssha -l \"$tsl\" \"\$cmd\"'"
-               kssha -l "$tsl" "$cmd"
-               ## couldn't get this to work
-               ##choice=":`echo $choice | tr '-' ':'`"
-               ##echo "debug: 'kssha -l \"${server_array[@]choice}\" \"$cmd\"'"
-               ##kssha -l "${server_array[@]:choice}" "$cmd"
-               return 0
-            elif [[ $choice =~ ^[0-9]+(,[0-9]+)+ ]]; then
-               tsl=""		# the server list
-               for i in `echo $choice | tr ',' ' '`; do
-                  [ -z "$tsl" ] && tsl="${server_array[$i]}" || tsl="$tsl ${server_array[$i]}"
-               done
-               #echo "debug: 'kssha -l \"$tsl\" \"\$cmd\"'"
-               kssha -l "$tsl" "$cmd"
-               return 0
-            elif [ `echo $choice | grep [b-zA-Z]` ]; then
-               echo "seriously?"
-               return 3
-            elif [ $choice -gt 0 -a $choice -le $sai ]; then
-               server=${server_array[$choice]}
-            else
-               echo "seriously?"
-               return 3
-            fi
-         else
-            echo "later..."
-            return 5
-         fi
-      fi
-      server=`echo $server`	# get rid of leading whitespace and color
-      #echo "debug: server='$server'"
-      server_ifqdn=`/usr/bin/knife node show $server -a internal_fqdn -c $KNIFERB | grep internal_fqdn | awk '{print $NF}'`
-      #echo "debug: server_ifqdn='$server_ifqdn'"
-      server_ip=`/usr/bin/host $server_ifqdn 2>/dev/null| awk '{print $NF}'`
-      #echo "debug: server_ip='$server_ip'"
-      echo $server_ip | egrep -q '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
-      if [ $? -ne 0 ]; then
-         echo "debug: couldn't get IP with 'host' (DNS) for < $server > - using 'knife'"
-         server_ip=`/usr/bin/knife node show $server -a ipaddress -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
-      fi
-      echo $server_ip | egrep -q '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
-      if [ $? -eq 0 ]; then
-         # don't do this for now - maybe later or with a smaller version of .bash_aliases
-         ##if [ -z "$cmd" ]; then
-         ##   scp -q ~/.{vim,bash}{rc,_aliases,_profile} $server_ip:/home/praco 2> /dev/null
-         ##fi
-         #[ -z "$cmd" ] && echo -e "	${CYN}< $server > [ $server_ip ]${NRM}" || echo -e "	${CYN}< $server > [ $server_ip ] ( $cmd )${NRM}"
-         #[ -z "$cmd" ] && echo -e "	${CYN}$server ($server_ip)${NRM}" || echo -e "	${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
-         if [ -z "$cmd" -o "$cmd" == "." ]; then
-            echo -e "	${CYN}$server ($server_ip)${NRM}"
-            if [ "$cmd" == "." ]; then
-               /usr/bin/ssh -q $server_ip
-            else
-               $XTERM -e 'eval /usr/bin/ssh -q '"$server_ip"'' &
-            fi
-         else
-            echo -e "	${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
-            eval /usr/bin/ssh -q $server_ip "$cmd"
-         fi
-         echo -ne "\033]0;`whoami`@`hostname`\007"
-      else
-         echo "error: cannot get IP for server: < $server >"
-      fi
-   fi
-}
-
-function kssha () {
-# run a command on multiple servers matching a given pattern
-# options
-#	-a	run on all servers
-#	-l	run on this list of servers
-#	-q	run quietly - less verbose - output on single lines
-   if [ "$1" == "-q" ]; then
-      QUIET=true
-      shift
-   else
-      QUIET=false
-   fi
-   if [ "$1" == "-a" ]; then
-      local _ALL=true
-      shift
-   else
-      local _ALL=false
-   fi
-   if [ "$1" == "-l" ]; then
-      shift
-      server_list=$1
-      shift
-   else
-      server_list=""
-   fi
-   if knife_env_set; then
-      source_ssh_env 
-      if [ -z "$server_list" ]; then
-         if [ "$_ALL" = "true" ]; then
-            server_list=`/usr/bin/knife node list -c $KNIFERB`
-         else
-            serverpattern="$1"
-            shift
-            server_list=`/usr/bin/knife node list -c $KNIFERB | \grep $serverpattern`
-         fi
-      fi
-      cmd="$*"
-      #echo "debug(kssha): server_list='$server_list'"
-      #echo "debug(kssha): cmd='$cmd'"
-      if [ -n "$cmd" ]; then
-         #for server in `/usr/bin/knife node list -c $KNIFERB | \grep $serverpattern`; do
-         for server in $server_list; do
-            server=`echo $server`	# get rid of leading whitespace and color
-            server_ifqdn=`/usr/bin/knife node show $server -a internal_fqdn -c $KNIFERB | grep internal_fqdn | awk '{print $NF}'`
-            server_ip=`/usr/bin/host $server_ifqdn 2>/dev/null | awk '{print $NF}'`
-            echo $server_ip | egrep -q '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
-            if [ $? -ne 0 ]; then
-               echo "debug: couldn't get IP with 'host' (DNS) for < $server > - using 'knife'"
-               server_ip=`/usr/bin/knife node show $server -a ipaddress -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
-            fi
-            echo $server_ip | egrep -q '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
-            if [ $? -eq 0 ]; then
-               if [ $QUIET == "true" ]; then
-                  #echo -n "$server ($server_ip) [$cmd]: "
-                  echo -ne "${CYN}$server ($server_ip)${NRM}: "
-               else
-                  echo -e "	${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
-               fi
-               ##/usr/bin/ssh $server_ip "$cmd"
-               #eval /usr/bin/ssh $server_ip "$cmd" 2> /dev/null
-               eval /usr/bin/ssh -q $server_ip "$cmd"
-               [ $? -ne 0 ] && echo
-            else
-               echo "error: cannot get IP for server: < $server >"
-            fi
-         done
-      else
-         #kcssh $serverpattern
-         kcssha $server_list
-         return 0
-      fi
-   fi
-}
-
-function ksshu () {
-# ssh as ubuntu into a server using knife to get the IP
-   if knife_env_set; then
-      source_ssh_env
-      server=`/usr/bin/knife node list -c $KNIFERB | \grep $1`
-      nos=`echo "$server" | wc -l`
-      if [ $nos -gt 1 ]; then
-         echo "please be more specific:"
-         echo "$server" | grep $1
+         echo "no certificate files found"
          return
       fi
-      server=`echo $server`        # get rid of leading whitespace and color
-      server_ip=`/usr/bin/knife node show -a ipaddress $server -c $KNIFERB | \grep ipaddress | awk '{print $2}'|tr -d '\n'`
-      shift
-      cmd="$*"
-      case $KNIFTLA in
-         ccd|pek|w11|w12|w13) ssh_identy_file=~/.ssh/Red5China.pem      ;;
-                         dts) ssh_identy_file=~/.ssh/Red5DevTest.pem    ;;
-                         sna) ssh_identy_file=~/.ssh/Red5PublicTest.pem ;;
-                           *) ssh_identy_file=~/.ssh/Red5Community.pem  ;;
-      esac
-      echo "/usr/bin/ssh -i $ssh_identy_file ubuntu@$server_ip \"$cmd\""
-      #/usr/bin/ssh -i ~/.ssh/Red5China.pem ubuntu@$server_ip "$cmd" 2> /dev/null
-      /usr/bin/ssh -q -i $ssh_identy_file ubuntu@$server_ip "$cmd"
-      echo -ne "\033]0;`whoami`@`hostname`\007"
+   else
+      _cbs=$_cert_bundle
    fi
+   for _cb in $_cbs; do
+      echo "---------------- ( $_cb ) ---------------------"
+      cat $_cb | \
+         awk '{\
+            if ($0 == "-----BEGIN CERTIFICATE-----") cert=""; \
+            else if ($0 == "-----END CERTIFICATE-----") print cert; \
+            else cert=cert$0}' | \
+               while read cert; do
+                  [[ $_more ]] && echo "---"
+                  echo "$cert" | \
+                     base64 -d | \
+                        openssl x509 -inform DER $_openssl_opts | \
+                           awk '{
+                              if ($1~/subject=/)
+                                 { gsub("subject=","  sub:",$0); print $0 }
+                              else if ($1~/issuer=/)
+                                 { gsub("issuer=","isuer:",$0); print $0 }
+                              else if ($1~/notBefore/)
+                                 { gsub("notBefore=","dates: ",$0); printf $0" -> " }
+                              else if ($1~/notAfter/)
+                                 { gsub("notAfter=","",$0); print $0 }
+                              else if ($1~/[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]/)
+                                 { print " hash: "$0 }
+                              else
+                                 { print $0 }
+                           }'
+                  local _more=yes
+               done
+   done
+}
+
+function listcrts2 () {
+   for _c; do
+      echo
+      echo "Certificate: $_c"
+      [ ! -f "$_c" ] && { echo " X - Certificate not found"; continue; }
+      _n_cert=$(grep -hc "BEGIN CERTIFICATE" "$_c")
+      [ "$_n_cert" -lt 1 ] && { echo " X - Not valid certificate"; continue; }
+      for n in $(seq 1 $_n_cert);do
+         awk -v n=$n '/BEGIN CERT/ { n -= 1;} n == 0 { print }' "$_c" | \
+            openssl x509 -noout -text | sed -n \
+               -e 's/^/ o - /' \
+               -e 's/ *Signature Algorithm: / signature=/p' \
+               -e 's/ *Not Before: / notBefore=/p' \
+               -e 's/ *Not After *: / notAfter=/p' \
+               -e 's/ *Issuer: / issuer=/p' \
+               -e 's/ *Subject: / subject=/p' \
+               -e '/Subject Public Key Info/q' | sort -r
+         echo " -------------"
+      done
+   done
 }
 
 function mkalias () {	# TOOL
@@ -1130,86 +992,10 @@ function mkalias () {	# TOOL
 function mktb () {	# MISC
 # get rid of all the MISC, RHUG, and TRUG functions from $BRCSRC
 # and save the rest to $BRCDST
- local BRCSRC=/home/praco/.bashrc
- local BRCDST=/home/praco/.bashrc.tools
+   local BRCSRC=/home/praco/.bashrc
+   local BRCDST=/home/praco/.bashrc.tools
    rm -f $BRCDST
    sed '/^function.*# MISC$/,/^}$/d;/^function.*# RHUG$/,/^}$/d;/^function.*# TRUG$/,/^}$/d' $BRCSRC > $BRCDST
-}
-
-function oav () {	# TOOL
-# OpenStack attach a VIP (and optional FIP)
-# 
-# Usage: oav [-f] <instance> <last octet of vip>
-# Option: -f	Create and attach a FIP to the VIP
-   local pcsgo
-   if [ -z "$OS_PASSWORD" -o -z "$OS_AUTH_URL" -o -z "$OS_USERNAME" -o -z "$OS_TENANT_NAME" ]; then
-      echo "error: all of the OpenStack Environment variables aren't set"
-      return 2
-   fi
-   if [ "$1" = "-f" ]; then
-      afip="true"
-      shift
-   else
-      afip="false"
-   fi
-   instance=$1
-   loov=$2
-   if [ -n "$instance" -a -n "$loov" ]; then
-      instance_interfaces=`nova interface-list $instance | \grep ACTIVE`
-      if [ $? -eq 0 ]; then
-         instance_portid=`echo $instance_interfaces | awk '{print $4}'`
-         instance_netid=`echo $instance_interfaces | awk '{print $6}'`
-         instance_ip=`echo $instance_interfaces | awk '{print $8}'`
-         iilo=`echo $instance_ip | cut -d'.' -f4`	#instance_ip_last_octect
-         vip=`echo $instance_ip | sed 's/.'"$iilo"'$/.'"$loov"'/'`
-         vippll=`neutron port-list | \fgrep '"'$vip'"'`
-         if [ $? -ne 0 ]; then
-            echo "creating VIP $vip with the following command:"
-            for isg in `nova list-secgroup $instance | \egrep -v 'Id.*Name.*Description|------+------'|awk '{print $2}'`; do
-               [ -n "$isg" ] && pcsgo="$pcsgo --security-group $isg"
-            done
-            echo "  neutron port-create --fixed-ip ip_address=$vip $pcsgo $instance_netid"
-            ##vipid=test_vipid ##debug##
-            vipid=`neutron port-create --fixed-ip ip_address=$vip $pcsgo $instance_netid | \fgrep "| id " | awk '{print $4}'`
-         else
-            echo "the VIP $vip already exists"
-            vipid=`echo $vippll | awk '{print $2}'`
-         fi
-         ipsal=`neutron port-show $instance_portid | \fgrep allowed_address_pairs | \fgrep '"'$vip'"'`
-         if [ $? -ne 0 ]; then
-            echo "allowing the VIP to send traffic to the instance with the following command:"
-            echo "  neutron port-update $instance_portid --allowed_address_pairs list=true type=dict ip_address=$vip"
-            neutron port-update $instance_portid --allowed_address_pairs list=true type=dict ip_address=$vip
-         else
-            echo "the VIP is already allowed to send traffic to the instance"
-            echo "  $ipsal"
-         fi
-         if [ "$afip" = "true" ]; then
-            fipll=`neutron floatingip-list | \fgrep " $vip "`
-            if [ $? -ne 0 ]; then
-               echo "creating a FIP with the following command:"
-               echo "  neutron floatingip-create net04_ext"
-               ##fipid=test_fipid ##debug##
-               fipid=`neutron floatingip-create net04_ext | \fgrep "| id " | awk '{print $4}'`
-               echo "attaching a FIP using the following command"
-               echo "  neutron floatingip-associate $fipid $vipid"
-               ##fip=`neutron floatingip-associate $fipid $vipid | \fgrep "| id " | awk '{print $4}'` 
-               neutron floatingip-associate $fipid $vipid > /dev/null
-               fip=`neutron floatingip-list | \fgrep $fipid | awk '{print $6}'` 
-               echo "VIP ($vip) is now attached to FIP ($fip)"
-            else
-               fip=`echo $fipll | awk '{print $6}'`
-               echo "VIP ($vip) is already attached to FIP ($fip)"
-            fi
-         else
-            echo "not creating a FIP or attaching it to the VIP"
-         fi
-      else
-         echo "cannot get the interface info for instance: $instance"
-      fi
-   else
-      echo "error: you did not specify an instance to attach the VIP to and last ip octet for the VIP"
-   fi
 }
 
 function pag () {	# TOOL
@@ -1220,62 +1006,119 @@ function peg () {	# TOOL
    ps -ef | grep $*
 }
 
-function rc () {	# MISC
-# remember command - save the given command for later retreval
- COMMAND="$*"
- COMMANDS_FILE=/home/praco/.commands.txt
+function pl () {
+# run a command and pipe it through `less`
+   eval $@ | less
+}
+
+function rac () {	# MISC
+# remember AWS CLI command - save the given command for later retreval
+   COMMAND="$*"
+   COMMANDS_FILE=/home/praco/.aws_commands.txt
    echo "$COMMAND" >> $COMMANDS_FILE
    sort $COMMANDS_FILE > $COMMANDS_FILE.sorted
    mv -f $COMMANDS_FILE.sorted $COMMANDS_FILE
-   echo "added '$COMMAND' to: $COMMANDS_FILE"
-   scp -q $COMMANDS_FILE $OTHERVM:/home/praco
+   echo "added: '$COMMAND'"
+   echo "   to: $COMMANDS_FILE"
+}
+
+function rc () {	# MISC
+# remember command - save the given command for later retreval
+   COMMAND="$*"
+   COMMANDS_FILE=/home/praco/.commands.txt
+   echo "$COMMAND" >> $COMMANDS_FILE
+   sort $COMMANDS_FILE > $COMMANDS_FILE.sorted
+   mv -f $COMMANDS_FILE.sorted $COMMANDS_FILE
+   echo "added: '$COMMAND'"
+   echo "   to: $COMMANDS_FILE"
+   ##scp -q $COMMANDS_FILE $OTHERVM:/home/praco
 }
 
 function rf () {	# MISC
 # remember file - save the given file for later retreval
- FILE="$*"
- FILES_FILE=/home/praco/.files.txt
+   FILE="$*"
+   FILES_FILE=/home/praco/.files.txt
    echo "$FILE" >> $FILES_FILE
    sort $FILES_FILE > $FILES_FILE.sorted
    mv -f $FILES_FILE.sorted $FILES_FILE
    echo "added '$FILE' to: $FILES_FILE"
-   scp -q $FILES_FILE $OTHERVM:/home/praco
+   ##scp -q $FILES_FILE $OTHERVM:/home/praco
 }
 
-function s3 () {
-# `s3cmd` command wrapper to use my dynamically set s3cfg file
-   if [ -z "$KNIFERB" ]; then
-      echo "chef/knife environment NOT set - use 'ske'"
+function sae () {	# TOOL
+# set AWS environment
+   local REPOS=$HOME/repos
+   local AWS_CFG=$HOME/.aws/config
+   local arg="$1"
+
+   if [ -n "$arg" ]; then
+      case $arg in
+            corsother) aenv="CORS Others"               ; s3cg="$HOME/.s3cfg.navel"   ;;
+           entcombain) aenv="ENT Combain"               ; s3cg="$HOME/.s3cfg.navel"   ;;
+         entlocalblox) aenv="ENT Local Blox"            ; s3cg="$HOME/.s3cfg.navel"   ;;
+               entscm) aenv="ENT SCM"                   ; s3cg="$HOME/.s3cfg.navel"   ;;
+              locapps) aenv="Local Applications (Prod)" ; s3cg="$HOME/.s3cfg.locapps" ;;
+           loctoolkit) aenv="Locl ToolKit"              ; s3cg="$HOME/.s3cfg.navel"   ;;
+           telecomsys) aenv="TeleComSys (Dev) 'NavTel'" ; s3cg="$HOME/.s3cfg.navel"   ;;
+                 raco) aenv="Raco's AWS"                                              ;;
+                unset) aenv="Environment un set"                                      ;;
+                    *) echo "WTF? Try: [corsother entcombain entlocalblox entscm locapps loctoolkit telecomsys raco OR unset]"; return 2 ;;
+      esac
+      if [ "$arg" != "unset" ]; then
+         export AWSPROF=$arg
+         export AWSENV=$aenv
+         export S3CFG=$s3cg
+         export AWS_DEFAULT_PROFILE=$arg	# for `aws` (instead of using --profile)
+         export AWS_ACCESS_KEY_ID=`awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF;exit}' $AWS_CFG`
+         export AWS_SECRET_ACCESS_KEY=`awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF;exit}' $AWS_CFG`
+         echo "environment has been set to --> $AWSENV"
+      else
+         unset AWSPROF
+         unset S3CFG
+         unset AWSENV
+         unset AWS_DEFAULT_PROFILE
+         unset AWS_ACCESS_KEY_ID
+         unset AWS_SECRET_ACCESS_KEY
+         echo "environment has been unset"
+      fi
+      if [ "$COLOR_PROMPT" = yes ]; then
+         case $arg in
+            unset)				# cyan prompt
+               PS_PROJ="$PNRM"; PS_COL="$PCYN" ;;
+            corsother|entcombain|entlocalblox)	# cyan prompt
+               PS_PROJ="$PCYN[$AWSPROF]$PNRM"; PS_COL="$PCYN" ;;
+            raco)				# magenta prompt
+               PS_PROJ="$PMAG[$AWSPROF]$PNRM"; PS_COL="$PMAG" ;;
+            telecomsys)				# yellow prompt
+               PS_PROJ="$PYLW[$AWSPROF]$PNRM"; PS_COL="$PYLW" ;;
+            entscm|locapps|loctoolkit)		# red prompt
+               PS_PROJ="$PRED[$AWSPROF]$PNRM"; PS_COL="$PRED" ;;
+         esac
+      fi
    else
-      eval s3cmd -c $S3CFG '$*'
+      echo "--- ${aenv:=Environment NOT set} ---"
+      echo " AWSPROF               = '$AWSPROF'"
+      echo " AWSENV                = '$AWSENV'"
+      echo " S3CFG                 = '$S3CFG'"
+      echo " AWS_DEFAULT_PROFILE   = '$AWS_DEFAULT_PROFILE'"
+      echo " AWS_ACCESS_KEY_ID     = '$AWS_ACCESS_KEY_ID'"
+      echo " AWS_SECRET_ACCESS_KEY = '$AWS_SECRET_ACCESS_KEY'"
    fi
 }
 
-function update_spiceweasel_repo () {
-# set which spiceweasel YAML file to use
- SPICEWEASELREPO=$REPO_DIR/spiceweasel
-   cd $SPICEWEASELREPO > /dev/null
-   hg incoming > /dev/null
-   if [ $? -eq 0 ]; then
-      echo -n "updating spiceweasel repo... "
-      hg pu > /dev/null
-      echo "done... "
-   else
-      echo "spiceweasel repo is up to date"
-   fi
-   cd - > /dev/null
-   [ ! -e $SW_YAML_FILE ] && echo "No such file: $SW_YAML_FILE"
+function searchtcsrepo () {	# TOOL
+   local _grep_pattern="$*"
+   #echo "looking for: '$_grep_pattern'"
+   aws --profile telecomsys s3 ls tcs-yum-repos/amzn/noarch/data/ | grep "$_grep_pattern"
 }
 
 function showf () {	# TOOL
-ALIASES_FILE="$HOME/.bash_aliases"
 # show a function
+   ALIASES_FILE="$HOME/.bash_aliases"
    if [[ $1 ]]; then
-      #declare -f $1 > /dev/null 2>&1
       grep -q "^function $1 " $ALIASES_FILE
       if [ $? -eq 0 ]; then
          echo -e "\n/-------------------------------------------------"
-         #declare -f $1 | awk '{print "| "$0}'
          sed -n '/^function '"$1"' /,/^}/p' $ALIASES_FILE | awk '{print "| "$0}'
          echo -e "\-------------------------------------------------\n"
       else
@@ -1284,7 +1127,6 @@ ALIASES_FILE="$HOME/.bash_aliases"
    else
       echo
       echo "which function do you want to see?"
-      #declare -F | awk -v c=4 '{if(NR%c){printf "  %-15s",$3}else{printf "  %-15s\n",$3}}END{print CR}'
       grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
       echo -ne "enter function: "
       read func
@@ -1292,194 +1134,33 @@ ALIASES_FILE="$HOME/.bash_aliases"
    fi
 }
 
-function ske () {	# TOOL
-# set knife environment
- local REPO=$CHEF_REPO
- local CHEF=$REPO/.chef
- local arg="$1"
- local SPICEWEASELREPO=$REPO_DIR/spiceweasel
-
-   if [ -n "$arg" ]; then
-      case $arg in
-         ccd) akrb="knife_pek01_censorship.rb";     aenv="China Censorship Destra DNA"
-              s3cg="$HOME/.s3cfg.pek01-censorship"; osrc="$HOME/.ccd.openstackrc.prod-pek01.sh"
-              swyf="$SPICEWEASELREPO/production.vpc01.pek01-censorship.nodes.yml"               ;;
-         dte) akrb="knife_devtest_ew.rb";           aenv="DevTest Europe West"                  ;;
-         dts) akrb="knife_sna01_dts.rb";            aenv="OpenStack:DevTest US West SNA01"
-              s3cg="$HOME/.s3cfg.sna01.dts";        osrc="$HOME/.dts.openstackrc.devtest-sna01.sh"
-              swyf="$SPICEWEASELREPO/devtest.vpc01.sna01.nodes.yml"                             ;;
-         dtu) akrb="knife_devtest_uw.rb";           aenv="DevTest US West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/devtest.vpc01.us-west-2.nodes.yml"                         ;;
-         nun) akrb="none";                          aenv="None"                                 ;;
-         oce) akrb="knife_openstack_corp.rb";       aenv="OpenStack:Corp"                       ;;
-         pek) akrb="knife_pek01.rb";                aenv="Asia Pacific PEK01"
-              s3cg="$HOME/.s3cfg.pek01";            osrc="$HOME/.pek.openstackrc.prod-pek01.sh"
-              swyf="$SPICEWEASELREPO/production.vpc01.pek01.nodes.yml"                          ;;
-         pew) akrb="knife_prod_ew.rb";              aenv="Production Europe West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/production.vpc01.eu-west-1.nodes.yml"                      ;;
-         pms) akrb="knife_pms.rb";                  aenv="Production Migration Stack"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/production.vpc02.us-west-2.nodes.yml"                      ;;
-         pue) akrb="knife_prod_ue.rb";              aenv="Production US East"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/production.vpc01.us-east-1.nodes.yml"                      ;;
-         puw) akrb="knife_prod_uw.rb";              aenv="Production US West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/production.vpc01.us-west-2.nodes.yml"                      ;;
-         pte) akrb="knife_pubtest_ew.rb";           aenv="PubTest Europe West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/pubtest.vpc01.eu-west-1.nodes.yml"                         ;;
-         ptu) akrb="knife_pubtest_uw.rb";           aenv="PubTest US West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/pubtest.vpc01.us-west-2.nodes.yml"                         ;;
-         rou) akrb="knife_r5ops_uw.rb";             aenv="R5Ops US West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/r5ops.vpc01.us-west-2.nodes.yml"                           ;;
-         sna) akrb="knife_sna01_pts.rb";            aenv="OpenStack:PubTest US West SNA01"
-              s3cg="$HOME/.s3cfg.sna01.pts";        osrc="$HOME/.sna.openstackrc.pubtest-sna01.sh"
-              swyf="$SPICEWEASELREPO/pubtest.vpc01.sna01.nodes.yml"                             ;;
-         w11) akrb="knife_wux01v01.rb";             aenv="OpenStack:Prod Asia Pacific WUX01-VPC01"
-              s3cg="$HOME/.s3cfg.wux01v01";         osrc="$HOME/.wux01v01.openstackrc.prod-wux01.sh"
-              swyf="$SPICEWEASELREPO/production.vpc01.wux01.nodes.yml"                           ;;
-         w12) akrb="knife_wux01v02.rb";             aenv="OpenStack:Prod Asia Pacific WUX01-VPC02"
-              s3cg="$HOME/.s3cfg.wux01v02";         osrc="$HOME/.wux01v02.openstackrc.prod-wux01.sh"
-              swyf="$SPICEWEASELREPO/production.vpc02.wux01.nodes.yml"                           ;;
-         w13) akrb="knife_wux01v03.rb";             aenv="OpenStack:Prod Asia Pacific WUX01-VPC03"
-              s3cg="$HOME/.s3cfg.wux01v03";         osrc="$HOME/.wux01v03.openstackrc.prod-wux01.sh"
-              swyf="$SPICEWEASELREPO/production.vpc03.wux01.nodes.yml"                           ;;
-           *) echo "unknown environment; (known: ccd dte dts dtu nun oce pek pew pms pue puw pte ptu rou sna w11 w12 w13)"; return 2 ;;
-      esac
-      if [ "$arg" != "nun" ]; then
-         export KNIFTLA=$arg
-         export KNIFERB=$CHEF/$akrb
-         export KNIFENV=$aenv
-         export S3CFG=$s3cg
-         export SW_YAML_FILE=$swyf
-         export OSRC=$osrc
-         [ -n "$OSRC" ] && source $OSRC
-         export AWS_DEFAULT_PROFILE=$arg	# for `aws` (instead of using --profile)
-         #echo "$KNIFENV (KNIFERB='$KNIFERB')"
-         echo "environment has been set to --> $KNIFENV"
-      else
-         unset KNIFTLA
-         unset KNIFERB
-         unset KNIFENV
-         unset S3CFG
-         unset SW_YAML_FILE
-         unset OSRC
-         unset AWS_DEFAULT_PROFILE
-         #echo "knife environment has been unset"
-         echo "environment has been unset"
-      fi
-      ## I don't want to set this link anymore to force myself to set my environment
-      ##(cd $CHEF; ln -fs $akrb $krb) 
-      if [ "$COLOR_PROMPT" = yes ]; then
-         case $arg in
-            nun)
-               PS1='${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;32m\]\w\[\033[00m\]│\[\033[01;36m\]\$\[\033[00m\] ' ;;
-            dte|dts|dtu|rou)
-               PS1='\[\033[01;36m\][$KNIFTLA]\[\033[00m\]${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;32m\]\w\[\033[00m\]│\[\033[01;36m\]\$\[\033[00m\] ' ;;
-            pte|ptu|oce|sna)
-               PS1='\[\033[01;33m\][$KNIFTLA]\[\033[00m\]${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;32m\]\w\[\033[00m\]│\[\033[01;33m\]\$\[\033[00m\] ' ;;
-            ccd|pek|pew|pms|pue|puw|w11|w12|w13)
-               PS1='\[\033[01;31m\][$KNIFTLA]\[\033[00m\]${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;32m\]\w\[\033[00m\]│\[\033[01;31m\]\$\[\033[00m\] ' ;;
-         esac
-      fi
-   else
-      if [ -n "$KNIFERB" ]; then
-         echo "--- $KNIFENV ---"
-         echo " KNIFTLA             = '$KNIFTLA'"
-         echo " KNIFERB             = '$KNIFERB'"
-         echo " KNIFENV             = '$KNIFENV'"
-         echo " S3CFG               = '$S3CFG'"
-         echo " SW_YAML_FILE        = '$SW_YAML_FILE'"
-         echo " OSRC                = '$OSRC'"
-         echo " AWS_DEFAULT_PROFILE = '$AWS_DEFAULT_PROFILE'"
-         #echo "$KNIFENV (KNIFERB='$KNIFERB')"
-      else
-         #echo "knife environment not set: KNIFENV='$KNIFENV' (KNIFERB='$KNIFERB')"
-         echo "environment not set:"
-         echo " KNIFTLA             = '$KNIFTLA'"
-         echo " KNIFERB             = '$KNIFERB'"
-         echo " KNIFENV             = '$KNIFENV'"
-         echo " S3CFG               = '$S3CFG'"
-         echo " SW_YAML_FILE        = '$SW_YAML_FILE'"
-         echo " OSRC                = '$OSRC'"
-         echo " AWS_DEFAULT_PROFILE = '$AWS_DEFAULT_PROFILE'"
-      fi
-   fi
-}
-
-function son () {	# TOOL
-# ssh as ubuntu to an server via IP supplied by user
-   nip=$1
-   if [ -n "$nip" ]; then
-      snauc=`ssh ubuntu@$nip -i ~/.ssh/Red5China.pem`
-      echo "here's the command:"
-      echo "	$snauc"
-      read -p "is this correct? " ans
-      if [ "$ans" = "y" ]; then
-         echo "ok, running the command"
-         eval "$snauc"
-      else
-         echo "ok, NOT running the command"
-      fi
-   else
-      echo "need to specify an ip"
-   fi
-}
-
-function sons () {	# TOOL
-# ssh as ubuntu to an server via IP using knife
-   if knife_env_set; then
-      source_ssh_env 
-      server=`/usr/bin/knife node list -c $KNIFERB | \grep $1`
-      nos=`echo "$server" | wc -l`
-      if [ $nos -gt 1 ]; then
-         sai=0
-         echo "which server?"
-         for srvr in $server; do
-            ((sai++))
-            echo "	$sai: $srvr"
-            server_array[$sai]=$srvr
-         done
-         read -p "enter choice (1-$sai): " choice
-         if [ $choice -gt 0 -a $choice -le $sai ]; then
-            server=${server_array[$choice]}
-         else
-            echo "seriously?"
-            return
-         fi
-      fi
-      server=`echo $server`	# get rid of leading whitespace and color
-      server_ip=`/usr/bin/knife node show -a ipaddress $server -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
-      echo "$server ($server_ip)"
-      #echo "ssh ubuntu@$server_ip -i ~/.ssh/Red5China.pem"
-      #ssh ubuntu@$server_ip -i ~/.ssh/Red5China.pem 2> /dev/null
-      #ssh -q ubuntu@$server_ip -i ~/.ssh/Red5China.pem
-      echo "ssh ubuntu@$server_ip -i ~/.ssh/Red5Community.pem"
-      ssh -q ubuntu@$server_ip -i ~/.ssh/Red5Community.pem
-   fi
-}
-
 function source_ssh_env () {
- SSH_ENV="$HOME/.ssh/environment"
-
-   if [ -f "${SSH_ENV}" ]; then
-       . "${SSH_ENV}" > /dev/null
-       #ps ${SSH_AGENT_PID} doesn't work under cywgin
-       ps -ef | grep ${SSH_AGENT_PID} | grep ssh-agent$ > /dev/null || {
-           start_ssh_agent;
-       }
+   SSH_ENV="$HOME/.ssh/environment"
+   if [ -f "$SSH_ENV" ]; then
+      source $SSH_ENV > /dev/null
+      ps -u $USER | grep -q "$SSH_AGENT_PID.*ssh-agent$" || start_ssh_agent
    else
-       start_ssh_agent;
+      start_ssh_agent
+   fi
+}
+
+function sse () {
+# ssh in to a server as user: "ec2-user" and run optional command
+   if [ "$1" != "" ]; then
+      _server=$1
+      shift
+      if [ "$*" == "" ]; then
+         ssh ec2-user@${_server}
+      else
+         ssh ec2-user@${_server} "$*"
+      fi
+   else
+      echo "USAGE: sse HOST [COMMAND(S)]"
    fi
 }
 
 ##function sshc () {	# TOOL
-##   source_ssh_env 
+##   source_ssh_env
 ##   if [ $# -ge 2 ]; then
 ##      host=$1
 ##      shift
@@ -1497,123 +1178,680 @@ function source_ssh_env () {
 ##}
 
 function start_ssh_agent () {
- SSH_ENV="$HOME/.ssh/environment"
-
+   SSH_ENV="$HOME/.ssh/environment"
    echo -n "Initializing new SSH agent... "
-   /usr/bin/ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}"
-   echo succeeded
-   chmod 600 "${SSH_ENV}"
-   . "${SSH_ENV}" > /dev/null
-   /usr/bin/ssh-add;
+   /usr/bin/ssh-agent | sed 's/^echo/#echo/' > $SSH_ENV
+   echo "succeeded"
+   chmod 600 $SSH_ENV
+   source $SSH_ENV > /dev/null
+   /usr/bin/ssh-add
+}
+
+function stopwatch () {	# TOOL
+   local _started _start_secs _current _current_secs
+   _started=$(date +'%d-%b-%Y %T')
+   _start_secs=$(date +%s -d "$_started")
+   while true; do
+      _current=$(date +'%d-%b-%Y %T')
+      _current_secs=$(date +%s -d "$_current")
+      echo -ne "\rStart: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs")${NRM}"
+   done
 }
 
 function tb () {
    echo -ne "\033]0; $* \007"
 }
 
+function tsend () {
+# Send same command to all panes
+   tmux set-window-option synchronize-panes on
+   tmux send-keys "$@" Enter
+   tmux set-window-option synchronize-panes off
+}
+
+function vagssh () {
+# ssh in to our vagrant server in a seperate xterm window
+   $XTERM -e 'cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' &
+}
+
+function vin () {
+# vim certain files by alias
+   NOTES_DIR="notes"
+   note_file=$1
+   if [ -n "$note_file" ]; then
+      case $note_file in
+         ansible) actual_note_file=Ansible_Notes.txt         ;;
+             aws) actual_note_file=AWS_Notes.txt             ;;
+           awsas) actual_note_file=AWS_AutoScaling_Notes.txt ;;
+            bash) actual_note_file=Bash_Notes.txt            ;;
+             git) actual_note_file=Git_Notes.txt             ;;
+            ldap) actual_note_file=LDAP_Notes.txt            ;;
+           linux) actual_note_file=Linux_Notes.txt           ;;
+          python) actual_note_file=Python_Notes.txt          ;;
+             sql) actual_note_file=SQL_Notes.txt             ;;
+               *) echo "sorry, don't have that alias"; return 2 ;;
+      esac
+      eval vim $REPO_DIR/$NOTES_DIR/$actual_note_file
+   else
+      echo "you didn't specify a file (alias) to edit"
+   fi
+}
+
+function vmbackups () {	# VMedix
+# show yesterday's and today's backups for VMedix
+   local _USAGE="usage: vmbackups [us|eu] [m|s]"
+   local _backup _region _s3_file_base
+   local _backups="backups elasticsearch"
+   local _regions="us-east-1 eu-west-1"
+   while [ $# -gt 0 ]; do
+      case $1 in
+         us) _regions="us-east-1"    ; shift ;;
+         eu) _regions="eu-west-1"    ; shift ;;
+          m) _backups="backups"      ; shift ;;
+          s) _backups="elasticsearch"; shift ;;
+          *) echo "$_USAGE"          ; return;;
+      esac
+   done
+   _mtoday=$(date +%Y-%m-%d)
+   _myestr=$(date +%Y-%m-%d -d yesterday)
+   _stoday=$(date +%Y_%m_%d)
+   _syestr=$(date +%Y_%m_%d -d yesterday)
+   for _backup in $_backups; do
+      for _region in $_regions; do
+         case $_region in
+            us-east-1) _s3_file_base=s3://virtumedix-$_backup/$_region   ;;
+            eu-west-1) _s3_file_base=s3://virtumedix-eu-$_backup/$_region;;
+         esac
+         case $_backup in
+            backups)
+               echo "MongoDB Backups ($_region)"
+               aws s3 ls $_s3_file_base/production/dump-$_myestr
+               aws s3 ls $_s3_file_base/production/dump-$_mtoday
+               aws s3 ls $_s3_file_base/production/dump-latest
+            ;;
+            elasticsearch)
+               echo "ElasticSearch Backups ($_region)"
+               aws s3 ls $_s3_file_base/snapshot-$_syestr
+               aws s3 ls $_s3_file_base/snapshot-$_stoday
+            ;;
+         esac
+      done
+   done
+}
+
+function vmchkcrts () {	# TOOL
+# check subject, dates and serial of certs installed on app_nginx servers
+   local _USAGE="vmchkcrts -p PROJECT [-b|g] -v LIST_OF_VPCS"
+   local _AUTOMATION_INV=~/cloud_automation/ansible/inventory
+   local project vpcs
+   local hosts_file=hosts_production
+   while [ $# -gt 0 ]; do
+      case $1 in
+         -b) hosts_file=hosts_blue; shift  ;;
+         -g) hosts_file=hosts_green; shift ;;
+         -p) project=$2; shift 2           ;;
+         -v) shift; vpcs="$*"; break       ;;
+          *) echo "$_USAGE"; return        ;;
+      esac
+   done
+   [ -z "$project" ] && project=VMedix
+   [ -z "$vpcs" ] && vpcs="mirkwood isengard"
+   for vpc in $vpcs; do
+      for domain in $(grep -r server_name: $_AUTOMATION_INV/$project/$vpc | awk '{print $NF}'); do
+         for host in $(ansible --list-hosts -i $_AUTOMATION_INV/$project/$vpc/$hosts_file "*app_nginx*" --vault-password-file=~/.vault.vm 2> /dev/null | grep -v 'hosts.*:$'); do
+            echo
+            echo -n " host: $host | domain: $domain"
+            nc -w 2 -z $host 443 > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+               echo
+               openssl s_client -connect $host:443 -servername $domain </dev/null 2>/dev/null | \
+                  openssl x509 -noout -subject -serial -dates | \
+                     awk '{
+                        if ($1~/subject=/) {
+                           gsub("subject=","  sub:",$0)
+                           printf $0" "
+                        }
+                        else if ($1~/notBefore/) {
+                           gsub("notBefore=","dates: ",$0)
+                           printf $0" "
+                        }
+                        else if ($1~/notAfter/) {
+                           gsub("notAfter=","-> ",$0)
+                           print $0
+                        }
+                        else if ($1~/serial=/) {
+                           gsub("serial=","",$0)
+                           print "["$0"]"
+                        }
+                        else {
+                           print $0
+                        }
+                     }'
+            else
+               echo " - NOT reachable"
+            fi
+         done
+      done
+   done
+}
+
+function vmcssh () {	# VMedix
+# cssh to VMedix servers
+   local _USAGE="usage: vmcssh us|eu a|1|2|g|b|p [PATTERN]"
+   local _INV_REPO="~/cloud_automation/ansible/inventory/VMedix"
+   local _vpc _h _pat
+   local _country=$1
+   if [[ $_country =~ (us|eu) ]]; then
+      case $_country in
+         us) _vpc="mirkwood"          ;;
+         eu) _vpc="isengard"          ;;
+          *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"
+      return
+   fi
+   local _hosts=$2
+   if [ -n "$_hosts" ]; then
+      case $_hosts in
+         a) _pat="*${_vpc}*"       ;;
+         1) _h=hosts_shared1       ;;
+         2) _h=hosts_shared2       ;;
+         g) _h=hosts_green         ;;
+         b) _h=hosts_blue          ;;
+         p) _h=hosts_production    ;;
+         *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"
+      return
+   fi
+   local _pattern=$3
+   if [ -n "$_pattern" ]; then
+      _pat="*${_pattern}*"
+   elif [ -z "$_pat" ]; then
+      _pat="all"
+   fi
+   #debug#echo "repo: $_INV_REPO | vpc: $_vpc | hosts: $_h | pat: $_pat"
+   #debug#echo -e "csshing to these hosts:\n$(ansible --list-hosts -i $_INV_REPO/$_vpc/$_h "$_pat" --vault-password-file=~/.vault.vm 2>/dev/null | grep -v 'hosts.*:$')"
+   cssh $(ansible --list-hosts -i $_INV_REPO/$_vpc/$_h "$_pat" --vault-password-file=~/.vault.vm 2>/dev/null | egrep -v 'hosts.*:$|localhost$|loghost|vpnhost') &
+}
+
+function vmmanageusers () {	# VMedix
+# add|remove user keys from AWS instances controled via Ansible
+   local _USAGE="usage: vmmanageusers us|eu a|1|2|g|b|p [-l apps|data|PATTERN] add|rem all|USR1 [USR2...]"
+   local _REPO_HOME=~/cloud_automation/ansible
+   local _INV_REPO=$_REPO_HOME/inventory/VMedix
+   local _USERS_ROLE_DEV_VARS=$_REPO_HOME/roles/users/vars/dev_users_present.yml
+   local _USERS_ROLE_MAIN_TASK=$_REPO_HOME/roles/users/tasks/main.yml
+   local _cmd _disable_opt _disable_usrs _h _pat _st _usr _vpc
+   local _country=$1
+   if [[ $_country =~ (us|eu) ]]; then
+      case $_country in
+         us) _vpc=mirkwood          ;;
+         eu) _vpc=isengard          ;;
+          *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"; return
+   fi
+   local _hosts=$2
+   if [ -n "$_hosts" ]; then
+      case $_hosts in
+         a) _pat="*${_vpc}*"       ;;
+         1) _h=hosts_shared1       ;;
+         2) _h=hosts_shared2       ;;
+         g) _h=hosts_green         ;;
+         b) _h=hosts_blue          ;;
+         p) _h=hosts_production    ;;
+         *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"; return
+   fi
+   local _3rd_opt=$3
+   if [ "$_3rd_opt" == "-l" ]; then
+      local _pattern=$4
+      if [ -n "$_pattern" ]; then
+         case $_pattern in
+            apps) _pat="*ap*" ;;
+            data) _pat="mongo*:search*:redis*" ;;
+               *) _pat="$_pattern*" ;;
+         esac
+      else
+         echo "$_USAGE"; return
+      fi
+      _cmd=$5
+      shift 5
+   else
+      _cmd=$3
+      shift 3
+   fi
+   if [ -z "$_pat" ]; then
+      _pat=all
+   fi
+   _pat="'$_pat:!localhost:!logstash*'"
+   local _all_tags=$(\grep "tags: \[" $_USERS_ROLE_MAIN_TASK | \grep -v always | sort -u | cut -d"'" -f2 | tr '\n' ',' | sed 's/,$//')
+   local _all_but_dev_tags=$(echo $_all_tags | sed "s/dev,//;s/,dev//")
+   case $_cmd in
+      add) _st="'$_all_but_dev_tags'" ;;
+      rem) _st="'$_all_tags'"         ;;
+        *) echo "$_USAGE"; return     ;;
+   esac
+   local _usrs=$*
+   local _all_dev_usrs=$(\grep -- "- name:" $_USERS_ROLE_DEV_VARS | awk '{print $NF}' | tr '\n' ',' | sed 's/,$//')
+   if [ -n "$_usrs" ]; then
+      if [ "$_cmd" == "add" ]; then
+         if [ "$_usrs" != "all" ]; then
+            for _usr in $_usrs; do
+               _disable_usrs=$(echo $_all_dev_usrs | sed "s/\"$_usr\",//;s/,\"$_usr\"//")
+               _all_dev_usrs=$_disable_usrs
+            done
+         fi
+      else
+         if [ "$_usrs" != "all" ]; then
+            _disable_usrs="\"$(echo "$_usrs" | sed 's/ /","/g')\""
+         else
+            _disable_usrs="$_all_dev_usrs"
+         fi
+      fi
+   else
+      echo "$_USAGE"; return
+   fi
+   if [ "$_cmd" == "add" -a "$_usrs" == "all" ]; then
+      _disable_opt=""
+   else
+      _disable_opt="-e '{\"disable_users\": [$_disable_usrs]}'"
+   fi
+   echo "ansible-playbook -i $_INV_REPO/$_vpc/$_h --limit "$_pat" --skip-tags "$_st" $_disable_opt --vault-password-file=~/.vault.vm $_REPO_HOME/playbooks/util/manage_users.yml"
+   eval ansible-playbook -i $_INV_REPO/$_vpc/$_h --limit "$_pat" --skip-tags "'$_st'" "$_disable_opt" --vault-password-file=~/.vault.vm $_REPO_HOME/playbooks/util/manage_users.yml
+}
+
+function vmmopmonit () {	# VMedix
+   local _USAGE="usage: vmmopmonit us|eu"
+   local _country=$1
+   local _vpc
+   local _repo="~/cloud_automation/ansible/inventory/VMedix"
+   local _region
+   case $_country in
+      us) _vpc="mirkwood"; _region="us-east-1" ;;
+      eu) _vpc="isengard"; _region="eu-west-1" ;;
+       *) echo "$_USAGE"; return ;;
+   esac
+   local _dns_servers=$(egrep -r 'server_name:|api_server:' ~/cloud_automation/ansible/inventory/VMedix/$_vpc | awk '{print $NF}' | paste -s )
+   # `sstat` on BLUE api servers
+   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 80x72+7+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${BLU}\\tBlue ${YLW}Cluster services status - ${RED}'"$_vpc"' ['"$_region"']${NRM}\"\; ansible -i '"$_repo/$_vpc"'/hosts_blue \"*api[0-9]*\" -a \"sstat\" --vault-password-file ~/.vault.vm 2>/dev/null \| egrep -v \"WARN\|duplicate\|cloud_auto\|SUCCESS\"''' &
+   # `sstat` on GREEN api servers
+   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 80x72+523+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${GRN}\\tGreen ${YLW}Cluster services status - ${RED}'"$_vpc"' ['"$_region"']${NRM}\"\; ansible -i '"$_repo/$_vpc"'/hosts_green \"*api[0-9]*\" -a \"sstat\" --vault-password-file ~/.vault.vm 2>/dev/null \| egrep -v \"WARN\|duplicate\|cloud_auto\|SUCCESS\"''' &
+   # `crond` service status on all app, mongo and redis servers
+   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 86x22+1038+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tcrond Service Statuses - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; ansible -i '"$_repo/$_vpc"'/hosts_production \"*ap*:mongo*:redis*\" -m shell -a \"/sbin/service crond status\" --vault-password-file ~/.vault.vm \| tr -d \"\\n\" \| sed \"s/\>\>/: /g\;s/running\.\.\./\`printf \"\\033[1\;32mrunning\\033[m\"\`\\n/g\;s/stopped/\`printf \"\\033[1\;31mstopped\\033[m\"\`\\n/g\" \| sort''' &
+   # AWS CloudWatch alarms
+   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 86x48+1038+358 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tCloudWatch Alarms - ${RED}'"$_vpc"' ['"$_region"']\\n${NRM}\"\; aws cloudwatch describe-alarms --region '"$_region"' --profile locapps \| grep AlarmName \| grep -i VMedix \| sed \"s/^ *//\;s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\"''' &
+   # AWS Route53/DNS entries showing active cluster
+   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 123x26+7-52 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tDNS Entries - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; for h in '"$_dns_servers"'\; do dig \$h \| egrep -v \"^$\|^\;\" \| grep CNAME \| sed \"s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\;s/\\\(\\s\\+[0-9]\\+\\s\\+\\\)/\`printf \"\\033[1\;36m\"\`\\1\`printf \"\\033[m\"\`/g\"\; done''' &
+   # AWS ASG of app servers showing Health Check Type
+   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 129x19+781-52 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tAWS AutoScalingGroup Descriptions - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; aws autoscaling describe-auto-scaling-groups --profile locapps --region '"$_region"' --query \"AutoScalingGroups[].[AutoScalingGroupName,LaunchConfigurationName,length\(Instances\),DesiredCapacity,MinSize,MaxSize,HealthCheckType,Instances[].HealthStatus\|join\('"\'"', '"\'"',@\),LoadBalancerNames[0]]\" --output table \| egrep -- \"-ap[i,p]\" \| sed \"s/ //g\" \| column -s\"\|\" -t \| sed \"s/\\\(  \\\)\\\([a-zA-Z0-9]\\\)/\| \\2/g\;s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\;s/EC2/\`printf \"\\033[1\;33mEC2\\033[m\"\`/g\;s/ELB/\`printf \"\\033[1\;36mELB\\033[m\"\`/g\"''' &
+   #TODO website status?
+}
+
+function vmmopprep () {	# VMedix
+# grab steps in PCR steps file and add to history file to easily execute them
+# must specify one of "-s|p|r" (staging|production|roll-back) steps desired
+# and the PCR steps file
+   local _ANSIBLE_HOME=~/cloud_automation/ansible
+   local _USAGE="usage: vmmopprep -s|t|p|r [PCR_Steps_File]"
+   local _STEPS=/tmp/.mop_steps
+   local _GIT_BRANCH=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
+   [ $# -lt 1 ] && { echo -e "${RED}ERROR${NRM}: not enough arguments\n$_USAGE"; return; }
+   local pcr_steps_file=$2
+   if [ -z "$pcr_steps_file" ]; then
+      echo -e "no PCR Steps File given   : [${CYN}using git branch: $_GIT_BRANCH${NRM}]"
+      pcr_steps_file="playbooks/VMedix/PCR/${_GIT_BRANCH}.txt"
+   else
+      echo -e "PCR Steps File given      : [${CYN}$pcr_steps_file${NRM}]"
+      pcr_steps_file="playbooks/VMedix/PCR/${pcr_steps_file}.txt"
+   fi
+   echo -e "using the PCR Steps File  : [${CYN}$pcr_steps_file${NRM}]"
+   echo -n "changing working dir to   : "
+   if cd $_ANSIBLE_HOME; then
+      echo -e "[${CYN}$_ANSIBLE_HOME${NRM}]"
+   else
+      echo -e "[${CYN}FAILED${NRM}]"
+      echo "couldn't change working dir to: $_ANSIBLE_HOME"
+      return
+   fi
+   [ ! -e "$pcr_steps_file" ] && { echo -e "${RED}ERROR${NRM}: no such file: $pcr_steps_file"; return; }
+   echo -n "setting AWS environment to: "
+   sae locapps > /dev/null
+   echo -e "[${CYN}$AWSPROF - $AWSENV${NRM}]"
+   echo -n "setting Ansible version to: "
+   act2.2 > /dev/null
+   _ansible_version=$(ansible --version | head -1)
+   echo -e "[${CYN}$_ansible_version${NRM}]"
+   case "$1" in
+      -s) steps_desired=STAGING
+          start_line_no=$((`grep -n '^#.*STAGING.*#$' $pcr_steps_file|cut -d: -f1` - 1))
+            end_line_no=$((`grep -n '^#.*TESTING/PREPPING.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
+      -t) steps_desired=TESTING
+          start_line_no=$((`grep -n '^#.*TESTING/PREPPING.*#$' $pcr_steps_file|cut -d: -f1` - 1))
+            end_line_no=$((`grep -n '^#.*PRODUCTION.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
+      -p) steps_desired=PRODUCTION
+          start_line_no=$((`grep -n '^#.*PRODUCTION.*#$' $pcr_steps_file|cut -d: -f1` - 1))
+            end_line_no=$((`grep -n '^#.*ROLL-BACK.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
+      -r) steps_desired=ROLL-BACK
+          start_line_no=$((`grep -n '^#.*ROLL-BACK.*#$' $pcr_steps_file|cut -d: -f1` - 1))
+            end_line_no=$((`grep -n '^#.*ROLLBACK COMPLETE.*$' $pcr_steps_file|cut -d: -f1`)) ;;
+       *) echo -e "error: invalid argument\n$_USAGE"; return ;;
+   esac
+   sed -n "${start_line_no},${end_line_no}s/^\$ //p" $pcr_steps_file > $_STEPS
+   cp $_STEPS{,.found}
+   sed -i "s,\\\!,\\\\\\\!,g" $_STEPS
+   if [ -s $_STEPS ]; then
+      local _step_no=1
+      history -s "vmmopprep $*"
+      while read _line; do
+         echo "$_line" >> $_STEPS.processed
+      done <<< "`cat $_STEPS`"
+      echo -n "verifying processed steps : "
+      if \diff -q $_STEPS{.found,.processed} > /dev/null; then
+         echo -e "[${GRN}PASSED${NRM}]"
+         echo -n "adding commands to history: "
+         #debug#echo "# BEGIN $steps_desired STEPS"
+         history -s "# BEGIN $steps_desired STEPS"
+         while read _line; do
+            #debug#echo "#$_step_no: $_line"
+            echo "$_line" >> $_STEPS.verify
+            history -s "#$_step_no: $_line"
+            (( _step_no++ ))
+         done <<< "`cat $_STEPS`"
+         #debug#echo "# END $steps_desired STEPS"
+         history -s "# END $steps_desired STEPS"
+         echo -e "[${GRN}DONE${NRM}]"
+         echo -e "commands added to history : [${MAG}Have fun and good luck!${NRM}]"
+      else
+         echo -e "[${RED}FAILED${NRM}]"
+         echo "NOT adding commands to history"
+         echo "differences found:"
+         diff $_STEPS{.found,.processed}
+      fi
+   else
+      echo "no commands added to history - could not find any"
+   fi
+   rm -f $_STEPS{,.found,.processed}
+}
+
+function vmprodaccess () {	# VMedix
+# add|remove user keys to/from VMedix AWS instances controled via Ansible
+   local _USAGE="usage: vmprodaccess us|eu a|1|2|g|b|p [-l apps|data|PATTERN] add|rem USER"
+   local _REPO_HOME=~/cloud_automation/ansible
+   local _MY_ANS_HOME=~/ansible
+   local _cmd
+   local _h
+   local _pat
+   local _user
+   local _vpc
+   local _country=$1
+   if [[ $_country =~ (us|eu) ]]; then
+      case $_country in
+         us) _vpc=mirkwood          ;;
+         eu) _vpc=isengard          ;;
+          *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"; return
+   fi
+   local _hosts=$2
+   if [ -n "$_hosts" ]; then
+      case $_hosts in
+         a) _pat="*${_vpc}*"       ;;
+         1) _h=hosts_shared1       ;;
+         2) _h=hosts_shared2       ;;
+         g) _h=hosts_green         ;;
+         b) _h=hosts_blue          ;;
+         p) _h=hosts_production    ;;
+         *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"; return
+   fi
+   local _3rd_opt=$3
+   if [ "$_3rd_opt" == "-l" ]; then
+      local _pattern=$4
+      if [ -n "$_pattern" ]; then
+         case $_pattern in
+            apps) _pat="*ap*" ;;
+            data) _pat="mongo*:search*:redis*" ;;
+               *) _pat="$_pattern*" ;;
+         esac
+      else
+         echo "$_USAGE"; return
+      fi
+      _cmd=$5
+      _user=$6
+   else
+      _cmd=$3
+      _user=$4
+   fi
+   if [ -z "$_pat" ]; then
+      _pat=all
+   fi
+   if [ -z "$_cmd" -o -z "$_user" ]; then
+      echo "$_USAGE"; return
+   fi
+   local _ap_cmd="ansible-playbook -i $_REPO_HOME/inventory/VMedix/$_vpc/$_h --limit '$_pat' -e 'c=$_cmd u=$_user' --vault-password-file=~/.vault $_MY_ANS_HOME/playbooks/vm_prod_access.yml"
+   eval $_ap_cmd
+}
+
+function vmrpms () {	# VMedix
+# show RPMs installed on VMedix servers
+   local _USAGE="usage: vmrpms us|eu a|g|b|p [PATTERN]"
+   local _INV_REPO="~/cloud_automation/ansible/inventory/VMedix"
+   local _vpc
+   local _h
+   local _pat
+   local _country=$1
+   case $_country in
+      us) _vpc="mirkwood";;
+      eu) _vpc="isengard";;
+       *) echo "$_USAGE"; return;;
+   esac
+   local _hosts=$2
+   case $_hosts in
+      a) _pat="*api[0-9]*:*app_nginx[0-9]*";;
+      g) _h=hosts_green;;
+      b) _h=hosts_blue;;
+      p) _h=hosts_production;;
+      *) echo "$_USAGE"; return;;
+   esac
+   local _pattern=$3
+   if [ -n "$_pattern" ]; then
+      _pat="*$_pattern*"
+   else
+      _pat="*api[0-9]*:*app_nginx[0-9]*"
+   fi
+   if [ "$_hosts" == "a" ]; then
+      for _h in hosts_blue hosts_green; do
+         ansible -T 1 -i $_INV_REPO/$_vpc/$_h "$_pat:!*api_nginx*" --vault-password-file=~/.vault.vm -m shell -a "rpm -qa | grep VirtuMedix" 2>/dev/null | egrep -v 'changed.*false|SSH Error|unreachable.*true|^}' | sed "s/\(^.* UNREACHABLE!\).*$/$(printf "$BLD$RED")\1$(printf "$NRM")/g;s/\(^.* SUCCESS\).*$/$(printf "$BLD$GRN")\1$(printf "$NRM")/g"
+      done
+   else
+      ansible -T 1 -i $_INV_REPO/$_vpc/$_h "$_pat:!*api_nginx*" --vault-password-file=~/.vault.vm -m shell -a "rpm -qa | grep VirtuMedix" 2>/dev/null | egrep -v 'changed.*false|SSH Error|unreachable.*true|^}' | sed "s/\(^.* UNREACHABLE!\).*$/$(printf "$BLD$RED")\1$(printf "$NRM")/g;s/\(^.* SUCCESS\).*$/$(printf "$BLD$GRN")\1$(printf "$NRM")/g"
+   fi
+}
+
+function wtac () {	# MISC
+# what's that AWS command - retrieve the given command for use
+   COMMAND_PATTERN="$*"
+   COMMANDS_FILE=/home/praco/.aws_commands.txt
+   grep "$COMMAND_PATTERN" $COMMANDS_FILE
+   while read _line; do
+      history -s "$_line"
+   done <<< "`grep "$COMMAND_PATTERN" $COMMANDS_FILE`"
+}
+
 function wtc () {	# MISC
 # what's that command - retrieve the given command for use
- COMMAND_PATTERN="$*"
- COMMANDS_FILE=/home/praco/.commands.txt
-   thecmd=`grep "$COMMAND_PATTERN" $COMMANDS_FILE`
-   echo "$thecmd"
+   COMMAND_PATTERN="$*"
+   COMMANDS_FILE=/home/praco/.commands.txt
+   grep "$COMMAND_PATTERN" $COMMANDS_FILE
+   while read _line; do
+      history -s "$_line"
+   done <<< "`grep "$COMMAND_PATTERN" $COMMANDS_FILE`"
 }
 
 function wtf () {	# MISC
 # what's that file - retrieve the given file for use
- FILE_PATTERN="$*"
- FILES_FILE=/home/praco/.files.txt
+   FILE_PATTERN="$*"
+   FILES_FILE=/home/praco/.files.txt
    thefile=`grep $FILE_PATTERN $FILES_FILE`
    echo "$thefile"
 }
 
+function wutch () {
+# like `watch` but colorful
+   # couldn't get the trap to work - just remove all - they'll get quickly replaced
+   #trap "rm -f $_TMP_WUTCH_OUT; return" SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT
+   rm -f /tmp/.wutch.out.*
+   local _TMP_WUTCH_OUT=$(mktemp /tmp/.wutch.out.XXX)
+   local _secs
+   [ "$1" == "-n" ] && { _secs=$2; shift 2; } || _secs=2
+   local _cmd="$*"
+   local _hcmd="${_cmd:0:35}..."
+   clear
+   while true; do
+      /bin/bash -c "$_cmd" > $_TMP_WUTCH_OUT
+      clear
+      echo "Every ${_secs}.0s: $_hcmd: `date`"
+      echo "Command: '$_cmd'"
+      echo "---"
+      cat $_TMP_WUTCH_OUT
+      tput ed
+      sleep $_secs
+   done
+}
+
+function xsse () {
+# ssh in to a server in a seperate xterm window as user: "ec2-user"
+   if [ -n "$1" ]; then
+      local _server=$1
+      $XTERM -e 'eval /usr/bin/ssh -q ec2-user@'"$_server"'' &
+   else
+      echo "USAGE: xsse HOST"
+   fi
+}
+
+function xssh () {
+# ssh in to a server in a seperate xterm window
+   if [ -n "$1" ]; then
+      local _server=$1
+      $XTERM -e 'eval /usr/bin/ssh -q '"$_server"'' &
+   else
+      echo "USAGE: xssh HOST"
+   fi
+}
+
 function zipstuff () {	# MISC
 # zip up specified files for backup
-   SRCSERVER="racovm"
-##   DSTSERVER="jump1"
-   STUFFZIP="/home/praco/stuff.r5.zip"
-##   EMAILTO="praco@red5studios.com"
+   SRCSERVER="praco.dev.local"
+   STUFFZIP="/home/praco/stuff.ctcs.zip"
    FILES="
 .*rc
 .bash*
+.csshrc
+.aws_commands.txt
 .commands.txt
+.gitconfig
+.gitignore
 .files.txt
-.profile
-.s3cfg
 .ssh/config
 .ssh/environment
-projs
-repos/.chef
-repos/cloud-creator
-repos/learningchef
-repos/tools
+.tmux.conf
+ansible
+notes
 scripts
 "
-   #EXCLUDE_FILES="*/.hg/\* repos/.chef/checksums/\* *.zip"	# didn't figure out how to make this work
+   # didn't figure out how to make this work
+   ##EXCLUDE_FILES="*/.hg/\* repos/.chef/checksums/\* *.zip"
    thisserver=`hostname`
    if [ "$thisserver" = "$SRCSERVER" ]; then
       echo "ziping $FILES to $STUFFZIP... "
-      #/usr/bin/zip -ru $STUFFZIP $FILES -x $EXCLUDE_FILES
-      /usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* repos/.chef/checksums/\* */*/.git/\* */*.zip */*/*.zip
+      ##/usr/bin/zip -ru $STUFFZIP $FILES -x $EXCLUDE_FILES
+      ##/usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* repos/.chef/checksums/\* */*/.git/\* */*.zip */*/*.zip
+      /usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* */.git/\* */*/.git/\* */*.zip */*/*.zip
       echo done
-##      echo "copying $STUFFZIP to $DSTSERVER:/misc/shared/Everyone/praco... "
-##      scp $STUFFZIP $DSTSERVER:/misc/shared/Everyone/praco
-##      echo done
    else
       echo "you have to be on $SRCSERVER to run this"
    fi
 }
 
-#alias a="alias"
-alias a="alias | cut -d= -f1 | awk -v c=4 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-15s\",\$2}else{printf \"  %-15s\n\",\$2}}END{print CR}'"
+# set bash prompt command (and bash prompt)
+export PROMPT_COMMAND="bash_prompt"
+# define aliases
+alias ~="cd ~"
+alias ..="cd .."
+alias -- -="cd -"
+#alias a="alias" # use: `sa`
+alias a="alias | cut -d= -f1 | sort | awk -v c=6 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
+alias act1='source ~/envs/Ansible_1.x/bin/activate; ansible --version'
+alias act2.1='source ~/envs/Ansible_2.x/bin/activate; ansible --version'
+alias act2.2='source ~/envs/Ansible_2.2/bin/activate; ansible --version'
+alias arcdiff="arc diff --reviewers akulkarni,pfreeman,sbenjamin,tbenichou,tholcomb,candonov main"
 alias c="clear"
-#alias cba='echo "comparing ~/.bash_aliases with ${OTHERVM}... "; scp -pq $OTHERVM:/home/praco/.bash_aliases /home/praco/.bash_aliases.other; oldba=`ls -rt /home/praco/.bash_aliases{,.other}|head -1`; newba=`ls -rt /home/praco/.bash_aliases{,.other}|tail -1`; diff $oldba $newba; echo "done"'
-alias cba='echo "comparing ~/.bash_aliases with ${OTHERVM}... "; scp -pq $OTHERVM:/home/praco/.bash_aliases /home/praco/.bash_aliases.other; diff ~/.bash_aliases{,.other}; echo "done"'
+alias cda="cd ~/cloud_automation/ansible"
+alias cdh="cd ~; cd"
+alias cdi="cd ~/cloud_automation/ansible/inventory"
+alias cdp="cd ~/cloud_automation/ansible/playbooks"
+alias cdr="cd ~/cloud_automation/ansible/roles"
+alias cols="tsend 'echo \$COLUMNS'"
+alias disp="tsend 'echo \$DISPLAY'"
 alias cp='cp -i'
 alias crt='~/scripts/chef_recipe_tree.sh'
+alias cvhf='~/cloud_automation/ansible/playbooks/VMedix/scripts/create_vm_qa_hosts_file.sh'
+#alias cssh='cssh -o "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"'
 alias diff="colordiff -u"
 #alias f="declare -F | awk '{print \$3}' | more"
 #alias f="declare -F | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-15s\",\$3}else{printf \"  %-15s\n\",\$3}}END{print CR}'"
-alias f="grep '^function .* ' ~/.bash_aliases | awk '{print $2}' | cut -d'(' -f1 | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias f="grep '^function .* ' ~/.bash_aliases | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
 alias fuck='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
-alias gh="history | grep"
-alias ghwt='dmidecode | grep "Product Name"'
-#alias grep="grep --color=auto"
-alias grep="grep --color=always"
-alias gsuid='printf "%x\n" `date +%s`'
+# alias gh="history | grep" # now a function
+alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
+alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
+alias ghwt='sudo dmidecode | grep "Product Name"'
+#alias grep="grep --color=always"
+alias grep="grep --color=auto"
+alias guid='printf "%x\n" `date +%s`'
 alias h="history"
-##alias hg="history | grep $1"	# conflicts with mercurial
-#alias kcl='kf client list'
-#alias knl='kf node list'
-#alias l.='ls -d .* --color=auto'
-alias l.='ls -d .* --color=always'
-#alias la='ls -a --color=auto'
-alias la='ls -a --color=always'
+alias kaj='eval kill $(jobs -p)'
+alias l.='ls -d .* --color=auto'
+alias la='ls -a --color=auto'
 alias less="less -FrX"
-#alias ll='ls -l --color=auto'
-alias ll='ls -l --color=always'
-#alias lla='ls -la --color=auto'
-alias lla='ls -la --color=always'
-#alias ls='ls --color=auto'
-alias ls='ls --color=always'
+alias ll='ls -l --color=auto'
+alias lla='ls -la --color=auto'
+alias ls='ls -CF --color=auto'
 alias mv='mv -i'
-alias pushba='echo -n "pushing ~/.bash_aliases to $OTHERVM... "; scp -q /home/praco/.bash_aliases $OTHERVM:/home/praco/.bash_aliases; echo "done"'
-alias pullba='echo -n "pulling ~/.bash_aliases from $OTHERVM... "; scp -q $OTHERVM:/home/praco/.bash_aliases /home/praco/.bash_aliases; echo "done"'
-#alias psa='ps auxfw'
+#alias psa='ps auxfw' # converted to a function
+alias myip='curl http://ipecho.net/plain; echo'
 alias pa='ps auxfw'
-#alias pse='ps -ef'
+#alias pse='ps -ef' # converted to a function
 alias pe='ps -ef'
+alias rcrlf="sed 's/$//g' -i.orig"
 alias ring="/home/praco/scripts/ring.sh"
 alias rsshk='ssh-keygen -f "/home/praco/.ssh/known_hosts" -R'
 alias rm='rm -i'
 alias sa=alias
-alias sba='echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases; echo "done"'
+alias sba='echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
+alias sdl="export DISPLAY=localhost:10.0"
 alias sf=showf
+alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 alias sing="/home/praco/scripts/sing.sh"
+#alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
 alias tt='echo -ne "\033]0;`whoami`@`hostname`\007"'
+alias tskap="_tmux_send_keys_all_panes"
 alias xterm='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
 alias u=uptime
-alias vvaf=~/scripts/verify_vipsnfips.sh
-alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; echo "done"; echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases; echo "done"'
-alias vsy='vi $SW_YAML_FILE' 
+alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; echo "done"; echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
+alias vi='`which vim`'
+alias view='`which vim` -R'
+# alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
+alias which='(alias; declare -f) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot'
+alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less'
