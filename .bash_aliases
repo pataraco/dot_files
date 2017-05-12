@@ -84,27 +84,31 @@ function awsasgcp () {
 # suspend/resume ALL AWS AutoScaling processes
 # (optional: only for a specified autoscaling group name or those matching a reg-ex)
 # defaults to "dry-run" - must use "--no-dry-run" option to perform
-   local _USAGE="usage: awsasgcp --resume|suspend [--region REGION] [--no-dry-run] [AutoScalingGroupName|RegEx]"
+   local _USAGE="usage: awsasgcp -r|--resume or -s|--suspend [--region REGION] [--no-dry-run] [AutoScalingGroupName|RegEx]"
+   local _AWS_CMD=$(/usr/bin/which aws 2> /dev/null) || { echo "'aws' needed to run this function"; exit 3; }
+   local _JQ_CMD=$(/usr/bin/which jq 2> /dev/null) || { echo "'jq' needed to run this function"; exit 3; }
    local _dryrun=dry-run
    local _pc_cmd
    local _region
    while true; do
       case "$1" in
-             --resume) _pc_cmd=resume-processes ; shift  ;;
-            --suspend) _pc_cmd=suspend-processes; shift  ;;
+          -r|--resume) _pc_cmd=resume-processes ; shift  ;;
+         -s|--suspend) _pc_cmd=suspend-processes; shift  ;;
              --region) _region="--region $2"    ; shift 2;;
          --no-dry-run) _dryrun=running          ; shift  ;;
                     *) break                             ;;
       esac
    done
    [ -z "$_pc_cmd" ] && { echo "$_USAGE"; return; }
-   asgn_pattern=$*
-   asg_names=$(aws $_region autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4 | grep "$asgn_pattern")
+   local _asgn_pattern=$*
+   #asg_names=$(aws $_region autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4 | grep "$_asgn_pattern")
+   #asg_names=$($_AWS_CMD $_region autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4 | grep "$_asgn_pattern")
+   asg_names=$($_AWS_CMD $_region autoscaling describe-auto-scaling-groups | $_JQ_CMD -r .AutoScalingGroups[].AutoScalingGroupName | grep "$_asgn_pattern")
    if [ -n "$asg_names" ]; then
       for asg_name in $asg_names; do
-         echo "$_dryrun: aws $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name"
+         echo "$_dryrun: $(basename $_AWS_CMD) $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name"
          if [ $_dryrun == "running" ]; then
-            aws $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name
+            $_AWS_CMD $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name
          fi
       done
    else
@@ -1188,13 +1192,18 @@ function start_ssh_agent () {
 }
 
 function stopwatch () {	# TOOL
+   trap "return" SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT
+   trap 'echo; stty echoctl; trap - SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT RETURN' RETURN
+   stty -echoctl # don't echo "^C" when [Ctrl-C] is entered
    local _started _start_secs _current _current_secs
    _started=$(date +'%d-%b-%Y %T')
    _start_secs=$(date +%s -d "$_started")
+   echo
    while true; do
       _current=$(date +'%d-%b-%Y %T')
       _current_secs=$(date +%s -d "$_current")
-      echo -ne "\rStart: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs")${NRM}"
+      #echo -ne "\rStart: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs")${NRM} "
+      echo -ne "  Start: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs")${NRM}\r"
    done
 }
 
@@ -1220,16 +1229,21 @@ function vin () {
    note_file=$1
    if [ -n "$note_file" ]; then
       case $note_file in
-         ansible) actual_note_file=Ansible_Notes.txt         ;;
-             aws) actual_note_file=AWS_Notes.txt             ;;
-           awsas) actual_note_file=AWS_AutoScaling_Notes.txt ;;
-            bash) actual_note_file=Bash_Notes.txt            ;;
-             git) actual_note_file=Git_Notes.txt             ;;
-            ldap) actual_note_file=LDAP_Notes.txt            ;;
-           linux) actual_note_file=Linux_Notes.txt           ;;
-          python) actual_note_file=Python_Notes.txt          ;;
-             sql) actual_note_file=SQL_Notes.txt             ;;
-               *) echo "sorry, don't have that alias"; return 2 ;;
+         ansible) actual_note_file=Ansible_Notes.txt        ;;
+             aws) actual_note_file=AWS_Notes.txt            ;;
+           awsas) actual_note_file=AWS_AutoScaling_Notes.txt;;
+            bash) actual_note_file=Bash_Notes.txt           ;;
+          consul) actual_note_file=Consul_Notes.txt         ;;
+          docker) actual_note_file=Docker_Notes.txt         ;;
+              es) actual_note_file=Elasticsearch_Notes.txt  ;;
+             git) actual_note_file=Git_Notes.txt            ;;
+            ldap) actual_note_file=LDAP_Notes.txt           ;;
+           linux) actual_note_file=Linux_Notes.txt          ;;
+        logstash) actual_note_file=Logstash_Notes.txt       ;;
+          python) actual_note_file=Python_Notes.txt         ;;
+           redis) actual_note_file=Redis_Notes.txt          ;;
+             sql) actual_note_file=SQL_Notes.txt            ;;
+               *) echo "unknown alias - try again"; return 2;;
       esac
       eval vim $REPO_DIR/$NOTES_DIR/$actual_note_file
    else
@@ -1501,6 +1515,14 @@ function vmmopprep () {	# VMedix
    local _ANSIBLE_HOME=~/cloud_automation/ansible
    local _USAGE="usage: vmmopprep -s|t|p|r [PCR_Steps_File]"
    local _STEPS=/tmp/.mop_steps
+   echo -n "changing working dir to   : "
+   if cd $_ANSIBLE_HOME; then
+      echo -e "[${CYN}$_ANSIBLE_HOME${NRM}]"
+   else
+      echo -e "[${CYN}FAILED${NRM}]"
+      echo "couldn't change working dir to: $_ANSIBLE_HOME"
+      return
+   fi
    local _GIT_BRANCH=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
    [ $# -lt 1 ] && { echo -e "${RED}ERROR${NRM}: not enough arguments\n$_USAGE"; return; }
    local pcr_steps_file=$2
@@ -1512,14 +1534,6 @@ function vmmopprep () {	# VMedix
       pcr_steps_file="playbooks/VMedix/PCR/${pcr_steps_file}.txt"
    fi
    echo -e "using the PCR Steps File  : [${CYN}$pcr_steps_file${NRM}]"
-   echo -n "changing working dir to   : "
-   if cd $_ANSIBLE_HOME; then
-      echo -e "[${CYN}$_ANSIBLE_HOME${NRM}]"
-   else
-      echo -e "[${CYN}FAILED${NRM}]"
-      echo "couldn't change working dir to: $_ANSIBLE_HOME"
-      return
-   fi
    [ ! -e "$pcr_steps_file" ] && { echo -e "${RED}ERROR${NRM}: no such file: $pcr_steps_file"; return; }
    echo -n "setting AWS environment to: "
    sae locapps > /dev/null
