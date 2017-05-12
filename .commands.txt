@@ -1,0 +1,190 @@
+ansible -i inventory/vagrant all -a "touch /tmp/test" --private-key ~/.ssh/vagrant
+ansible -i inventory/vagrant all -m file -a "src=/tmp/test dest=/tmp/testdir/test state=link" --private-key ~/.ssh/vagrant
+ansible -i inventory/VMedix/VPC/hosts_CLUSTER "all:\!aws" -m service -a "name=crond state=stopped" --vault-password-file=~/.vault --become
+ansible -i inventory/VMedix/VPC/hosts_CLUSTER "REGEX.*" -a "bash -x /root/scripts/ansible_pull.sh force" --vault-password-file ~/.vault --become
+ansible-playbook -i ~/cloud_automation/ansible/inventory/VMedix/VPC/hosts_HOSTS [--limit 'PATTERN*'] -e 'c=add|rem u=USER' --vault-password-file=~/.vault ~/ansible/playbooks/vm_prod_access.yml
+ansible-playbook -i inventory/vagrant --private-key=~/.ssh/vagrant playbooks/util/manage_users.yml
+ansible-playbook -i inventory/VMedix/VPC/HOSTS_CLUSTER --skip-tags "cmc,qa,nb,scm" --limit '!aws' --vault-password-file=~/.vault.vm playbooks/util/manage_users.yml
+ansible-playbook -i inventory/VMedix/VPC/hosts_CLUSTER --skip-tags "dev,cmc,qa,nb,scm" --limit '!aws' -e '{"disable_users": ["vshainiak","btrinh","lzhao","bdre","dtaylor","rpatel","jpark","nganapathy"]}' --vault-password-file=~/.vault playbooks/util/manage_users.yml
+ansible-playbook -i inventory/VMedix/VPC/hosts_local -e "bn=BRANCH_NEW cn=CLUST_NEW us=UPDATE_SCRIPT dt=no" --vault-password-file=~/.vault.vm playbooks/VMedix/create_vm_pcr.yml
+ansible-playbook -i IP_ADDR, [--tags "qa"|--skip-tags "cmc,dev,qa,nb,scm"] playbooks/util/manage_users.yml
+ansible-vault decrypt encrypted --output=decrypted --vault-password-file=~/.vault
+ansible-vault encrypt decrypted --output=encrypted --vault-password-file=~/.vault
+arc diff --reviewers sbenjamin,tholcomb,akulkarni,pfreeman main
+arc land --onto main
+arp -a
+arp inet_addr (192.168.1.29)
+awk 'BEGIN {RS=" "} found=="true" {print $1;exit}; $1=="-r" {found="true"}'	# parse a line
+awk 'found=="true" && $1~/([0-9]{1,3}\.){3}[0-9]{1,3}/ {print $1;exit}; $1=="virtual_ipaddress" {found="true"}'
+aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,PublicIpAddress,State.Name]" --output table
+aws ec2 describe-instances --region=us-east-1 --filters "Name=tag:Project,Values=VMedix" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='Env'].Value|[0],Tags[?Key=='Cluster'].Value|[0],State.Name]" --output table
+aws s3 sync --profile ptu s3://firefall-stabilization-build-1298-publictest/ /data/1298-download
+base64 /dev/urandom|head -c 128; echo
+base64 /dev/urandom|tr -dc A-Za-z0-9|head -c 29; echo
+build=XXX;type=NNN; for fte in `ls *.$type`; do echo $fte; openssl enc -e -in $fte -out $fte.r5e -pass file:/home/praco/repos/client_certificates/builds/$build/publictest-aes-pass.bin -aes-256-cbc; done
+chef-server-ctl org-user-add red5 praco --admin
+chef-server-ctl user-create praco Patrick Raco praco@red5studios.com PASSWORD --filename /home/praco/.praco.chef.pem
+chmod 000|755 /usr/bin/bsd-mailx
+credstash -r us-east-1 -t location-studio-dev put vault-password PASSWORD
+credstash -r us-east-1 -t location-studio-dev setup
+crontab -l | grep -v '^#' | grep 'cron.*informix.*backup'
+crontab -l | grep -v '^#' | grep 'cron.*system.*backup'
+crontab -r; service procmond stop; rm -rf /tmp/*download*; sleep 10; umount /r5/replays /r5
+cssh -l ubuntu -o "-i ~/.ssh/Red5China.pem" 10.248.4.2 10.248.4.5 10.248.4.6 10.248.4.7
+curl --data "Hello from Slackbot" $'https://r5s.slack.com/services/hooks/slackbot?token=yonGbwn&channel=%23techops'
+curl --data "Why do I feel like I'm all alone?" https://r5s.slack.com/services/hooks/slackbot?token=yonGov0hqEWDn\&channel=%23techops
+curl http://169.254.169.254/latest/meta-data/
+curl http://ipecho.net/plain; echo	# myip
+curl https://webkeys.vpc02.wux01.r5external.com/firefall-china_prod-build-1913/aes-pass.bin --cacert /r5/certificates/red5-rootcert.crt --cert /r5/certificates/1913.crt --key /r5/certificates/1913_nopass.key --ssl
+curl ifconfig.co/port/22; echo	# show if my port is reachable
+curl -s https://api.github.com/users/pataraco/repos|grep clone_url|awk '{print $2}'|tr -d '",'
+date --date=@1447474147
+date --date=@`printf "%d\n" 0x5646b3e3`
+date +%s%N | sha512sum
+dbaccess dev 
+dbaccess dev $tempsql
+df -BM /eci/dev/sqr
+df -BM /maint				# need 500MB free for RHEL6 upgrade
+dig MX virtumedix.com
+dig NS us-east-1.amazonaws.com
+dig +short myip.opendns.com @resolver1.opendns.com	# get my IP - FAST
+dmidecode | egrep -i 'date|bios'
+dmidecode | grep Product
+du -hsx * | sort -rh | head -10
+echo auth-1207-2015-oct-14|sha512sum|awk '{print $1}' > auth.key
+echo -e protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com
+echo -e "protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get
+echo passwd | sha512sum > mikey.bin
+echo "SELECT * FROM ls_hotelconfig WHERE parameter like '%mail%'"|dbaccess dev
+echo "SELECT hotelnum,banklive FROM bank_parms"|dbaccess dev
+echo "SELECT hotelnum,intnum,intcode,connectiontype,portname,intlive FROM gsi_header ORDER BY hotelnum"|dbaccess dev
+egrep -q '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling resume-processes --auto-scaling-group-name $asgn; done
+ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling suspend-processes --auto-scaling-group-name $asgn; done
+/etc/init.d/crond [start|stop]
+/etc/init.d/ntpd [start|stop]
+/etc/init.d/smb [start|stop]
+find -exec md5sum {} \; > .md5sum.checklist
+find . -mtime +3 -exec rm {} \;		# find stuff older than 3 days
+find / -name *.crt -ls -exec openssl x509 -noout -dates -in {} \;
+for file in `grep filename *|awk '{print $NF}'`; do echo -n "$file: "; aws s3 cp s3://web-builds-devtest/$file .; done
+for file in `grep filename *.yaml|awk '{print $NF}'`; do ls $file; done
+for host in `kns -a ifqdn PATTERN|\grep \.net$|awk '{print $NF}'`; do host $host; done
+for i in {0..255}; do printf "\x1b[38;5;${i}mcolour${i} "; done
+for node in `knl`; do host=`kns -a ifqdn $node|\grep \.net$|awk '{print $NF}'`; host $host; done
+for x in www.evideodoc.ie evideodoc.co.uk; do for h in app_nginx{1,2}.eu.vmedix.nim; do echo; echo; echo $x : $h; openssl s_client -connect $h:443 -servername $x </dev/null 2>/dev/null | openssl x509 -noout -subject -dates -serial; done; done
+for yaml in `cat ../webapp-yamls`; do echo -n "$yaml: "; aws s3 cp s3://web-builds-devtest/$yaml .;done
+get #guestnum1 $roomnum1 from guest-room-tbl(#i+1)	# Club Data (clbdata.sqr)
+git diff-tree --no-commit-id --name-only -r 170be5c
+git log -p FILE
+grep "Database Archive" /eci/sinbad/tape.log | awk '/[sS]tarted/ {SL=$0}; /[fF]inished/ {print SL; print $0}' | tail -2
+grep "Database Archive" /eci/sinbad/tape.log | tail -4
+grep "^# eof" /eci/sinbad/.systemrestore.script
+grep "File System Backup" /eci/sinbad/tape.log | awk '/[sS]tarted/ {SL=$0}; /[fF]inished/ {print SL; print $0}' | tail -2
+grep "File System Backup" /eci/sinbad/tape.log | tail -4
+grep LOADERSIZE /etc/sysconfig/galaxy
+grep ^TAPEDEV /opt/informix/etc/tbconfig
+grep uid roles/users/vars/*users_present.yml|awk '{print $3}'|sort -n|uniq -d
+hpacucli ctrl all show config detail | egrep 'Smart|Firm'
+hpacucli ctrl all show config detail | grep Firm
+hpacucli ctrl all show config detail | grep Status
+hpacucli ctrl all show config detail | grep Status | grep -vE 'Status: (OK|Initialization Complete|Disabled|LOCKED)'
+hpacucli ctrl all show config | grep -i drive | grep -v OK
+hpasmcli -s "show server"
+hpasmcli -s "show server" | egrep "ML350|System"
+hplog -v | grep Critical
+hplog -v | perl -n -e 'if (/^\d\d\d\d\s/) { chomp; print "$_ "; $n=1; next; } if ($n) { print; $n=0; }' | grep -E 'Critical'
+hwclock [-w]
+kf openstack server delete game-neweden-1298-02 -y --purge
+kill -[15|6|9] PID				# nice|HUP|force
+knife cookbook show [COOKBOOK] [VERSION] [PART] [FILENAME]
+knife search [INDEX] [SEARCH_QUERY] (options)
+knife search 'recipes:knife' | egrep 'items found|Name'
+knife ssh "name:game-neweden-*" -a internal_fqdn "sudo ls -l /r5/config/matrix/mxconfig.ini" -c $KNIFERB
+kssha haproxy grep state /etc/keepalived/keepalived.conf
+kssha haproxy 'ip -f inet address | grep eth.$'
+kssha haproxy-restricted sudo service keepalived restart
+kssha -q webapp 'curl 0/build_info 2>/dev/null|grep application|cut -d: -f3'
+less
+lpc printcap sarp1
+lpc redirect fdrp2 fdfax
+lpc redirect fdrp2 off
+lsgconf
+lsof -t -i :22 | xargs ps -fp
+lspci | grep Ethernet
+lspci | grep Ethernet | egrep 'Intel|BCM5703'
+lvcreate -L 10G -n /dev/vg01/data vg01
+md5sum --check --status .md5sum.checklit
+mt -f /dev/st0 [status|eject]
+nc -n -v -w 5 -z 10.180.146.95 80
+nc -w 1 -z 10.148.3.11 22
+neutron floatingip-create net04_ext
+nova boot --flavor m1.large --image 64470276-fec7-4b6c-84e5-7556b76f07d3 --security-groups "base,inside-core,inside-chef" --key-name Red5PublicTest --nic net-id=7f5dca69-81f8-4ceb-abc8-dabb7d5de2ef,v4-fixed-ip=10.149.0.5 --availability-zone core-1 chef-server-01
+nova force-delete 458795c7-a296-4476-954d-8a0c2382b051
+nova reset-state 458795c7-a296-4476-954d-8a0c2382b051
+ntpdate ntphost1.star
+openssl ciphers -v 'ALL:eNULL'
+openssl enc -d -in ENCRYPTED_FILE -out DECRYPTED_FILE -pass file:/path/to/key -aes-256-cbc
+openssl enc -e -in DECRYPTED_FILE -out ENCRYPTED_FILE -pass file:/path/to/key -aes-256-cbc
+openssl req -in consult.firecrackerhealth.com.csr.orig -noout -subject
+openssl req -in DOMAIN_NAME.csr -noout -subject
+openssl req -new -newkey rsa:2048 -nodes -keyout DOMAIN_NAME.key -out DOMAIN_NAME.csr
+openssl s_client -connect clientapi-v01-sna01-prod.firefall.com:443 -servername firefall.com </dev/null 2>/dev/null | openssl x509 -noout -subject -dates -serial
+openssl s_client -connect $host:443 -servername $domain </dev/null 2>/dev/null| openssl x509 -noout -subject -dates -serial
+openssl x509 -in nimaws.com.crt -text
+openssl x509 -noout -subject -in star_game.firefall.com.cn.pem
+openstack ec2 credentials list --user admin
+/opt/informix/bin/tbmode -sy
+/opt/informix/bin/tbstat -
+/opt/informix/bin/tbtape -s		# backup
+/opt/informix/etc/tbconfig
+pkill clientp
+pkill -HUP dbaccess
+pkill java
+pmmaint - <F4> - <F5>	# port (terminal) maintenance
+printf "%x\n" `date +%s`
+prsetup					# printer setup
+prtlock					# /eci/dev/bin/prtlock
+put &res.guestnum &resrooms.roomnum into guest-room-tbl(#guest-room-index+1)	# Club Data (clbdata.sqr)
+RACK_ENV=ENVIRONMENT bundle exec rake db:migrate # run from "/var/apps/APP/current"
+rpm -qa | grep MQSeries | grep -v 6.0.0
+rsync -nvcrlDz
+s3cmd -c /data/.s3cfg --disable-multipart put matchmaker.lexe.r5e s3://firefall-prod-build-1931-production/bin/
+/sbin/e2fsck -f FILESYSTEM			# e.g. /dev/vg01/lvol6
+/sbin/fuser -v[m] MOUNTPOINT			# e.g. /maint
+/sbin/lvextend -L [+-]N[GB|MB] VOLUME_GROUP	# e.g. /dev/mapper/vg01-lvol9
+/sbin/resize2fs VOLUME_GROUP			# e.g. /dev/mapper/vg01-lvol9
+scp [-q -o BatchMode=yes] /upgrade/rhel6upgrade/* ecisupp@"hostname":/maint/	# from jump1
+scp [-q -o BatchMode=yes] /upgrade/rhel6upgrade/viper ecisupp@"hostname":/eci/sinbad/	# from jump1
+semstatus
+semulock
+set_parms timezone				# set timezone of the server
+sftp -i /home/praco/repos/client_certificates/package-key/369-environment/keys/369-sftp buildinfo@123.59.73.131
+sftp -i /home/praco/repos/client_certificates/package-key/369-environment/keys/369-webkeys ubuntu@123.59.71.225
+sleep $((RANDOM % 300))		# sleep 0 to 300 seconds
+smaint
+sqr /eci/dbatools/oob dev	# run as eci
+ssh-add -l
+ssh-copy-id [$USER@]$HOSTNAME
+ssh-keygen -p -f raco.pem	# add/change passphrase
+ssh-keygen -t rsa		# generate RSA key-pair
+stty -a < /dev/ttyaa05
+su eci -c '/eci/dev/bin/loader dev XXXXXX'
+su informix -c '/home/informix/bin/start_logical_logs'	# tape | backup
+su informix -c '/home/informix/bin/stop_logical_logs'	# tape | backup
+tbinit
+tbmode -[ky|sy]
+tbmode -z 22354 21770
+tbmode -z PID
+tbstat -
+tbstat -c | grep ^TAPEDEV
+tbstat -m
+tbstat -u | grep galaxyux
+tbtape -a				# Automatic backup of logical logs
+telnet mapscii.me
+uname -r
+unzip scripts/scripts.zip scripts/shutdown_ints_db.sh
+vgdisplay [/dev/vg01] | grep Free
+wget http://169.254.169.254/latest/user-data
+xwininfo
+zip -sf scripts.zip|grep init

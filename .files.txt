@@ -1,0 +1,13 @@
+/etc/image-id
+/etc/issue
+/etc/sysconfig/network-scripts/ifcfg-eth0
+/etc/udev/rules.d
+/logical_logs/logical.log
+/root/user-data.log
+/usr/bin/bsd-mailx
+/var/log/ansible-pull.log
+/var/log/boot.log
+/var/log/informix_backup.log	# "Database Archive Backup completed"
+/var/log/jboss/server.log
+/var/log/system_backup.log	# "File System Backup Finished"
+/var/tmp/rpmreinstall.log
