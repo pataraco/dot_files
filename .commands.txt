@@ -31,8 +31,8 @@ crontab -l | grep -v '^#' | grep 'cron.*informix.*backup'
 crontab -l | grep -v '^#' | grep 'cron.*system.*backup'
 crontab -r; service procmond stop; rm -rf /tmp/*download*; sleep 10; umount /r5/replays /r5
 cssh -l ubuntu -o "-i ~/.ssh/Red5China.pem" 10.248.4.2 10.248.4.5 10.248.4.6 10.248.4.7
-curl --data "Hello from Slackbot" $'https://r5s.slack.com/services/hooks/slackbot?token=yonGbwn&channel=%23techops'
-curl --data "Why do I feel like I'm all alone?" https://r5s.slack.com/services/hooks/slackbot?token=yonGov0hqEWDn\&channel=%23techops
+curl --data "Hello from Slackbot" $'https://r5s.slack.com/services/hooks/slackbot?token=yonGbov0hqEWDHf62DRv4mwn&channel=%23techops'
+curl --data "Why do I feel like I'm all alone?" https://r5s.slack.com/services/hooks/slackbot?token=yonGbov0hqEWDHf62DRv4mwn\&channel=%23techops
 curl http://169.254.169.254/latest/meta-data/
 curl http://ipecho.net/plain; echo	# myip
 curl https://webkeys.vpc02.wux01.r5external.com/firefall-china_prod-build-1913/aes-pass.bin --cacert /r5/certificates/red5-rootcert.crt --cert /r5/certificates/1913.crt --key /r5/certificates/1913_nopass.key --ssl
@@ -147,6 +147,7 @@ prsetup					# printer setup
 prtlock					# /eci/dev/bin/prtlock
 put &res.guestnum &resrooms.roomnum into guest-room-tbl(#guest-room-index+1)	# Club Data (clbdata.sqr)
 RACK_ENV=ENVIRONMENT bundle exec rake db:migrate # run from "/var/apps/APP/current"
+rgn=us-east-1; watch -n1 -d 'awsdasg -r '"$rgn"' -n vmedix +bt; echo "--"; awsdlc -r '"$rgn"' -n vmedix; echo "--"; awsdi -r '"$rgn"' -p VMedix -n log +bt +c'
 rpm -qa | grep MQSeries | grep -v 6.0.0
 rsync -nvcrlDz
 s3cmd -c /data/.s3cfg --disable-multipart put matchmaker.lexe.r5e s3://firefall-prod-build-1931-production/bin/
@@ -186,5 +187,6 @@ uname -r
 unzip scripts/scripts.zip scripts/shutdown_ints_db.sh
 vgdisplay [/dev/vg01] | grep Free
 wget http://169.254.169.254/latest/user-data
+wget raw.githubusercontent.com/pataraco/bash_aliases/master/.bash_aliases
 xwininfo
 zip -sf scripts.zip|grep init

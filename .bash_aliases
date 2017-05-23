@@ -212,7 +212,7 @@ awsdasg [OPTIONS]
   +ht          # show Health Check Type
   +ii          # show Instance Id(s)
   +ih          # show Instance Health Status
-  +lb          # show Load Balancer name
+  +lb          # show Load Balancers
   +mr          # show Machine Role
   +p           # show Project
   +v           # show VPC Name
@@ -239,7 +239,7 @@ default display:
          +ht) _more_qs="HealthCheckType,$_more_qs"                      ; shift  ;;
          +ii) _more_qs="Instances[].InstanceId|join(', ',@),$_more_qs"  ; shift  ;;
          +ih) _more_qs="Instances[].HealthStatus|join(', ',@),$_more_qs"; shift  ;;
-         +lb) _more_qs="LoadBalancerNames[0],$_more_qs"                 ; shift  ;;
+         +lb) _more_qs="LoadBalancerNames[]|join(', ',@),$_more_qs"     ; shift  ;;
          +mr) _more_qs="Tags[?Key=='MachineRole'].Value|[0],$_more_qs"  ; shift  ;;
           +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"      ; shift  ;;
           +v) _more_qs="Tags[?Key=='VPCName'].Value|[0],$_more_qs"      ; shift  ;;
@@ -598,6 +598,26 @@ function ccc () {
    done
    tmux set-window-option synchronize-panes on
    exit
+}
+
+function chkrepodiffs () {	# TOOL
+# checks files in current dir against file in home dir for diffs
+# only works on https://github.com/pataraco/bash_aliases repo now
+# usage: chkrepodiffs [-v] [file]
+   local _verbose=$1
+   local _files=$2
+   local _file
+   [ -z "$_files" ] && _files=$(ls -A -I .git)
+   for _file in $_files; do
+      if [ -e ~/$_file ]; then
+         diff -q $_file ~/$_file
+         if [ $? -eq 1 ]; then
+            if [ "$_verbose" == "-v" ]; then
+              diff $_file ~/$_file | \less -rX
+            fi
+         fi
+      fi
+   done
 }
 
 function chksums () {	# TOOL
@@ -1057,28 +1077,28 @@ function sae () {	# TOOL
 
    if [ -n "$arg" ]; then
       case $arg in
-            corsother) aenv="CORS Others"               ; s3cg="$HOME/.s3cfg.navel"   ;;
-           entcombain) aenv="ENT Combain"               ; s3cg="$HOME/.s3cfg.navel"   ;;
-         entlocalblox) aenv="ENT Local Blox"            ; s3cg="$HOME/.s3cfg.navel"   ;;
-               entscm) aenv="ENT SCM"                   ; s3cg="$HOME/.s3cfg.navel"   ;;
-              locapps) aenv="Local Applications (Prod)" ; s3cg="$HOME/.s3cfg.locapps" ;;
-           loctoolkit) aenv="Locl ToolKit"              ; s3cg="$HOME/.s3cfg.navel"   ;;
-           telecomsys) aenv="TeleComSys (Dev) 'NavTel'" ; s3cg="$HOME/.s3cfg.navel"   ;;
-                 raco) aenv="Raco's AWS"                                              ;;
-                unset) aenv="Environment un set"                                      ;;
-                    *) echo "WTF? Try: [corsother entcombain entlocalblox entscm locapps loctoolkit telecomsys raco OR unset]"; return 2 ;;
+            corsother) aenv="CORS Others"               ;;
+              combain) aenv="ENT Combain"               ;;
+            cybrscore) aenv="ENT CYBRScore Development" ;;
+               ilpdev) aenv="ENT ILP Development"       ;;
+            localblox) aenv="ENT Local Blox"            ;;
+                  scm) aenv="ENT SCM"                   ;;
+              locapps) aenv="Local Applications (Prod)" ;;
+           loctoolkit) aenv="Local ToolKit"             ;;
+           telecomsys) aenv="TeleComSys (Dev) 'NavTel'" ;;
+                 raco) aenv="Raco's AWS"                ;;
+                unset) aenv="Environment un set"        ;;
+                    *) echo "WTF? Try: [corsother combain cybrscore ilpdev localblox scm locapps loctoolkit telecomsys raco OR unset]"; return 2 ;;
       esac
       if [ "$arg" != "unset" ]; then
          export AWSPROF=$arg
          export AWSENV=$aenv
-         export S3CFG=$s3cg
          export AWS_DEFAULT_PROFILE=$arg	# for `aws` (instead of using --profile)
          export AWS_ACCESS_KEY_ID=`awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF;exit}' $AWS_CFG`
          export AWS_SECRET_ACCESS_KEY=`awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF;exit}' $AWS_CFG`
          echo "environment has been set to --> $AWSENV"
       else
          unset AWSPROF
-         unset S3CFG
          unset AWSENV
          unset AWS_DEFAULT_PROFILE
          unset AWS_ACCESS_KEY_ID
@@ -1087,23 +1107,24 @@ function sae () {	# TOOL
       fi
       if [ "$COLOR_PROMPT" = yes ]; then
          case $arg in
-            unset)				# cyan prompt
+            unset)						# cyan prompt
                PS_PROJ="$PNRM"; PS_COL="$PCYN" ;;
-            corsother|entcombain|entlocalblox)	# cyan prompt
+            corsother|combain|cybrscore|ilpdev|localblox)	# cyan prompt
                PS_PROJ="$PCYN[$AWSPROF]$PNRM"; PS_COL="$PCYN" ;;
-            raco)				# magenta prompt
+            loctoolkit)						# magenta prompt
                PS_PROJ="$PMAG[$AWSPROF]$PNRM"; PS_COL="$PMAG" ;;
-            telecomsys)				# yellow prompt
+            telecomsys)						# yellow prompt
                PS_PROJ="$PYLW[$AWSPROF]$PNRM"; PS_COL="$PYLW" ;;
-            entscm|locapps|loctoolkit)		# red prompt
+            scm|locapps)					# red prompt
                PS_PROJ="$PRED[$AWSPROF]$PNRM"; PS_COL="$PRED" ;;
+            raco)						# green prompt
+               PS_PROJ="$PGRN[$AWSPROF]$PNRM"; PS_COL="$PGRN" ;;
          esac
       fi
    else
       echo "--- ${aenv:=Environment NOT set} ---"
       echo " AWSPROF               = '$AWSPROF'"
       echo " AWSENV                = '$AWSENV'"
-      echo " S3CFG                 = '$S3CFG'"
       echo " AWS_DEFAULT_PROFILE   = '$AWS_DEFAULT_PROFILE'"
       echo " AWS_ACCESS_KEY_ID     = '$AWS_ACCESS_KEY_ID'"
       echo " AWS_SECRET_ACCESS_KEY = '$AWS_SECRET_ACCESS_KEY'"
@@ -1122,9 +1143,7 @@ function showf () {	# TOOL
    if [[ $1 ]]; then
       grep -q "^function $1 " $ALIASES_FILE
       if [ $? -eq 0 ]; then
-         echo -e "\n/-------------------------------------------------"
-         sed -n '/^function '"$1"' /,/^}/p' $ALIASES_FILE | awk '{print "| "$0}'
-         echo -e "\-------------------------------------------------\n"
+         sed -n '/^function '"$1"' /,/^}/p' $ALIASES_FILE
       else
          echo "function: '$1' - not found"
       fi
@@ -1134,6 +1153,7 @@ function showf () {	# TOOL
       grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
       echo -ne "enter function: "
       read func
+      echo
       showf $func
    fi
 }
@@ -1804,7 +1824,8 @@ alias ~="cd ~"
 alias ..="cd .."
 alias -- -="cd -"
 #alias a="alias" # use: `sa`
-alias a="alias | cut -d= -f1 | sort | awk -v c=6 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
+#alias a="alias | cut -d= -f1 | sort | awk -v c=6 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
+alias a="alias | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
 alias act1='source ~/envs/Ansible_1.x/bin/activate; ansible --version'
 alias act2.1='source ~/envs/Ansible_2.x/bin/activate; ansible --version'
 alias act2.2='source ~/envs/Ansible_2.2/bin/activate; ansible --version'
