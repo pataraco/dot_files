@@ -31,8 +31,8 @@ crontab -l | grep -v '^#' | grep 'cron.*informix.*backup'
 crontab -l | grep -v '^#' | grep 'cron.*system.*backup'
 crontab -r; service procmond stop; rm -rf /tmp/*download*; sleep 10; umount /r5/replays /r5
 cssh -l ubuntu -o "-i ~/.ssh/Red5China.pem" 10.248.4.2 10.248.4.5 10.248.4.6 10.248.4.7
-curl --data "Hello from Slackbot" $'https://r5s.slack.com/services/hooks/slackbot?token=yonGbov0hqEWDHf62DRv4mwn&channel=%23techops'
-curl --data "Why do I feel like I'm all alone?" https://r5s.slack.com/services/hooks/slackbot?token=yonGbov0hqEWDHf62DRv4mwn\&channel=%23techops
+curl --data "Hello from Slackbot" $'https://r5s.slack.com/services/hooks/slackbot?token=yRnGbRv0hqEWDHf62Dov4mwn&channel=%23techops'
+curl --data "Why do I feel like I'm all alone?" https://r5s.slack.com/services/hooks/slackbot?token=yRnGbRv0hqEWDHf62Dov4mwn\&channel=%23techops
 curl http://169.254.169.254/latest/meta-data/
 curl http://ipecho.net/plain; echo	# myip
 curl https://webkeys.vpc02.wux01.r5external.com/firefall-china_prod-build-1913/aes-pass.bin --cacert /r5/certificates/red5-rootcert.crt --cert /r5/certificates/1913.crt --key /r5/certificates/1913_nopass.key --ssl
