@@ -282,6 +282,7 @@ awsdi [OPTIONS]
   +c           # show Cluster
   +e           # show Env (Environment)
   +it          # show Instance Type
+  +lt          # show Launch Time
   +mr          # show Machine Role
   +p           # show Project
   +pi          # show Public IP
@@ -314,6 +315,7 @@ default display:
           +c) _more_qs="Tags[?Key=='Cluster'].Value|[0],$_more_qs"      ; shift  ;;
           +e) _more_qs="Tags[?Key=='Env'].Value|[0],$_more_qs"          ; shift  ;;
          +it) _more_qs="InstanceType,$_more_qs"                         ; shift  ;;
+         +lt) _more_qs="LaunchTime,$_more_qs"                           ; shift  ;;
          +mr) _more_qs="Tags[?Key=='MachineRole'].Value|[0],$_more_qs"  ; shift  ;;
           +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"      ; shift  ;;
          +pi) _more_qs="PublicIpAddress,$_more_qs"                      ; shift  ;;
@@ -603,21 +605,34 @@ function ccc () {
 function chkrepodiffs () {	# TOOL
 # checks files in current dir against file in home dir for diffs
 # only works on https://github.com/pataraco/bash_aliases repo now
+# comparing those files against those in home directory
 # usage: chkrepodiffs [-v] [file]
+   cd ~/repos/bash_aliases
    local _verbose=$1
-   local _files=$2
+   if [ "$_verbose" == "-v" ]; then
+      shift
+   fi
+   local _files=$*
    local _file
    [ -z "$_files" ] && _files=$(ls -A -I .git)
    for _file in $_files; do
-      if [ -e ~/$_file ]; then
+      if [ -e $_file -a -e ~/$_file ]; then
          diff -q $_file ~/$_file
          if [ $? -eq 1 ]; then
             if [ "$_verbose" == "-v" ]; then
+              read -p "Hit [Enter] to continue" junk
               diff $_file ~/$_file | \less -rX
+              echo
             fi
+         else
+            echo "Files $_file and ~/$_file are the same"
          fi
+      else
+         [ ! -e $_file ] && ls $_file
+         [ ! -e ~/$_file ] && ls ~/$_file
       fi
    done
+   cd - > /dev/null
 }
 
 function chksums () {	# TOOL
@@ -939,7 +954,7 @@ function listcrts () {
    fi
    _openssl_opts=${_openssl_opts:=$_DEFAULT_OPENSSL_OPTS}
    _openssl_opts="$_openssl_opts -noout"
-echo "opts: '$_openssl_opts'"
+   #debug#echo "opts: '$_openssl_opts'"
    if [ -z "$_cert_bundle" ]; then
       ls *.crt > /dev/null 2>&1
       if [ $? -eq 0 ]; then
@@ -1071,13 +1086,12 @@ function rf () {	# MISC
 
 function sae () {	# TOOL
 # set AWS environment
-   local REPOS=$HOME/repos
-   local AWS_CFG=$HOME/.aws/config
-   local arg="$1"
+   local _AWS_CFG=$HOME/.aws/config
+   local _arg="$1"
 
-   if [ -n "$arg" ]; then
-      case $arg in
-            corsother) aenv="CORS Others"               ;;
+   if [ -n "$_arg" ]; then
+      case $_arg in
+            corsother) aenv="CORS Other"                ;;
               combain) aenv="ENT Combain"               ;;
             cybrscore) aenv="ENT CYBRScore Development" ;;
                ilpdev) aenv="ENT ILP Development"       ;;
@@ -1090,41 +1104,38 @@ function sae () {	# TOOL
                 unset) aenv="Environment un set"        ;;
                     *) echo "WTF? Try: [corsother combain cybrscore ilpdev localblox scm locapps loctoolkit telecomsys raco OR unset]"; return 2 ;;
       esac
-      if [ "$arg" != "unset" ]; then
-         export AWSPROF=$arg
-         export AWSENV=$aenv
-         export AWS_DEFAULT_PROFILE=$arg	# for `aws` (instead of using --profile)
-         export AWS_ACCESS_KEY_ID=`awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF;exit}' $AWS_CFG`
-         export AWS_SECRET_ACCESS_KEY=`awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF;exit}' $AWS_CFG`
-         echo "environment has been set to --> $AWSENV"
+      if [ "$_arg" != "unset" ]; then
+         export AWS_ENVIROMENT=$aenv
+         export AWS_DEFAULT_PROFILE=$_arg	# for `aws` CLI (instead of using --profile)
+         export AWS_ACCESS_KEY_ID=`awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF;exit}' $_AWS_CFG`
+         export AWS_SECRET_ACCESS_KEY=`awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF;exit}' $_AWS_CFG`
+         echo "environment has been set to --> $AWS_ENVIROMENT"
       else
-         unset AWSPROF
-         unset AWSENV
+         unset AWS_ENVIROMENT
          unset AWS_DEFAULT_PROFILE
          unset AWS_ACCESS_KEY_ID
          unset AWS_SECRET_ACCESS_KEY
          echo "environment has been unset"
       fi
       if [ "$COLOR_PROMPT" = yes ]; then
-         case $arg in
+         case $_arg in
             unset)						# cyan prompt
-               PS_PROJ="$PNRM"; PS_COL="$PCYN" ;;
+               PS_COL="$PCYN"; PS_PROJ="$PNRM" ;;
             corsother|combain|cybrscore|ilpdev|localblox)	# cyan prompt
-               PS_PROJ="$PCYN[$AWSPROF]$PNRM"; PS_COL="$PCYN" ;;
+               PS_COL="$PCYN"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
             loctoolkit)						# magenta prompt
-               PS_PROJ="$PMAG[$AWSPROF]$PNRM"; PS_COL="$PMAG" ;;
+               PS_COL="$PMAG"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
             telecomsys)						# yellow prompt
-               PS_PROJ="$PYLW[$AWSPROF]$PNRM"; PS_COL="$PYLW" ;;
+               PS_COL="$PYLW"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
             scm|locapps)					# red prompt
-               PS_PROJ="$PRED[$AWSPROF]$PNRM"; PS_COL="$PRED" ;;
+               PS_COL="$PRED"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
             raco)						# green prompt
-               PS_PROJ="$PGRN[$AWSPROF]$PNRM"; PS_COL="$PGRN" ;;
+               PS_COL="$PGRN"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
          esac
       fi
    else
       echo "--- ${aenv:=Environment NOT set} ---"
-      echo " AWSPROF               = '$AWSPROF'"
-      echo " AWSENV                = '$AWSENV'"
+      echo " AWS_ENVIROMENT        = '$AWS_ENVIROMENT'"
       echo " AWS_DEFAULT_PROFILE   = '$AWS_DEFAULT_PROFILE'"
       echo " AWS_ACCESS_KEY_ID     = '$AWS_ACCESS_KEY_ID'"
       echo " AWS_SECRET_ACCESS_KEY = '$AWS_SECRET_ACCESS_KEY'"
@@ -1557,7 +1568,7 @@ function vmmopprep () {	# VMedix
    [ ! -e "$pcr_steps_file" ] && { echo -e "${RED}ERROR${NRM}: no such file: $pcr_steps_file"; return; }
    echo -n "setting AWS environment to: "
    sae locapps > /dev/null
-   echo -e "[${CYN}$AWSPROF - $AWSENV${NRM}]"
+   echo -e "[${CYN}$AWS_DEFAULT_PROFILE - $AWS_ENVIROMENT${NRM}]"
    echo -n "setting Ansible version to: "
    act2.2 > /dev/null
    _ansible_version=$(ansible --version | head -1)
@@ -1825,11 +1836,12 @@ alias ..="cd .."
 alias -- -="cd -"
 #alias a="alias" # use: `sa`
 #alias a="alias | cut -d= -f1 | sort | awk -v c=6 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
-alias a="alias | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
+alias a="alias | grep -v ^declare | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
 alias act1='source ~/envs/Ansible_1.x/bin/activate; ansible --version'
 alias act2.1='source ~/envs/Ansible_2.x/bin/activate; ansible --version'
 alias act2.2='source ~/envs/Ansible_2.2/bin/activate; ansible --version'
 alias arcdiff="arc diff --reviewers akulkarni,pfreeman,sbenjamin,tbenichou,tholcomb,candonov main"
+alias awsrlhz="aws route53 list-hosted-zones |jq -r .HostedZones[].Name|sort|sed 's/\.$//'"
 alias c="clear"
 alias cda="cd ~/cloud_automation/ansible"
 alias cdh="cd ~; cd"
@@ -1837,12 +1849,13 @@ alias cdi="cd ~/cloud_automation/ansible/inventory"
 alias cdp="cd ~/cloud_automation/ansible/playbooks"
 alias cdr="cd ~/cloud_automation/ansible/roles"
 alias cols="tsend 'echo \$COLUMNS'"
-alias disp="tsend 'echo \$DISPLAY'"
 alias cp='cp -i'
 alias crt='~/scripts/chef_recipe_tree.sh'
 alias cvhf='~/cloud_automation/ansible/playbooks/VMedix/scripts/create_vm_qa_hosts_file.sh'
 #alias cssh='cssh -o "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"'
 alias diff="colordiff -u"
+alias disp="tsend 'echo \$DISPLAY'"
+alias eaf="eval \"$(declare -F | sed -e 's/-f /-fx /')\""
 #alias f="declare -F | awk '{print \$3}' | more"
 #alias f="declare -F | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-15s\",\$3}else{printf \"  %-15s\n\",\$3}}END{print CR}'"
 alias f="grep '^function .* ' ~/.bash_aliases | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"

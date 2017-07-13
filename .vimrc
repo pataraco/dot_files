@@ -11,6 +11,8 @@ set formatoptions-=c		" stop auto commenting in general
 set formatoptions-=r		" stop auto commenting with [Enter]
 set formatoptions-=o		" stop auto commenting with 'o' or 'O'
 set ffs=unix			" show ^M from DOS files
+" strings to use in 'list' mode (:list command)
+set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<,conceal:?,nbsp:_
 " turn off search highlight
 "nnoremap <silent> <space> :silent nohlsearch<CR>
 "nnoremap <silent> <space> :nohlsearch<CR>
@@ -21,10 +23,14 @@ syntax on			" turn on syntax highlighting
 " one-liner to put & search `:redir @"|silent map|redir END|new|put!`
 "
 " split windows
-" increase the size of the pane
+" increase the height of the pane
 map <C-i> <C-W>+
-" reduce the size of the pane
+" reduce the height of the pane
 map <C-u> <C-W>-
+" increase the width of the pane
+map <C-o> <C-W>>
+" reduce the width of the pane
+map <C-p> <C-W><
 " move to left pane
 map <C-h> <C-W>h
 " move to down pane
@@ -42,7 +48,10 @@ map <C-n> 0i# j
 " for vimdiff (vim -d) - set following 2 mappings to jump to prev/next diff
 map ] ]c
 map [ [c
+" use 'du' to update diff after changes
 map du :silent diffupdate<CR>
+" wrap those diffed lines
+autocmd VimEnter * if &diff | execute 'windo set wrap' | endif
 " turn line numbering on/off
 " use <Leader>n (below)
 "map <C-n> :set number!<CR>

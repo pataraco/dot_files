@@ -31,8 +31,7 @@ crontab -l | grep -v '^#' | grep 'cron.*informix.*backup'
 crontab -l | grep -v '^#' | grep 'cron.*system.*backup'
 crontab -r; service procmond stop; rm -rf /tmp/*download*; sleep 10; umount /r5/replays /r5
 cssh -l ubuntu -o "-i ~/.ssh/Red5China.pem" 10.248.4.2 10.248.4.5 10.248.4.6 10.248.4.7
-curl --data "Hello from Slackbot" $'https://r5s.slack.com/services/hooks/slackbot?token=yRnGbRv0hqEWDHf62Dov4mwn&channel=%23techops'
-curl --data "Why do I feel like I'm all alone?" https://r5s.slack.com/services/hooks/slackbot?token=yRnGbRv0hqEWDHf62Dov4mwn\&channel=%23techops
+curl --data "Hello from Slackbot" $'https://r5s.slack.com/services/hooks/slackbot?token=nbvhEDf2Dov4mwn&channel=%23techops'
 curl http://169.254.169.254/latest/meta-data/
 curl http://ipecho.net/plain; echo	# myip
 curl https://webkeys.vpc02.wux01.r5external.com/firefall-china_prod-build-1913/aes-pass.bin --cacert /r5/certificates/red5-rootcert.crt --cert /r5/certificates/1913.crt --key /r5/certificates/1913_nopass.key --ssl
@@ -77,6 +76,8 @@ for yaml in `cat ../webapp-yamls`; do echo -n "$yaml: "; aws s3 cp s3://web-buil
 get #guestnum1 $roomnum1 from guest-room-tbl(#i+1)	# Club Data (clbdata.sqr)
 git diff-tree --no-commit-id --name-only -r 170be5c
 git log -p FILE
+git pull origin BRANCH
+git push origin BRANCH
 grep "Database Archive" /eci/sinbad/tape.log | awk '/[sS]tarted/ {SL=$0}; /[fF]inished/ {print SL; print $0}' | tail -2
 grep "Database Archive" /eci/sinbad/tape.log | tail -4
 grep "^# eof" /eci/sinbad/.systemrestore.script
@@ -167,8 +168,9 @@ smaint
 sqr /eci/dbatools/oob dev	# run as eci
 ssh-add -l
 ssh-copy-id [$USER@]$HOSTNAME
-ssh-keygen -p -f raco.pem	# add/change passphrase
+ssh-keygen -p -f $key_file	# add/change passphrase
 ssh-keygen -t rsa		# generate RSA key-pair
+ssh-keygen -R $hostname		# remove host entries from known_hosts
 stty -a < /dev/ttyaa05
 su eci -c '/eci/dev/bin/loader dev XXXXXX'
 su informix -c '/home/informix/bin/start_logical_logs'	# tape | backup
