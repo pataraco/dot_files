@@ -569,17 +569,26 @@ function bash_prompt () {
    # get git info
    local git_branch=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
    git_status=$(git status --porcelain 2> /dev/null)
-   # for the future to get fancy
-   ##if [[ $git_status =~ ($'\n'|^).M ]]; then local has_modifications=true; fi
-   ##if [[ $git_status =~ ($'\n'|^)M ]]; then local has_modifications_cached=true; fi
-   ##if [[ $git_status =~ ($'\n'|^)A ]]; then local has_adds=true; fi
-   ##if [[ $git_status =~ ($'\n'|^).D ]]; then local has_deletions=true; fi
-   ##if [[ $git_status =~ ($'\n'|^)D ]]; then local has_deletions_cached=true; fi
-   ##if [[ $git_status =~ ($'\n'|^)[MAD] && ! $git_status =~ ($'\n'|^).[MAD\?] ]]; then local ready_to_commit=true; fi
-   if [ -n "$git_status" ]; then
+   [[ $git_status =~ ($'\n'|^).M ]] && local _git_has_mods=true
+   [[ $git_status =~ ($'\n'|^)M ]] && local _git_has_mods_cached=true
+   [[ $git_status =~ ($'\n'|^)A ]] && local _git_has_adds=true
+   [[ $git_status =~ ($'\n'|^).D ]] && local _git_has_dels=true
+   [[ $git_status =~ ($'\n'|^)D ]] && local _git_has_dels_cached=true
+   [[ $git_status =~ ($'\n'|^)\?\? ]] && local _git_has_untracked_files=true
+   [[ $git_status =~ ($'\n'|^)[MAD] && ! $git_status =~ ($'\n'|^).[MAD\?] ]] && local _git_ready_to_commit=true
+   if [ "$_git_ready_to_commit" ]; then
+      PS_GIT="$PGRN$git_branch$PNRM|✔"
+   elif [ "$_git_has_mods_cached" -o "$_git_has_dels_cached" ]; then
+      PS_GIT="$PCYN$git_branch$PNRM|+"
+   elif [ "$_git_has_mods" -o "$_git_has_adds" -o "$_git_has_dels" ]; then
+      PS_GIT="$PRED$git_branch$PNRM|*"
+   elif [ "$_git_has_untracked_files" ]; then
       PS_GIT="$PYLW$git_branch$PNRM"
    else
       PS_GIT="$PNRM$git_branch$PNRM"
+   fi
+   if [ "$_git_has_untracked_files" ]; then
+      PS_GIT="$PS_GIT$PYLW?$PNRM"
    fi
    PS_PATH="$PGRN\w$PNRM [$PS_GIT]"
    PS_WHO="$PBLU\u@\h$PNRM"
@@ -1525,17 +1534,17 @@ function vmmopmonit () {	# VMedix
    esac
    local _dns_servers=$(egrep -r 'server_name:|api_server:' ~/cloud_automation/ansible/inventory/VMedix/$_vpc | awk '{print $NF}' | paste -s )
    # `sstat` on BLUE api servers
-   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 80x72+7+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${BLU}\\tBlue ${YLW}Cluster services status - ${RED}'"$_vpc"' ['"$_region"']${NRM}\"\; ansible -i '"$_repo/$_vpc"'/hosts_blue \"*api[0-9]*\" -a \"sstat\" --vault-password-file ~/.vault.vm 2>/dev/null \| egrep -v \"WARN\|duplicate\|cloud_auto\|SUCCESS\"''' &
+   xterm -xrm '*.allowSendEvents:true' -T "BLUE Cluster services status" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 80x72+7+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${BLU}\\tBlue ${YLW}Cluster services status - ${RED}'"$_vpc"' ['"$_region"']${NRM}\"\; ansible -i '"$_repo/$_vpc"'/hosts_blue \"*api[0-9]*\" -a \"sstat\" --vault-password-file ~/.vault.vm 2>/dev/null \| egrep -v \"WARN\|duplicate\|cloud_auto\|SUCCESS\"''' &
    # `sstat` on GREEN api servers
-   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 80x72+523+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${GRN}\\tGreen ${YLW}Cluster services status - ${RED}'"$_vpc"' ['"$_region"']${NRM}\"\; ansible -i '"$_repo/$_vpc"'/hosts_green \"*api[0-9]*\" -a \"sstat\" --vault-password-file ~/.vault.vm 2>/dev/null \| egrep -v \"WARN\|duplicate\|cloud_auto\|SUCCESS\"''' &
+   xterm -xrm '*.allowSendEvents:true' -T "GREEN Cluster services status" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 80x72+523+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${GRN}\\tGreen ${YLW}Cluster services status - ${RED}'"$_vpc"' ['"$_region"']${NRM}\"\; ansible -i '"$_repo/$_vpc"'/hosts_green \"*api[0-9]*\" -a \"sstat\" --vault-password-file ~/.vault.vm 2>/dev/null \| egrep -v \"WARN\|duplicate\|cloud_auto\|SUCCESS\"''' &
    # `crond` service status on all app, mongo and redis servers
-   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 86x22+1038+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tcrond Service Statuses - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; ansible -i '"$_repo/$_vpc"'/hosts_production \"*ap*:mongo*:redis*\" -m shell -a \"/sbin/service crond status\" --vault-password-file ~/.vault.vm \| tr -d \"\\n\" \| sed \"s/\>\>/: /g\;s/running\.\.\./\`printf \"\\033[1\;32mrunning\\033[m\"\`\\n/g\;s/stopped/\`printf \"\\033[1\;31mstopped\\033[m\"\`\\n/g\" \| sort''' &
+   xterm -xrm '*.allowSendEvents:true' -T "CROND Service Statuses" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 86x22+1038+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tcrond Service Statuses - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; ansible -i '"$_repo/$_vpc"'/hosts_production \"*ap*:mongo*:redis*\" -m shell -a \"/sbin/service crond status\" --vault-password-file ~/.vault.vm \| tr -d \"\\n\" \| sed \"s/\>\>/: /g\;s/running\.\.\./\`printf \"\\033[1\;32mrunning\\033[m\"\`\\n/g\;s/stopped/\`printf \"\\033[1\;31mstopped\\033[m\"\`\\n/g\" \| sort''' &
    # AWS CloudWatch alarms
-   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 86x48+1038+358 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tCloudWatch Alarms - ${RED}'"$_vpc"' ['"$_region"']\\n${NRM}\"\; aws cloudwatch describe-alarms --region '"$_region"' --profile locapps \| grep AlarmName \| grep -i VMedix \| sed \"s/^ *//\;s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\"''' &
+   xterm -xrm '*.allowSendEvents:true' -T "AWS CloudWatch Alarms" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 86x48+1038+358 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tAWS CloudWatch Alarms - ${RED}'"$_vpc"' ['"$_region"']\\n${NRM}\"\; aws cloudwatch describe-alarms --region '"$_region"' --profile locapps \| grep AlarmName \| grep -i VMedix \| sed \"s/^ *//\;s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\"''' &
    # AWS Route53/DNS entries showing active cluster
-   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 123x26+7-52 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tDNS Entries - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; for h in '"$_dns_servers"'\; do dig \$h \| egrep -v \"^$\|^\;\" \| grep CNAME \| sed \"s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\;s/\\\(\\s\\+[0-9]\\+\\s\\+\\\)/\`printf \"\\033[1\;36m\"\`\\1\`printf \"\\033[m\"\`/g\"\; done''' &
+   xterm -xrm '*.allowSendEvents:true' -T "DNS Entries" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 123x26+7-52 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tDNS Entries - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; for h in '"$_dns_servers"'\; do dig \$h \| egrep -v \"^$\|^\;\" \| grep CNAME \| sed \"s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\;s/\\\(\\s\\+[0-9]\\+\\s\\+\\\)/\`printf \"\\033[1\;36m\"\`\\1\`printf \"\\033[m\"\`/g\"\; done''' &
    # AWS ASG of app servers showing Health Check Type
-   xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 129x19+781-52 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tAWS AutoScalingGroup Descriptions - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; aws autoscaling describe-auto-scaling-groups --profile locapps --region '"$_region"' --query \"AutoScalingGroups[].[AutoScalingGroupName,LaunchConfigurationName,length\(Instances\),DesiredCapacity,MinSize,MaxSize,HealthCheckType,Instances[].HealthStatus\|join\('"\'"', '"\'"',@\),LoadBalancerNames[0]]\" --output table \| egrep -- \"-ap[i,p]\" \| sed \"s/ //g\" \| column -s\"\|\" -t \| sed \"s/\\\(  \\\)\\\([a-zA-Z0-9]\\\)/\| \\2/g\;s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\;s/EC2/\`printf \"\\033[1\;33mEC2\\033[m\"\`/g\;s/ELB/\`printf \"\\033[1\;36mELB\\033[m\"\`/g\"''' &
+   xterm -xrm '*.allowSendEvents:true' -T "AWS AutoScalingGroup Descriptions" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 129x19+781-52 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tAWS AutoScalingGroup Descriptions - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; aws autoscaling describe-auto-scaling-groups --profile locapps --region '"$_region"' --query \"AutoScalingGroups[].[AutoScalingGroupName,LaunchConfigurationName,length\(Instances\),DesiredCapacity,MinSize,MaxSize,HealthCheckType,Instances[].HealthStatus\|join\('"\'"', '"\'"',@\),LoadBalancerNames[0]]\" --output table \| egrep -- \"-ap[i,p]\" \| sed \"s/ //g\" \| column -s\"\|\" -t \| sed \"s/\\\(  \\\)\\\([a-zA-Z0-9]\\\)/\| \\2/g\;s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\;s/EC2/\`printf \"\\033[1\;33mEC2\\033[m\"\`/g\;s/ELB/\`printf \"\\033[1\;36mELB\\033[m\"\`/g\"''' &
    #TODO website status?
 }
 
@@ -1546,16 +1555,24 @@ function vmmopprep () {	# VMedix
    local _ANSIBLE_HOME=~/cloud_automation/ansible
    local _USAGE="usage: vmmopprep -s|t|p|r [PCR_Steps_File]"
    local _STEPS=/tmp/.mop_steps
+   local _steps_desired
+   [ $# -lt 1 ] && { echo -e "${RED}ERROR${NRM}: not enough arguments\n$_USAGE"; return; }
+   case "$1" in
+      -s) _steps_desired=STAGING    ;;
+      -t) _steps_desired=TESTING    ;;
+      -p) _steps_desired=PRODUCTION ;;
+      -r) _steps_desired=ROLL-BACK  ;;
+       *) echo -e "${RED}ERROR${NRM}: missing argument 'steps desired' (s|t|p|r)\n$_USAGE"; return ;;
+   esac
    echo -n "changing working dir to   : "
    if cd $_ANSIBLE_HOME; then
       echo -e "[${CYN}$_ANSIBLE_HOME${NRM}]"
    else
-      echo -e "[${CYN}FAILED${NRM}]"
+      echo -e "[${RED}FAILED${NRM}]"
       echo "couldn't change working dir to: $_ANSIBLE_HOME"
       return
    fi
-   local _GIT_BRANCH=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
-   [ $# -lt 1 ] && { echo -e "${RED}ERROR${NRM}: not enough arguments\n$_USAGE"; return; }
+   local _GIT_BRANCH=$(git branch 2>/dev/null | grep '^*' | colrm 1 2)
    local pcr_steps_file=$2
    if [ -z "$pcr_steps_file" ]; then
       echo -e "no PCR Steps File given   : [${CYN}using git branch: $_GIT_BRANCH${NRM}]"
@@ -1573,20 +1590,20 @@ function vmmopprep () {	# VMedix
    act2.2 > /dev/null
    _ansible_version=$(ansible --version | head -1)
    echo -e "[${CYN}$_ansible_version${NRM}]"
-   case "$1" in
-      -s) steps_desired=STAGING
+   case "$_steps_desired" in
+      STAGING)
           start_line_no=$((`grep -n '^#.*STAGING.*#$' $pcr_steps_file|cut -d: -f1` - 1))
             end_line_no=$((`grep -n '^#.*TESTING/PREPPING.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
-      -t) steps_desired=TESTING
+      TESTING)
           start_line_no=$((`grep -n '^#.*TESTING/PREPPING.*#$' $pcr_steps_file|cut -d: -f1` - 1))
             end_line_no=$((`grep -n '^#.*PRODUCTION.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
-      -p) steps_desired=PRODUCTION
+      PRODUCTION)
           start_line_no=$((`grep -n '^#.*PRODUCTION.*#$' $pcr_steps_file|cut -d: -f1` - 1))
             end_line_no=$((`grep -n '^#.*ROLL-BACK.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
-      -r) steps_desired=ROLL-BACK
+      ROLL-BACK)
           start_line_no=$((`grep -n '^#.*ROLL-BACK.*#$' $pcr_steps_file|cut -d: -f1` - 1))
             end_line_no=$((`grep -n '^#.*ROLLBACK COMPLETE.*$' $pcr_steps_file|cut -d: -f1`)) ;;
-       *) echo -e "error: invalid argument\n$_USAGE"; return ;;
+       *) echo -e "${RED}FATAL ERROR${NRM}: unknown state\n$_USAGE"; return ;;
    esac
    sed -n "${start_line_no},${end_line_no}s/^\$ //p" $pcr_steps_file > $_STEPS
    cp $_STEPS{,.found}
@@ -1601,16 +1618,16 @@ function vmmopprep () {	# VMedix
       if \diff -q $_STEPS{.found,.processed} > /dev/null; then
          echo -e "[${GRN}PASSED${NRM}]"
          echo -n "adding commands to history: "
-         #debug#echo "# BEGIN $steps_desired STEPS"
-         history -s "# BEGIN $steps_desired STEPS"
+         #debug#echo "# BEGIN $_steps_desired STEPS"
+         history -s "# BEGIN $_steps_desired STEPS"
          while read _line; do
             #debug#echo "#$_step_no: $_line"
             echo "$_line" >> $_STEPS.verify
             history -s "#$_step_no: $_line"
             (( _step_no++ ))
          done <<< "`cat $_STEPS`"
-         #debug#echo "# END $steps_desired STEPS"
-         history -s "# END $steps_desired STEPS"
+         #debug#echo "# END $_steps_desired STEPS"
+         history -s "# END $_steps_desired STEPS"
          echo -e "[${GRN}DONE${NRM}]"
          echo -e "commands added to history : [${MAG}Have fun and good luck!${NRM}]"
       else
@@ -1891,6 +1908,7 @@ alias sdl="export DISPLAY=localhost:10.0"
 alias sf=showf
 alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 alias sing="/home/praco/scripts/sing.sh"
+alias sw=stopwatch
 #alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
 alias tt='echo -ne "\033]0;`whoami`@`hostname`\007"'
