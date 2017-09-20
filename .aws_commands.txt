@@ -1,34 +1,39 @@
-aws codecommit create-repository --repository-name repo_infostretch --repository-description "DES code repo for Comtech and Infostretch developers to share source."
+aws acm request-certificate --domain-name HOST.DOMAIN --domain-validation-options DomainName=HOST.DOMAIN,ValidationDomain=DOMAIN
+aws acm resend-validation-email --certificate-arn ARN --domain HOST.DOMAIN --validation-domain DOMAIN
 aws codecommit create-repository --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
+aws codecommit list-repositories --region us-east-1
 aws ec2 create-tags --resources i-1689170e --tags Key=BranchTag,Value=vm-test-1 --region us-west-2
 aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,PublicIpAddress,State.Name]" --output table
 aws ec2 describe-instances --region=us-east-1 --filters "Name=tag:Project,Values=VMedix" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='Env'].Value|[0],Tags[?Key=='Cluster'].Value|[0],State.Name]" --output table
 aws ec2 describe-instances --region us-east-1 --instance-ids i-0e7ae84d4c75f1033 --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0]]|[0]"
 aws ec2 describe-instances --region=us-west-2 --filters "Name=tag:Project,Values=VMedix" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name,SecurityGroups[].GroupId|join(', ',@)]" --output table
 aws ec2 describe-instances --region=us-west-2 --filters "Name=tag:Project,Values=VMedix" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='Env'].Value|[0],Tags[?Key=='Cluster'].Value|[0],State.Name]" --output table
+aws ec2 describe-instances --region=us-west-2 --filters 'Name=tag:Project,Values=vzfl' --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name]" --output table
+aws ec2 describe-instance-status --instance-id IID
 aws ec2 describe-security-groups --region=us-west-2 --filters "Name=tag:Name,Values=*internet*,*grp-default*,*elk*,*vmedix*,*elasticsearch*,*redis*,*mongodb*,*gunicorn*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
 aws ec2 describe-security-groups --region=us-west-2 --filters "Name=tag:Name,Values=sec-grp*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
 aws ec2 describe-security-groups --region=us-west-2 --filters "Name=tag:Name,Values=*vmedix*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
 aws ec2 modify-instance-attribute --instance-id i-cf8b15d7 --groups sg-0c82f575
-aws ec2 stop-instances --region eu-west-1 --instance-ids i-UID1 [i-UID2...]
+aws ec2 start-instances --instance-ids IID1 [IID2...]
+aws ec2 stop-instances --instance-ids IID1 [IID2...]
 aws ec2 terminate-instances --region eu-west-1 --instance-ids i-UID1 [i-UID2...]
 aws elb describe-load-balancers [--load-balancer-names elb-VMedix-api-blue] --query "LoadBalancerDescriptions[].[LoadBalancerName,Instances[].InstanceId|join(', ',@)]" --output table
-aws iam add-user-to-group --group-name CodeCommit_repo_infostretch --user-name infostretch_dsamant
 aws iam add-user-to-group --group-name GROUP_NAME --user-name USER_NAME
-aws iam attach-group-policy --group-name CodeCommit_repo_infostretch --policy-arn arn:aws:iam::033362729015:policy/CodeCommit_repo_infostretch
 aws iam attach-group-policy --group-name GROUP_NAME --policy-arn POLICY-ARN
-aws iam create-access-key --user-name infostretch_dsamant
 aws iam create-access-key --user-name USER_NAME
-aws iam create-group --group-name CodeCommit_repo_infostretch
-aws iam create-group --group-name GROUP_NAME
-aws iam create-policy --policy-name CodeCommit_repo_infostretch --policy-document file://repo_infostretch_policy.json
+aws iam create-group --group-name GROUP_NAME # e.g. CodeCommit_repo_infostretch
 aws iam create-policy --policy-name POLICY_NAME --policy-document file://FILE_NAME.json
-aws iam create-user --user-name infostretch_dsamant
 aws iam create-user --user-name USER_NAME
+aws iam get-group --group-name GROUP_NAME | grep UserName	# get all users
+aws iam get-group --group-name GROUP_NAME | grep USER_NAME	# search for specific user
+aws iam list-access-keys --user-name USER_NAME
 aws iam list-attached-group-policies --group-name GROUP_NAME
 aws iam list-group-policies --group-name GROUP_NAME
-aws iam list-groups | grep Name
-aws iam list-policies | grep -i stretch
+aws iam list-groups
+aws iam list-groups-for-user --user-name USER_NAME		# list all groups user is in
+aws iam list-policies
+aws iam list-users
+aws s3 sync --profile corsother --exclude \* --include repodata\* s3://tcs-yum-repos/amzn/noarch/data/ s3://vmedix-yum-repo/amzn/noarch/data/
 aws s3 sync --profile corsother --exclude \* --include VirtuMedix\* s3://tcs-yum-repos/amzn/noarch/data/ s3://vmedix-yum-repo/amzn/noarch/data/
 aws s3 sync --profile ptu s3://firefall-stabilization-build-1298-publictest/ /data/1298-download
 aws ses get-identity-verification-attributes --region us-east-1 --identities no-reply@there.care
