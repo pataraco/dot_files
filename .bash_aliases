@@ -163,7 +163,9 @@ function awsci () {
 
 function awsdami () {
 # some 'aws ec2 describe-images' hacks
+   local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="us-west-2"
+   local _AWSEC2DAMI_CMD="aws ec2 describe-images"
    local _USAGE="usage: \
 awsdami [OPTIONS]
   -a  ARCH      # Architecture (e.g. i386, x86_64)
@@ -194,10 +196,8 @@ awsdami [OPTIONS]
   -h            # help (show this message)
 default display:
   Image Name | Image ID | State"
-   local _awsec2dami_cmd="aws ec2 describe-images"
    local _owners="self"
    local _region="$_DEFAULT_REGION"
-   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
    local _filters=""
    local _queries="Tags[?Key=='Name'].Value|[0],ImageId,State"
    local _more_qs=""
@@ -236,17 +236,19 @@ default display:
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
    if [ "$_region" == "all" ]; then
-      for _region in $_regions; do
-         $_awsec2dami_cmd --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      for _region in $_ALL_REGIONS; do
+         $_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
    else
-      $_awsec2dami_cmd --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      $_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
 
 function awsdasg () {
 # some 'aws autoscaling describe-auto-scaling-groups' hacks
+   local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="us-west-2"
+   local _AWSASDASG_CMD="aws autoscaling describe-auto-scaling-groups"
    local _USAGE="usage: \
 awsdasg [OPTIONS]
   -n NAME      # filter results by this Auto Scaling Group Name
@@ -266,10 +268,8 @@ awsdasg [OPTIONS]
   -h           # help (show this message)
 default display:
   ASG name | Launch Config Name | Instances | Desired | Min | Max | Region"
-   local _awsasdasg_cmd="aws autoscaling describe-auto-scaling-groups"
    local _max_items=""
    local _region="$_DEFAULT_REGION"
-   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
    local _reg_exp=""
    local _queries="AutoScalingGroupName,LaunchConfigurationName,length(Instances),DesiredCapacity,MinSize,MaxSize"
    local _more_qs=""
@@ -296,25 +296,27 @@ default display:
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
    if [ "$_region" == "all" ]; then
-      for _region in $_regions; do
+      for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
-            $_awsasdasg_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            $_AWSASDASG_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          else
-            $_awsasdasg_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            $_AWSASDASG_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          fi
       done
    else
       if [ -z "$_reg_exp" ]; then
-         $_awsasdasg_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSASDASG_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       else
-         $_awsasdasg_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSASDASG_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
    fi
 }
 
 function awsdi () {
 # some 'aws ec2 describe-instances' hacks
+   local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="us-west-2"
+   local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
    local _USAGE="usage: \
 awsdi [OPTIONS]
   -e ENVIRON   # filter results by this Environment (e.g. production, staging)
@@ -340,8 +342,6 @@ awsdi [OPTIONS]
   -h           # help (show this message)
 default display:
   Inst name | Private IP | Instance ID | State"
-   local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
-   local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _max_items=""
    local _region="$_DEFAULT_REGION"
    local _filters=""
@@ -388,6 +388,7 @@ function awsdlb () {
 # some 'aws elb describe-load-balancer' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="us-west-2"
+   local _AWSELBDLB_CMD="aws elb describe-load-balancers"
    local _USAGE="usage: \
 awsdlb [OPTIONS]
   -n NAME      # filter results by this Launch Config Name
@@ -404,7 +405,6 @@ awsdlb [OPTIONS]
   -h           # help (show this message)
 default display:
   Load Balancer name"
-   local _awselbdlb_cmd="aws elb describe-load-balancers"
    local _max_items=""
    local _region="$_DEFAULT_REGION"
    local _reg_exp=""
@@ -432,16 +432,16 @@ default display:
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
-            $_awselbdlb_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          else
-            $_awselbdlb_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          fi
       done
    else
       if [ -z "$_reg_exp" ]; then
-         $_awselbdlb_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       else
-         $_awselbdlb_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
    fi
 }
@@ -450,6 +450,7 @@ function awsdlc () {
 # some 'aws autoscaling describe-launch-configurations' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="us-west-2"
+   local _AWSASDLC_CMD="aws autoscaling describe-launch-configurations"
    local _USAGE="usage: \
 awsdlc [OPTIONS]
   -n NAME      # filter results by this Launch Config Name
@@ -462,7 +463,6 @@ awsdlc [OPTIONS]
   -h           # help (show this message)
 default display:
   Launch Config name | AMI ID | Instance Type | Region"
-   local _awsasdlc_cmd="aws autoscaling describe-launch-configurations"
    local _max_items=""
    local _region="$_DEFAULT_REGION"
    local _reg_exp=""
@@ -486,16 +486,16 @@ default display:
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
-            $_awsasdlc_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            $_AWSASDLC_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          else
-            $_awsasdlc_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            $_AWSASDLC_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          fi
       done
    else
       if [ -z "$_reg_exp" ]; then
-         $_awsasdlc_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSASDLC_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       else
-         $_awsasdlc_cmd --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSASDLC_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
    fi
 }
@@ -504,6 +504,7 @@ function awsdni () {
 # some 'aws ec2 describe-network-interfaces' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="us-west-2"
+   local _AWSEC2DNI_CMD="aws ec2 describe-network-interfaces"
    local _USAGE="usage: \
 awsdni [OPTIONS]
   -a  AZ       # filter by Availability Zone (RegEx)
@@ -523,7 +524,6 @@ awsdni [OPTIONS]
   -h           # help (show this message)
 default display:
   ID | Description | Private IP | Status"
-   local _awsec2dni_cmd="aws ec2 describe-network-interfaces"
    local _max_items=""
    local _region="$_DEFAULT_REGION"
    local _filters=""
@@ -556,16 +556,17 @@ default display:
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
-         #$_awsec2dni_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         $_awsec2dni_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$/|'"$_region"'/' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         #$_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$/|'"$_region"'/' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
    else
-      $_awsec2dni_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$//g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      $_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$//g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
 
 function awsrlrrs () {
 # some 'aws route53 list-resource-record-sets' hacks
+   local _AWSRLRRS_CMD="aws route53 list-resource-record-sets"
    local _USAGE="usage: \
 awsrlrrs DNS_NAME [OPTIONS]
   -d DNS_NAME # the DNS Name or Hosted Zone to query
@@ -578,7 +579,6 @@ awsrlrrs DNS_NAME [OPTIONS]
   -h          # help (show this message)
 default display:
   Record Name | Type | Record Value"
-   local _awsrlrrs_cmd="aws route53 list-resource-record-sets"
    local _max_items=""
    local _rec_type="*"
    local _queries="Name,Type,ResourceRecords[].Value|[0]"
@@ -603,9 +603,9 @@ default display:
    # get the Hosted Zone Id
    hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name $_dns_name --max-items 1 | jq -r .HostedZones[].Id)
    if [ -z "$_reg_exp" ]; then
-      $_awsrlrrs_cmd --hosted-zone-id $hosted_zone_id --query "$_query" --output table | egrep -v '^[-+]|ListResourceRecordSets' | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      $_AWSRLRRS_CMD --hosted-zone-id $hosted_zone_id --query "$_query" --output table | egrep -v '^[-+]|ListResourceRecordSets' | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    else
-      $_awsrlrrs_cmd --hosted-zone-id $hosted_zone_id --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      $_AWSRLRRS_CMD --hosted-zone-id $hosted_zone_id --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
 
