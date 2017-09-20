@@ -130,6 +130,7 @@ openssl enc -e -in DECRYPTED_FILE -out ENCRYPTED_FILE -pass file:/path/to/key -a
 openssl req -in consult.firecrackerhealth.com.csr.orig -noout -subject
 openssl req -in DOMAIN_NAME.csr -noout -subject
 openssl req -new -newkey rsa:2048 -nodes -keyout DOMAIN_NAME.key -out DOMAIN_NAME.csr
+openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout www.example.com.selfsigned.key -out www.example.com.selfsigned.crt -subj /CN=www.example.com -days 3650
 openssl s_client -connect clientapi-v01-sna01-prod.firefall.com:443 -servername firefall.com </dev/null 2>/dev/null | openssl x509 -noout -subject -dates -serial
 openssl s_client -connect $host:443 -servername $domain </dev/null 2>/dev/null| openssl x509 -noout -subject -dates -serial
 openssl x509 -in nimaws.com.crt -text
@@ -169,8 +170,8 @@ sqr /eci/dbatools/oob dev	# run as eci
 ssh-add -l
 ssh-copy-id [$USER@]$HOSTNAME
 ssh-keygen -p -f $key_file	# add/change passphrase
-ssh-keygen -t rsa		# generate RSA key-pair
 ssh-keygen -R $hostname		# remove host entries from known_hosts
+ssh-keygen -t rsa		# generate RSA key-pair
 stty -a < /dev/ttyaa05
 su eci -c '/eci/dev/bin/loader dev XXXXXX'
 su informix -c '/home/informix/bin/start_logical_logs'	# tape | backup
