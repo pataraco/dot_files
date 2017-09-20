@@ -2,6 +2,7 @@
 
 # if interactive shell - display message
 [ -n "$PS1" ] && echo "sourcing '.bash_aliases'"
+
 # some ansi colorizatioin escape sequences
 D2E="\e[K"              # to delete the rest of the chars on a line
 BLD="\e[1m"             # bold
@@ -20,17 +21,23 @@ BBG="\e[44m"            # blue BG
 MBG="\e[45m"            # magenta BG
 CBG="\e[46m"            # cyan BG
 NRM="\e[m"              # to make text normal
+
 # turn on `vi` command line editing - oh yeah!
 set -o vi
+
 # set xterm defaults
 XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
+
 # set bash prompt command (and bash prompt)
 ORIG_PS1=$PS1
 export PROMPT_DIRTRIM=3
+
 # # change grep color to light yelow highlighting with black fg
 # export GREP_COLOR="5;43;30"
+
 # change grep color to light green fg on black bg
 export GREP_COLOR="1;40;32"
+
 # for changing prompt colors
 PRED='\[\e[1;31m\]'      # red (bold)
 PGRN='\[\e[1;32m\]'      # green (bold)
@@ -39,14 +46,18 @@ PBLU='\[\e[1;34m\]'      # blue (bold)
 PMAG='\[\e[1;35m\]'      # magenta (bold)
 PCYN='\[\e[1;36m\]'      # cyan (bold)
 PNRM='\[\e[m\]'          # to make text normal
+
 # some bind settings
 bind Space:magic-space
+
 # update change the title bar of the terminal
 echo -ne "\033]0;`whoami`@`hostname`\007"
+
 # set up some globals
 REPO_DIR=$HOME/repos
 
 # define functions
+
 function _tmux_send_keys_all_panes () {
 # send keys to all tmux panes
    for _pane in $(tmux list-panes -F '#P'); do
@@ -56,7 +67,7 @@ function _tmux_send_keys_all_panes () {
 
 function awssnsep () {
 # AWS SNS list platform application endpoints
-   local _USAGE="usage: awssnsep APPLICATION [REGION]"
+   local _USAGE="usage: awssnsep APPLICATION [REGION]  # can use 'all'"
    local _app=$1
    [ -z "$_app" ] && { echo "$_USAGE"; return; }
    local _region=$2
@@ -116,8 +127,43 @@ function awsasgcp () {
    fi
 }
 
+function awsci () {
+# start or stop an instance
+   local _DEFAULT_REGION="us-west-2"
+   local _USAGE="usage: awsci [-r REGION] start|stop INSTANCE_NAME # default: $_DEFAULT_REGION"
+   local _region=$1
+   [ "$_region" == "-r" ] && { $_region=$2; shift 2; } || $_region=$_DEFAULT_REGION
+   local _CONTROL_CMD=$1
+   local _INSTANCE_NAME=$2
+   [ -z "$_CONTROL_CMD" ] && { echo "error: did not specify 'start' or 'stop'"; echo "$_USAGE"; return; }
+   [ -z "$_INSTANCE_NAME" ] && { echo "error: did not specify an instance name"; echo "$_USAGE"; return; }
+   local _INSTANCE_ID=$(/usr/bin/aws ec2 describe-instances --region $_region --filters "Name=tag:Name,Values=$_INSTANCE_NAME" --output json | jq -r .Reservations[].Instances[].InstanceId)
+   local _INSTANCE_STATE=$(/usr/bin/aws ec2 describe-instances --region $_region --filters "Name=tag:Name,Values=$_INSTANCE_NAME" --output json | jq -r .Reservations[].Instances[].State.Name)
+   local _aws_ec2_cmd
+   case $_CONTROL_CMD in
+      start)
+         [ "$_INSTANCE_STATE" == "running" ] && { echo "$_INSTANCE_NAME ($_INSTANCE_ID) is already running"; return; }
+         _aws_ec2_cmd=start-instances ;;
+      stop)
+         [ "$_INSTANCE_STATE" == "stopped" ] && { echo "$_INSTANCE_NAME ($_INSTANCE_ID) is already stopped"; return; }
+         _aws_ec2_cmd=stop-instances  ;;
+      *)
+         echo "unknown option: exiting..."; echo "$_USAGE" ; return ;;
+   esac
+   [ -z "$_INSTANCE_ID" ] && { echo "note: did not find instance named: $_INSTANCE_NAME"; return; }
+   local _ans
+   echo "Instance: $_INSTANCE_NAME ($_INSTANCE_ID) is $_INSTANCE_STATE"
+   read -p "Are you sure that you want to ${_CONTROL_CMD^^} it [yes/no]? " _ans
+   if [ "$_ans" == "yes" -o "$_ans" == "YES" ]; then
+      /usr/bin/aws ec2 $_aws_ec2_cmd --region $_region --instance-ids $_INSTANCE_ID
+   else
+      echo "Did not enter 'yes'; NOT going to ${_CONTROL_CMD} the instance"
+   fi
+}
+
 function awsdami () {
 # some 'aws ec2 describe-images' hacks
+   local _DEFAULT_REGION="us-west-2"
    local _USAGE="usage: \
 awsdami [OPTIONS]
   -a  ARCH      # Architecture (e.g. i386, x86_64)
@@ -127,7 +173,7 @@ awsdami [OPTIONS]
   -n  NAME      # Image Name (RegEx)
   -o  OWNERS    # Owners (e.g. amazon, aws-marketplace, AWS ID. default: self)
   -p  PROJECT   # Project
-  -r  REGION    # Region (default: us-west-2)
+  -r  REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
   -s  STATE     # State
   -v  VIRT_TYPE # Virtualization Type (e.g. paravirtual, hvm)
   -vs VOL_SIZE  # Volume Size (in GiB)
@@ -150,7 +196,7 @@ default display:
   Image Name | Image ID | State"
    local _awsec2dami_cmd="aws ec2 describe-images"
    local _owners="self"
-   local _region="us-west-2"
+   local _region="$_DEFAULT_REGION"
    local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
    local _filters=""
    local _queries="Tags[?Key=='Name'].Value|[0],ImageId,State"
@@ -200,11 +246,12 @@ default display:
 
 function awsdasg () {
 # some 'aws autoscaling describe-auto-scaling-groups' hacks
-  local _USAGE="usage: \
+   local _DEFAULT_REGION="us-west-2"
+   local _USAGE="usage: \
 awsdasg [OPTIONS]
   -n NAME      # filter results by this Auto Scaling Group Name
-  -m MAX       # the maximum number of items to display
-  -r REGION    # the Region to query (default: us-west-2)
+  -m MAX       # maximum number of items to display
+  -r REGION    # region to query (default: $_DEFAULT_REGION, 'all' for all)
   +bt          # show Branch Tag
   +cc          # show Charge Code
   +c           # show Cluster
@@ -221,7 +268,7 @@ default display:
   ASG name | Launch Config Name | Instances | Desired | Min | Max | Region"
    local _awsasdasg_cmd="aws autoscaling describe-auto-scaling-groups"
    local _max_items=""
-   local _region="us-west-2"
+   local _region="$_DEFAULT_REGION"
    local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
    local _reg_exp=""
    local _queries="AutoScalingGroupName,LaunchConfigurationName,length(Instances),DesiredCapacity,MinSize,MaxSize"
@@ -267,19 +314,20 @@ default display:
 
 function awsdi () {
 # some 'aws ec2 describe-instances' hacks
+   local _DEFAULT_REGION="us-west-2"
    local _USAGE="usage: \
 awsdi [OPTIONS]
   -e ENVIRON   # filter results by this Environment (e.g. production, staging)
   -n NAME      # filter results by this Instance Name
   -p PROJECT   # filter results by this Project
   -s STATE     # filter results by this State (e.g. running, terminated, etc.)
-  -m MAX       # the maximum number of items to display
-  -r REGION    # the Region to query (default: us-west-2)
-  +az          # show Availability Zone
+  -m MAX       # maximum number of items to display
+  -r REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
   +a           # show AMI (ImageId)
+  +az          # show Availability Zone
   +bt          # show Branch Tag
-  +cc          # show Charge Code
   +c           # show Cluster
+  +cc          # show Charge Code
   +e           # show Env (Environment)
   +it          # show Instance Type
   +lt          # show Launch Time
@@ -292,10 +340,10 @@ awsdi [OPTIONS]
   -h           # help (show this message)
 default display:
   Inst name | Private IP | Instance ID | State"
-   local _awsec2di_cmd="aws ec2 describe-instances"
+   local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
+   local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _max_items=""
-   local _region="us-west-2"
-   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
+   local _region="$_DEFAULT_REGION"
    local _filters=""
    local _queries="Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name"
    local _more_qs=""
@@ -311,8 +359,8 @@ default display:
           +a) _more_qs="ImageId,$_more_qs"                              ; shift  ;;
          +az) _more_qs="Placement.AvailabilityZone,$_more_qs"           ; shift  ;;
          +bt) _more_qs="Tags[?Key=='BranchTag'].Value|[0],$_more_qs"    ; shift  ;;
-         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"   ; shift  ;;
           +c) _more_qs="Tags[?Key=='Cluster'].Value|[0],$_more_qs"      ; shift  ;;
+         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"   ; shift  ;;
           +e) _more_qs="Tags[?Key=='Env'].Value|[0],$_more_qs"          ; shift  ;;
          +it) _more_qs="InstanceType,$_more_qs"                         ; shift  ;;
          +lt) _more_qs="LaunchTime,$_more_qs"                           ; shift  ;;
@@ -322,28 +370,29 @@ default display:
          +si) _more_qs="SecurityGroups[].GroupId|join(', ',@),$_more_qs"; shift  ;;
          +sn) _more_qs="SecurityGroups[].GroupName|join(', ',@),$_more_qs"; shift  ;;
           +v) _more_qs="Tags[?Key=='VPCName'].Value|[0],$_more_qs"      ; shift  ;;
-          -h) echo "$_USAGE"                                            ; return ;;
-           *) echo "$_USAGE"                                            ; return ;;
+        -h|*) echo "$_USAGE"                                            ; return ;;
       esac
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
    if [ "$_region" == "all" ]; then
-      for _region in $_regions; do
-         $_awsec2di_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      for _region in $_ALL_REGIONS; do
+         $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
    else
-      $_awsec2di_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
 
 function awsdlb () {
 # some 'aws elb describe-load-balancer' hacks
+   local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
+   local _DEFAULT_REGION="us-west-2"
    local _USAGE="usage: \
 awsdlb [OPTIONS]
   -n NAME      # filter results by this Launch Config Name
   -m MAX       # the maximum number of items to display
-  -r REGION    # the Region to query (default: us-west-2)
+  -r REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
   +az          # show Availability Zones
   +d           # show DNS Name
   +hc          # show Health Check info (HTH, Int, T, TO, UTH)
@@ -357,8 +406,7 @@ default display:
   Load Balancer name"
    local _awselbdlb_cmd="aws elb describe-load-balancers"
    local _max_items=""
-   local _region="us-west-2"
-   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
+   local _region="$_DEFAULT_REGION"
    local _reg_exp=""
    local _queries="LoadBalancerName"
    local _more_qs=""
@@ -382,7 +430,7 @@ default display:
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
    if [ "$_region" == "all" ]; then
-      for _region in $_regions; do
+      for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
             $_awselbdlb_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          else
@@ -400,11 +448,13 @@ default display:
 
 function awsdlc () {
 # some 'aws autoscaling describe-launch-configurations' hacks
+   local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
+   local _DEFAULT_REGION="us-west-2"
    local _USAGE="usage: \
 awsdlc [OPTIONS]
   -n NAME      # filter results by this Launch Config Name
   -m MAX       # the maximum number of items to display
-  -r REGION    # the Region to query (default: us-west-2)
+  -r REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
   +ip          # show IAM Instance Profile
   +kn          # show Key Name
   +pt          # show Placement Tenancy
@@ -414,8 +464,7 @@ default display:
   Launch Config name | AMI ID | Instance Type | Region"
    local _awsasdlc_cmd="aws autoscaling describe-launch-configurations"
    local _max_items=""
-   local _region="us-west-2"
-   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
+   local _region="$_DEFAULT_REGION"
    local _reg_exp=""
    local _queries="LaunchConfigurationName,ImageId,InstanceType"
    local _more_qs=""
@@ -435,7 +484,7 @@ default display:
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
    if [ "$_region" == "all" ]; then
-      for _region in $_regions; do
+      for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
             $_awsasdlc_cmd --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          else
@@ -453,6 +502,8 @@ default display:
 
 function awsdni () {
 # some 'aws ec2 describe-network-interfaces' hacks
+   local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
+   local _DEFAULT_REGION="us-west-2"
    local _USAGE="usage: \
 awsdni [OPTIONS]
   -a  AZ       # filter by Availability Zone (RegEx)
@@ -460,7 +511,7 @@ awsdni [OPTIONS]
   -i  IP_PRIV  # filter by Private IP
   -id ID       # filter by Interface ID
   -p  IP_PUB   # filter by Public IP
-  -r  REGION   # the Region to query (default: us-west-2)
+  -r  REGION   # region to query (default: $_DEFAULT_REGION, 'all' for all)
   -s  STATUS   # filter by Status (e.g. in-use, etc.)
   +az          # show Availability Zone
   +m           # show MAC Address
@@ -474,8 +525,7 @@ default display:
   ID | Description | Private IP | Status"
    local _awsec2dni_cmd="aws ec2 describe-network-interfaces"
    local _max_items=""
-   local _region="us-west-2"
-   local _regions="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1"
+   local _region="$_DEFAULT_REGION"
    local _filters=""
    local _queries="NetworkInterfaceId,Description,PrivateIpAddress,Status"
    local _more_qs=""
@@ -505,7 +555,7 @@ default display:
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
    if [ "$_region" == "all" ]; then
-      for _region in $_regions; do
+      for _region in $_ALL_REGIONS; do
          #$_awsec2dni_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          $_awsec2dni_cmd --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$/|'"$_region"'/' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
@@ -577,11 +627,11 @@ function bash_prompt () {
    [[ $git_status =~ ($'\n'|^)\?\? ]] && local _git_has_untracked_files=true
    [[ $git_status =~ ($'\n'|^)[MAD] && ! $git_status =~ ($'\n'|^).[MAD\?] ]] && local _git_ready_to_commit=true
    if [ "$_git_ready_to_commit" ]; then
-      PS_GIT="$PGRN$git_branch$PNRM|✔"
+      PS_GIT="$PGRN$git_branch✔$PNRM"
    elif [ "$_git_has_mods_cached" -o "$_git_has_dels_cached" ]; then
-      PS_GIT="$PCYN$git_branch$PNRM|+"
+      PS_GIT="$PCYN$git_branch+$PNRM"
    elif [ "$_git_has_mods" -o "$_git_has_adds" -o "$_git_has_dels" ]; then
-      PS_GIT="$PRED$git_branch$PNRM|*"
+      PS_GIT="$PRED$git_branch*$PNRM"
    elif [ "$_git_has_untracked_files" ]; then
       PS_GIT="$PYLW$git_branch$PNRM"
    else
@@ -859,17 +909,6 @@ function gdate () {
    date --date=@`printf "%d\n" 0x$1`
 }
 
-function getpubkey () {	# CTCS
-# get user's public key from cloud_automation users role
-   local _USERS_ROLE_PATH=~/cloud_automation/ansible/roles/users
-   local _user=$1
-   if [ "$_user" ]; then
-      grep -r "ssh.*$_user" $_USERS_ROLE_PATH | cut -d'"' -f2
-   else
-      echo "usage: getpubkey USER"
-   fi
-}
-
 ##function getramsz () {	# TOOL
 ### get the amount of RAM on a server
 ## JUMP_SERVERS="jump1 jump2 stcgxyjmp01"
@@ -1096,65 +1135,53 @@ function rf () {	# MISC
 function sae () {	# TOOL
 # set AWS environment
    local _AWS_CFG=$HOME/.aws/config
+   local _AWS_PROFILES=$(grep '^\[profile' $_AWS_CFG | awk '{print $2}' | tr ']\n' ' ')
+   local _VALID_ARGS=$(echo $_AWS_PROFILES unset | tr ' ' '|')
+   local _environment
    local _arg="$1"
-
    if [ -n "$_arg" ]; then
-      case $_arg in
-            corsother) aenv="CORS Other"                ;;
-              combain) aenv="ENT Combain"               ;;
-            cybrscore) aenv="ENT CYBRScore Development" ;;
-               ilpdev) aenv="ENT ILP Development"       ;;
-            localblox) aenv="ENT Local Blox"            ;;
-                  scm) aenv="ENT SCM"                   ;;
-              locapps) aenv="Local Applications (Prod)" ;;
-           loctoolkit) aenv="Local ToolKit"             ;;
-           telecomsys) aenv="TeleComSys (Dev) 'NavTel'" ;;
-                 raco) aenv="Raco's AWS"                ;;
-                unset) aenv="Environment un set"        ;;
-                    *) echo "WTF? Try: [corsother combain cybrscore ilpdev localblox scm locapps loctoolkit telecomsys raco OR unset]"; return 2 ;;
-      esac
-      if [ "$_arg" != "unset" ]; then
-         export AWS_ENVIROMENT=$aenv
-         export AWS_DEFAULT_PROFILE=$_arg	# for `aws` CLI (instead of using --profile)
-         export AWS_ACCESS_KEY_ID=`awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF;exit}' $_AWS_CFG`
-         export AWS_SECRET_ACCESS_KEY=`awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF;exit}' $_AWS_CFG`
-         echo "environment has been set to --> $AWS_ENVIROMENT"
-      else
-         unset AWS_ENVIROMENT
+      if [[ ! $_arg =~ $_VALID_ARGS ]]; then
+         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $_AWS_PROFILES
+         return 2
+      fi
+      if [ "$_arg" == "unset" ]; then
+         unset AWS_ENVIRONMENT
          unset AWS_DEFAULT_PROFILE
          unset AWS_ACCESS_KEY_ID
          unset AWS_SECRET_ACCESS_KEY
          echo "environment has been unset"
+      else
+         export AWS_DEFAULT_PROFILE=$_arg	# for `aws` CLI (instead of using --profile)
+         export AWS_ENVIRONMENT=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}' $_AWS_CFG)
+         export AWS_ACCESS_KEY_ID=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}' $_AWS_CFG)
+         export AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}' $_AWS_CFG)
+         _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/environment/) {print $NF; exit}' $_AWS_CFG)
+         echo "environment has been set to --> $AWS_ENVIRONMENT"
       fi
-      if [ "$COLOR_PROMPT" = yes ]; then
-         case $_arg in
-            unset)						# cyan prompt
-               PS_COL="$PCYN"; PS_PROJ="$PNRM" ;;
-            corsother|combain|cybrscore|ilpdev|localblox)	# cyan prompt
+      if [ "$COLOR_PROMPT" == "yes" ]; then
+         case $_environment in
+            dev)	# cyan prompt
                PS_COL="$PCYN"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
-            loctoolkit)						# magenta prompt
+            test)	# magenta prompt
                PS_COL="$PMAG"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
-            telecomsys)						# yellow prompt
+            mixed)	# yellow prompt
                PS_COL="$PYLW"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
-            scm|locapps)					# red prompt
+            prod)	# red prompt
                PS_COL="$PRED"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
-            raco)						# green prompt
+            mine)	# green prompt
                PS_COL="$PGRN"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+            *)		# cyan prompt
+               PS_COL="$PCYN"; PS_PROJ="$PNRM" ;;
          esac
       fi
    else
-      echo "--- ${aenv:=Environment NOT set} ---"
-      echo " AWS_ENVIROMENT        = '$AWS_ENVIROMENT'"
-      echo " AWS_DEFAULT_PROFILE   = '$AWS_DEFAULT_PROFILE'"
-      echo " AWS_ACCESS_KEY_ID     = '$AWS_ACCESS_KEY_ID'"
-      echo " AWS_SECRET_ACCESS_KEY = '$AWS_SECRET_ACCESS_KEY'"
+      echo -n "--- AWS Environment "
+      [ -n "$AWS_ENVIRONMENT" ] && echo "Settings ---" || echo "(NOT set) ---"
+      echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
+      echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
+      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}"
+      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}"
    fi
-}
-
-function searchtcsrepo () {	# TOOL
-   local _grep_pattern="$*"
-   #echo "looking for: '$_grep_pattern'"
-   aws --profile telecomsys s3 ls tcs-yum-repos/amzn/noarch/data/ | grep "$_grep_pattern"
 }
 
 function showf () {	# TOOL
@@ -1258,11 +1285,6 @@ function tsend () {
    tmux set-window-option synchronize-panes off
 }
 
-function vagssh () {
-# ssh in to our vagrant server in a seperate xterm window
-   $XTERM -e 'cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' &
-}
-
 function vin () {
 # vim certain files by alias
    NOTES_DIR="notes"
@@ -1288,455 +1310,6 @@ function vin () {
       eval vim $REPO_DIR/$NOTES_DIR/$actual_note_file
    else
       echo "you didn't specify a file (alias) to edit"
-   fi
-}
-
-function vmbackups () {	# VMedix
-# show yesterday's and today's backups for VMedix
-   local _USAGE="usage: vmbackups [us|eu] [m|s]"
-   local _backup _region _s3_file_base
-   local _backups="backups elasticsearch"
-   local _regions="us-east-1 eu-west-1"
-   while [ $# -gt 0 ]; do
-      case $1 in
-         us) _regions="us-east-1"    ; shift ;;
-         eu) _regions="eu-west-1"    ; shift ;;
-          m) _backups="backups"      ; shift ;;
-          s) _backups="elasticsearch"; shift ;;
-          *) echo "$_USAGE"          ; return;;
-      esac
-   done
-   _mtoday=$(date +%Y-%m-%d)
-   _myestr=$(date +%Y-%m-%d -d yesterday)
-   _stoday=$(date +%Y_%m_%d)
-   _syestr=$(date +%Y_%m_%d -d yesterday)
-   for _backup in $_backups; do
-      for _region in $_regions; do
-         case $_region in
-            us-east-1) _s3_file_base=s3://virtumedix-$_backup/$_region   ;;
-            eu-west-1) _s3_file_base=s3://virtumedix-eu-$_backup/$_region;;
-         esac
-         case $_backup in
-            backups)
-               echo "MongoDB Backups ($_region)"
-               aws s3 ls $_s3_file_base/production/dump-$_myestr
-               aws s3 ls $_s3_file_base/production/dump-$_mtoday
-               aws s3 ls $_s3_file_base/production/dump-latest
-            ;;
-            elasticsearch)
-               echo "ElasticSearch Backups ($_region)"
-               aws s3 ls $_s3_file_base/snapshot-$_syestr
-               aws s3 ls $_s3_file_base/snapshot-$_stoday
-            ;;
-         esac
-      done
-   done
-}
-
-function vmchkcrts () {	# TOOL
-# check subject, dates and serial of certs installed on app_nginx servers
-   local _USAGE="vmchkcrts -p PROJECT [-b|g] -v LIST_OF_VPCS"
-   local _AUTOMATION_INV=~/cloud_automation/ansible/inventory
-   local project vpcs
-   local hosts_file=hosts_production
-   while [ $# -gt 0 ]; do
-      case $1 in
-         -b) hosts_file=hosts_blue; shift  ;;
-         -g) hosts_file=hosts_green; shift ;;
-         -p) project=$2; shift 2           ;;
-         -v) shift; vpcs="$*"; break       ;;
-          *) echo "$_USAGE"; return        ;;
-      esac
-   done
-   [ -z "$project" ] && project=VMedix
-   [ -z "$vpcs" ] && vpcs="mirkwood isengard"
-   for vpc in $vpcs; do
-      for domain in $(grep -r server_name: $_AUTOMATION_INV/$project/$vpc | awk '{print $NF}'); do
-         for host in $(ansible --list-hosts -i $_AUTOMATION_INV/$project/$vpc/$hosts_file "*app_nginx*" --vault-password-file=~/.vault.vm 2> /dev/null | grep -v 'hosts.*:$'); do
-            echo
-            echo -n " host: $host | domain: $domain"
-            nc -w 2 -z $host 443 > /dev/null 2>&1
-            if [ $? -eq 0 ]; then
-               echo
-               openssl s_client -connect $host:443 -servername $domain </dev/null 2>/dev/null | \
-                  openssl x509 -noout -subject -serial -dates | \
-                     awk '{
-                        if ($1~/subject=/) {
-                           gsub("subject=","  sub:",$0)
-                           printf $0" "
-                        }
-                        else if ($1~/notBefore/) {
-                           gsub("notBefore=","dates: ",$0)
-                           printf $0" "
-                        }
-                        else if ($1~/notAfter/) {
-                           gsub("notAfter=","-> ",$0)
-                           print $0
-                        }
-                        else if ($1~/serial=/) {
-                           gsub("serial=","",$0)
-                           print "["$0"]"
-                        }
-                        else {
-                           print $0
-                        }
-                     }'
-            else
-               echo " - NOT reachable"
-            fi
-         done
-      done
-   done
-}
-
-function vmcssh () {	# VMedix
-# cssh to VMedix servers
-   local _USAGE="usage: vmcssh us|eu a|1|2|g|b|p [PATTERN]"
-   local _INV_REPO="~/cloud_automation/ansible/inventory/VMedix"
-   local _vpc _h _pat
-   local _country=$1
-   if [[ $_country =~ (us|eu) ]]; then
-      case $_country in
-         us) _vpc="mirkwood"          ;;
-         eu) _vpc="isengard"          ;;
-          *) echo "$_USAGE"; return ;;
-      esac
-   else
-      echo "$_USAGE"
-      return
-   fi
-   local _hosts=$2
-   if [ -n "$_hosts" ]; then
-      case $_hosts in
-         a) _pat="*${_vpc}*"       ;;
-         1) _h=hosts_shared1       ;;
-         2) _h=hosts_shared2       ;;
-         g) _h=hosts_green         ;;
-         b) _h=hosts_blue          ;;
-         p) _h=hosts_production    ;;
-         *) echo "$_USAGE"; return ;;
-      esac
-   else
-      echo "$_USAGE"
-      return
-   fi
-   local _pattern=$3
-   if [ -n "$_pattern" ]; then
-      _pat="*${_pattern}*"
-   elif [ -z "$_pat" ]; then
-      _pat="all"
-   fi
-   #debug#echo "repo: $_INV_REPO | vpc: $_vpc | hosts: $_h | pat: $_pat"
-   #debug#echo -e "csshing to these hosts:\n$(ansible --list-hosts -i $_INV_REPO/$_vpc/$_h "$_pat" --vault-password-file=~/.vault.vm 2>/dev/null | grep -v 'hosts.*:$')"
-   cssh $(ansible --list-hosts -i $_INV_REPO/$_vpc/$_h "$_pat" --vault-password-file=~/.vault.vm 2>/dev/null | egrep -v 'hosts.*:$|localhost$|loghost|vpnhost') &
-}
-
-function vmmanageusers () {	# VMedix
-# add|remove user keys from AWS instances controled via Ansible
-   local _USAGE="usage: vmmanageusers us|eu a|1|2|g|b|p [-l apps|data|PATTERN] add|rem all|USR1 [USR2...]"
-   local _REPO_HOME=~/cloud_automation/ansible
-   local _INV_REPO=$_REPO_HOME/inventory/VMedix
-   local _USERS_ROLE_DEV_VARS=$_REPO_HOME/roles/users/vars/dev_users_present.yml
-   local _USERS_ROLE_MAIN_TASK=$_REPO_HOME/roles/users/tasks/main.yml
-   local _cmd _disable_opt _disable_usrs _h _pat _st _usr _vpc
-   local _country=$1
-   if [[ $_country =~ (us|eu) ]]; then
-      case $_country in
-         us) _vpc=mirkwood          ;;
-         eu) _vpc=isengard          ;;
-          *) echo "$_USAGE"; return ;;
-      esac
-   else
-      echo "$_USAGE"; return
-   fi
-   local _hosts=$2
-   if [ -n "$_hosts" ]; then
-      case $_hosts in
-         a) _pat="*${_vpc}*"       ;;
-         1) _h=hosts_shared1       ;;
-         2) _h=hosts_shared2       ;;
-         g) _h=hosts_green         ;;
-         b) _h=hosts_blue          ;;
-         p) _h=hosts_production    ;;
-         *) echo "$_USAGE"; return ;;
-      esac
-   else
-      echo "$_USAGE"; return
-   fi
-   local _3rd_opt=$3
-   if [ "$_3rd_opt" == "-l" ]; then
-      local _pattern=$4
-      if [ -n "$_pattern" ]; then
-         case $_pattern in
-            apps) _pat="*ap*" ;;
-            data) _pat="mongo*:search*:redis*" ;;
-               *) _pat="$_pattern*" ;;
-         esac
-      else
-         echo "$_USAGE"; return
-      fi
-      _cmd=$5
-      shift 5
-   else
-      _cmd=$3
-      shift 3
-   fi
-   if [ -z "$_pat" ]; then
-      _pat=all
-   fi
-   _pat="'$_pat:!localhost:!logstash*'"
-   local _all_tags=$(\grep "tags: \[" $_USERS_ROLE_MAIN_TASK | \grep -v always | sort -u | cut -d"'" -f2 | tr '\n' ',' | sed 's/,$//')
-   local _all_but_dev_tags=$(echo $_all_tags | sed "s/dev,//;s/,dev//")
-   case $_cmd in
-      add) _st="'$_all_but_dev_tags'" ;;
-      rem) _st="'$_all_tags'"         ;;
-        *) echo "$_USAGE"; return     ;;
-   esac
-   local _usrs=$*
-   local _all_dev_usrs=$(\grep -- "- name:" $_USERS_ROLE_DEV_VARS | awk '{print $NF}' | tr '\n' ',' | sed 's/,$//')
-   if [ -n "$_usrs" ]; then
-      if [ "$_cmd" == "add" ]; then
-         if [ "$_usrs" != "all" ]; then
-            for _usr in $_usrs; do
-               _disable_usrs=$(echo $_all_dev_usrs | sed "s/\"$_usr\",//;s/,\"$_usr\"//")
-               _all_dev_usrs=$_disable_usrs
-            done
-         fi
-      else
-         if [ "$_usrs" != "all" ]; then
-            _disable_usrs="\"$(echo "$_usrs" | sed 's/ /","/g')\""
-         else
-            _disable_usrs="$_all_dev_usrs"
-         fi
-      fi
-   else
-      echo "$_USAGE"; return
-   fi
-   if [ "$_cmd" == "add" -a "$_usrs" == "all" ]; then
-      _disable_opt=""
-   else
-      _disable_opt="-e '{\"disable_users\": [$_disable_usrs]}'"
-   fi
-   echo "ansible-playbook -i $_INV_REPO/$_vpc/$_h --limit "$_pat" --skip-tags "$_st" $_disable_opt --vault-password-file=~/.vault.vm $_REPO_HOME/playbooks/util/manage_users.yml"
-   eval ansible-playbook -i $_INV_REPO/$_vpc/$_h --limit "$_pat" --skip-tags "'$_st'" "$_disable_opt" --vault-password-file=~/.vault.vm $_REPO_HOME/playbooks/util/manage_users.yml
-}
-
-function vmmopmonit () {	# VMedix
-   local _USAGE="usage: vmmopmonit us|eu"
-   local _country=$1
-   local _vpc
-   local _repo="~/cloud_automation/ansible/inventory/VMedix"
-   local _region
-   case $_country in
-      us) _vpc="mirkwood"; _region="us-east-1" ;;
-      eu) _vpc="isengard"; _region="eu-west-1" ;;
-       *) echo "$_USAGE"; return ;;
-   esac
-   local _dns_servers=$(egrep -r 'server_name:|api_server:' ~/cloud_automation/ansible/inventory/VMedix/$_vpc | awk '{print $NF}' | paste -s )
-   # `sstat` on BLUE api servers
-   xterm -xrm '*.allowSendEvents:true' -T "BLUE Cluster services status" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 80x72+7+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${BLU}\\tBlue ${YLW}Cluster services status - ${RED}'"$_vpc"' ['"$_region"']${NRM}\"\; ansible -i '"$_repo/$_vpc"'/hosts_blue \"*api[0-9]*\" -a \"sstat\" --vault-password-file ~/.vault.vm 2>/dev/null \| egrep -v \"WARN\|duplicate\|cloud_auto\|SUCCESS\"''' &
-   # `sstat` on GREEN api servers
-   xterm -xrm '*.allowSendEvents:true' -T "GREEN Cluster services status" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 80x72+523+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${GRN}\\tGreen ${YLW}Cluster services status - ${RED}'"$_vpc"' ['"$_region"']${NRM}\"\; ansible -i '"$_repo/$_vpc"'/hosts_green \"*api[0-9]*\" -a \"sstat\" --vault-password-file ~/.vault.vm 2>/dev/null \| egrep -v \"WARN\|duplicate\|cloud_auto\|SUCCESS\"''' &
-   # `crond` service status on all app, mongo and redis servers
-   xterm -xrm '*.allowSendEvents:true' -T "CROND Service Statuses" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 86x22+1038+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tcrond Service Statuses - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; ansible -i '"$_repo/$_vpc"'/hosts_production \"*ap*:mongo*:redis*\" -m shell -a \"/sbin/service crond status\" --vault-password-file ~/.vault.vm \| tr -d \"\\n\" \| sed \"s/\>\>/: /g\;s/running\.\.\./\`printf \"\\033[1\;32mrunning\\033[m\"\`\\n/g\;s/stopped/\`printf \"\\033[1\;31mstopped\\033[m\"\`\\n/g\" \| sort''' &
-   # AWS CloudWatch alarms
-   xterm -xrm '*.allowSendEvents:true' -T "AWS CloudWatch Alarms" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 86x48+1038+358 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tAWS CloudWatch Alarms - ${RED}'"$_vpc"' ['"$_region"']\\n${NRM}\"\; aws cloudwatch describe-alarms --region '"$_region"' --profile locapps \| grep AlarmName \| grep -i VMedix \| sed \"s/^ *//\;s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\"''' &
-   # AWS Route53/DNS entries showing active cluster
-   xterm -xrm '*.allowSendEvents:true' -T "DNS Entries" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 123x26+7-52 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tDNS Entries - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; for h in '"$_dns_servers"'\; do dig \$h \| egrep -v \"^$\|^\;\" \| grep CNAME \| sed \"s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\;s/\\\(\\s\\+[0-9]\\+\\s\\+\\\)/\`printf \"\\033[1\;36m\"\`\\1\`printf \"\\033[m\"\`/g\"\; done''' &
-   # AWS ASG of app servers showing Health Check Type
-   xterm -xrm '*.allowSendEvents:true' -T "AWS AutoScalingGroup Descriptions" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 129x19+781-52 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tAWS AutoScalingGroup Descriptions - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; aws autoscaling describe-auto-scaling-groups --profile locapps --region '"$_region"' --query \"AutoScalingGroups[].[AutoScalingGroupName,LaunchConfigurationName,length\(Instances\),DesiredCapacity,MinSize,MaxSize,HealthCheckType,Instances[].HealthStatus\|join\('"\'"', '"\'"',@\),LoadBalancerNames[0]]\" --output table \| egrep -- \"-ap[i,p]\" \| sed \"s/ //g\" \| column -s\"\|\" -t \| sed \"s/\\\(  \\\)\\\([a-zA-Z0-9]\\\)/\| \\2/g\;s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\;s/EC2/\`printf \"\\033[1\;33mEC2\\033[m\"\`/g\;s/ELB/\`printf \"\\033[1\;36mELB\\033[m\"\`/g\"''' &
-   #TODO website status?
-}
-
-function vmmopprep () {	# VMedix
-# grab steps in PCR steps file and add to history file to easily execute them
-# must specify one of "-s|p|r" (staging|production|roll-back) steps desired
-# and the PCR steps file
-   local _ANSIBLE_HOME=~/cloud_automation/ansible
-   local _USAGE="usage: vmmopprep -s|t|p|r [PCR_Steps_File]"
-   local _STEPS=/tmp/.mop_steps
-   local _steps_desired
-   [ $# -lt 1 ] && { echo -e "${RED}ERROR${NRM}: not enough arguments\n$_USAGE"; return; }
-   case "$1" in
-      -s) _steps_desired=STAGING    ;;
-      -t) _steps_desired=TESTING    ;;
-      -p) _steps_desired=PRODUCTION ;;
-      -r) _steps_desired=ROLL-BACK  ;;
-       *) echo -e "${RED}ERROR${NRM}: missing argument 'steps desired' (s|t|p|r)\n$_USAGE"; return ;;
-   esac
-   echo -n "changing working dir to   : "
-   if cd $_ANSIBLE_HOME; then
-      echo -e "[${CYN}$_ANSIBLE_HOME${NRM}]"
-   else
-      echo -e "[${RED}FAILED${NRM}]"
-      echo "couldn't change working dir to: $_ANSIBLE_HOME"
-      return
-   fi
-   local _GIT_BRANCH=$(git branch 2>/dev/null | grep '^*' | colrm 1 2)
-   local pcr_steps_file=$2
-   if [ -z "$pcr_steps_file" ]; then
-      echo -e "no PCR Steps File given   : [${CYN}using git branch: $_GIT_BRANCH${NRM}]"
-      pcr_steps_file="playbooks/VMedix/PCR/${_GIT_BRANCH}.txt"
-   else
-      echo -e "PCR Steps File given      : [${CYN}$pcr_steps_file${NRM}]"
-      pcr_steps_file="playbooks/VMedix/PCR/${pcr_steps_file}.txt"
-   fi
-   echo -e "using the PCR Steps File  : [${CYN}$pcr_steps_file${NRM}]"
-   [ ! -e "$pcr_steps_file" ] && { echo -e "${RED}ERROR${NRM}: no such file: $pcr_steps_file"; return; }
-   echo -n "setting AWS environment to: "
-   sae locapps > /dev/null
-   echo -e "[${CYN}$AWS_DEFAULT_PROFILE - $AWS_ENVIROMENT${NRM}]"
-   echo -n "setting Ansible version to: "
-   act2.2 > /dev/null
-   _ansible_version=$(ansible --version | head -1)
-   echo -e "[${CYN}$_ansible_version${NRM}]"
-   case "$_steps_desired" in
-      STAGING)
-          start_line_no=$((`grep -n '^#.*STAGING.*#$' $pcr_steps_file|cut -d: -f1` - 1))
-            end_line_no=$((`grep -n '^#.*TESTING/PREPPING.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
-      TESTING)
-          start_line_no=$((`grep -n '^#.*TESTING/PREPPING.*#$' $pcr_steps_file|cut -d: -f1` - 1))
-            end_line_no=$((`grep -n '^#.*PRODUCTION.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
-      PRODUCTION)
-          start_line_no=$((`grep -n '^#.*PRODUCTION.*#$' $pcr_steps_file|cut -d: -f1` - 1))
-            end_line_no=$((`grep -n '^#.*ROLL-BACK.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
-      ROLL-BACK)
-          start_line_no=$((`grep -n '^#.*ROLL-BACK.*#$' $pcr_steps_file|cut -d: -f1` - 1))
-            end_line_no=$((`grep -n '^#.*ROLLBACK COMPLETE.*$' $pcr_steps_file|cut -d: -f1`)) ;;
-       *) echo -e "${RED}FATAL ERROR${NRM}: unknown state\n$_USAGE"; return ;;
-   esac
-   sed -n "${start_line_no},${end_line_no}s/^\$ //p" $pcr_steps_file > $_STEPS
-   cp $_STEPS{,.found}
-   sed -i "s,\\\!,\\\\\\\!,g" $_STEPS
-   if [ -s $_STEPS ]; then
-      local _step_no=1
-      history -s "vmmopprep $*"
-      while read _line; do
-         echo "$_line" >> $_STEPS.processed
-      done <<< "`cat $_STEPS`"
-      echo -n "verifying processed steps : "
-      if \diff -q $_STEPS{.found,.processed} > /dev/null; then
-         echo -e "[${GRN}PASSED${NRM}]"
-         echo -n "adding commands to history: "
-         #debug#echo "# BEGIN $_steps_desired STEPS"
-         history -s "# BEGIN $_steps_desired STEPS"
-         while read _line; do
-            #debug#echo "#$_step_no: $_line"
-            echo "$_line" >> $_STEPS.verify
-            history -s "#$_step_no: $_line"
-            (( _step_no++ ))
-         done <<< "`cat $_STEPS`"
-         #debug#echo "# END $_steps_desired STEPS"
-         history -s "# END $_steps_desired STEPS"
-         echo -e "[${GRN}DONE${NRM}]"
-         echo -e "commands added to history : [${MAG}Have fun and good luck!${NRM}]"
-      else
-         echo -e "[${RED}FAILED${NRM}]"
-         echo "NOT adding commands to history"
-         echo "differences found:"
-         diff $_STEPS{.found,.processed}
-      fi
-   else
-      echo "no commands added to history - could not find any"
-   fi
-   rm -f $_STEPS{,.found,.processed}
-}
-
-function vmprodaccess () {	# VMedix
-# add|remove user keys to/from VMedix AWS instances controled via Ansible
-   local _USAGE="usage: vmprodaccess us|eu a|1|2|g|b|p [-l apps|data|PATTERN] add|rem USER"
-   local _REPO_HOME=~/cloud_automation/ansible
-   local _MY_ANS_HOME=~/ansible
-   local _cmd
-   local _h
-   local _pat
-   local _user
-   local _vpc
-   local _country=$1
-   if [[ $_country =~ (us|eu) ]]; then
-      case $_country in
-         us) _vpc=mirkwood          ;;
-         eu) _vpc=isengard          ;;
-          *) echo "$_USAGE"; return ;;
-      esac
-   else
-      echo "$_USAGE"; return
-   fi
-   local _hosts=$2
-   if [ -n "$_hosts" ]; then
-      case $_hosts in
-         a) _pat="*${_vpc}*"       ;;
-         1) _h=hosts_shared1       ;;
-         2) _h=hosts_shared2       ;;
-         g) _h=hosts_green         ;;
-         b) _h=hosts_blue          ;;
-         p) _h=hosts_production    ;;
-         *) echo "$_USAGE"; return ;;
-      esac
-   else
-      echo "$_USAGE"; return
-   fi
-   local _3rd_opt=$3
-   if [ "$_3rd_opt" == "-l" ]; then
-      local _pattern=$4
-      if [ -n "$_pattern" ]; then
-         case $_pattern in
-            apps) _pat="*ap*" ;;
-            data) _pat="mongo*:search*:redis*" ;;
-               *) _pat="$_pattern*" ;;
-         esac
-      else
-         echo "$_USAGE"; return
-      fi
-      _cmd=$5
-      _user=$6
-   else
-      _cmd=$3
-      _user=$4
-   fi
-   if [ -z "$_pat" ]; then
-      _pat=all
-   fi
-   if [ -z "$_cmd" -o -z "$_user" ]; then
-      echo "$_USAGE"; return
-   fi
-   local _ap_cmd="ansible-playbook -i $_REPO_HOME/inventory/VMedix/$_vpc/$_h --limit '$_pat' -e 'c=$_cmd u=$_user' --vault-password-file=~/.vault $_MY_ANS_HOME/playbooks/vm_prod_access.yml"
-   eval $_ap_cmd
-}
-
-function vmrpms () {	# VMedix
-# show RPMs installed on VMedix servers
-   local _USAGE="usage: vmrpms us|eu a|g|b|p [PATTERN]"
-   local _INV_REPO="~/cloud_automation/ansible/inventory/VMedix"
-   local _vpc
-   local _h
-   local _pat
-   local _country=$1
-   case $_country in
-      us) _vpc="mirkwood";;
-      eu) _vpc="isengard";;
-       *) echo "$_USAGE"; return;;
-   esac
-   local _hosts=$2
-   case $_hosts in
-      a) _pat="*api[0-9]*:*app_nginx[0-9]*";;
-      g) _h=hosts_green;;
-      b) _h=hosts_blue;;
-      p) _h=hosts_production;;
-      *) echo "$_USAGE"; return;;
-   esac
-   local _pattern=$3
-   if [ -n "$_pattern" ]; then
-      _pat="*$_pattern*"
-   else
-      _pat="*api[0-9]*:*app_nginx[0-9]*"
-   fi
-   if [ "$_hosts" == "a" ]; then
-      for _h in hosts_blue hosts_green; do
-         ansible -T 1 -i $_INV_REPO/$_vpc/$_h "$_pat:!*api_nginx*" --vault-password-file=~/.vault.vm -m shell -a "rpm -qa | grep VirtuMedix" 2>/dev/null | egrep -v 'changed.*false|SSH Error|unreachable.*true|^}' | sed "s/\(^.* UNREACHABLE!\).*$/$(printf "$BLD$RED")\1$(printf "$NRM")/g;s/\(^.* SUCCESS\).*$/$(printf "$BLD$GRN")\1$(printf "$NRM")/g"
-      done
-   else
-      ansible -T 1 -i $_INV_REPO/$_vpc/$_h "$_pat:!*api_nginx*" --vault-password-file=~/.vault.vm -m shell -a "rpm -qa | grep VirtuMedix" 2>/dev/null | egrep -v 'changed.*false|SSH Error|unreachable.*true|^}' | sed "s/\(^.* UNREACHABLE!\).*$/$(printf "$BLD$RED")\1$(printf "$NRM")/g;s/\(^.* SUCCESS\).*$/$(printf "$BLD$GRN")\1$(printf "$NRM")/g"
    fi
 }
 
@@ -1811,64 +1384,23 @@ function xssh () {
    fi
 }
 
-function zipstuff () {	# MISC
-# zip up specified files for backup
-   SRCSERVER="praco.dev.local"
-   STUFFZIP="/home/praco/stuff.ctcs.zip"
-   FILES="
-.*rc
-.bash*
-.csshrc
-.aws_commands.txt
-.commands.txt
-.gitconfig
-.gitignore
-.files.txt
-.ssh/config
-.ssh/environment
-.tmux.conf
-ansible
-notes
-scripts
-"
-   # didn't figure out how to make this work
-   ##EXCLUDE_FILES="*/.hg/\* repos/.chef/checksums/\* *.zip"
-   thisserver=`hostname`
-   if [ "$thisserver" = "$SRCSERVER" ]; then
-      echo "ziping $FILES to $STUFFZIP... "
-      ##/usr/bin/zip -ru $STUFFZIP $FILES -x $EXCLUDE_FILES
-      ##/usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* repos/.chef/checksums/\* */*/.git/\* */*.zip */*/*.zip
-      /usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* */.git/\* */*/.git/\* */*.zip */*/*.zip
-      echo done
-   else
-      echo "you have to be on $SRCSERVER to run this"
-   fi
-}
-
 # set bash prompt command (and bash prompt)
 export PROMPT_COMMAND="bash_prompt"
+
 # define aliases
+
 alias ~="cd ~"
 alias ..="cd .."
 alias -- -="cd -"
 #alias a="alias" # use: `sa`
 #alias a="alias | cut -d= -f1 | sort | awk -v c=6 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
 alias a="alias | grep -v ^declare | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
-alias act1='source ~/envs/Ansible_1.x/bin/activate; ansible --version'
-alias act2.1='source ~/envs/Ansible_2.x/bin/activate; ansible --version'
-alias act2.2='source ~/envs/Ansible_2.2/bin/activate; ansible --version'
-alias arcdiff="arc diff --reviewers akulkarni,pfreeman,sbenjamin,tbenichou,tholcomb,candonov main"
 alias awsrlhz="aws route53 list-hosted-zones |jq -r .HostedZones[].Name|sort|sed 's/\.$//'"
 alias c="clear"
-alias cda="cd ~/cloud_automation/ansible"
 alias cdh="cd ~; cd"
-alias cdi="cd ~/cloud_automation/ansible/inventory"
-alias cdp="cd ~/cloud_automation/ansible/playbooks"
-alias cdr="cd ~/cloud_automation/ansible/roles"
 alias cols="tsend 'echo \$COLUMNS'"
 alias cp='cp -i'
 alias crt='~/scripts/chef_recipe_tree.sh'
-alias cvhf='~/cloud_automation/ansible/playbooks/VMedix/scripts/create_vm_qa_hosts_file.sh'
 #alias cssh='cssh -o "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"'
 alias diff="colordiff -u"
 alias disp="tsend 'echo \$DISPLAY'"
@@ -1899,7 +1431,7 @@ alias pa='ps auxfw'
 #alias pse='ps -ef' # converted to a function
 alias pe='ps -ef'
 alias rcrlf="sed 's/$//g' -i.orig"
-alias ring="/home/praco/scripts/ring.sh"
+alias ring="/home/praco/scripts/tools/ring.sh"
 alias rsshk='ssh-keygen -f "/home/praco/.ssh/known_hosts" -R'
 alias rm='rm -i'
 alias sa=alias
@@ -1907,7 +1439,7 @@ alias sba='echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev
 alias sdl="export DISPLAY=localhost:10.0"
 alias sf=showf
 alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
-alias sing="/home/praco/scripts/sing.sh"
+alias sing="/home/praco/scripts/tools/sing.sh"
 alias sw=stopwatch
 #alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
@@ -1921,3 +1453,6 @@ alias view='`which vim` -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
 alias which='(alias; declare -f) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot'
 alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less'
+
+# source company specific functions and aliases
+company_shit=~/.bash_aliases_ctcs && [ -f $company_shit ] && source $company_shit
