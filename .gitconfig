@@ -1,7 +1,6 @@
 [color]
 	ui = auto
 [alias]
-	a = config --get-regexp '^alias\\.'
 	b = branch
 	cam = commit -am
 	co = checkout
@@ -21,16 +20,21 @@
 	bclean = "!f() { git branch --merged ${1-master} | grep -v " ${1-master}$" | xargs -r git branch -d; }; f"
 	bdone = "!f() { git checkout ${1-master} && git up && git bclean ${1-master}; }; f"
 	# log stuff
-	ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
-	ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
-	lnc = log --pretty=format:"%h\\ %s\\ [%cn]"
-	lds = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=short
+	fl = log -u # file log
 	ld = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=relative
+	lds = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=short
 	le = log --oneline --decorate
-	filelog = log -u
-	fl = log -u
-	ltree = log --graph --oneline --decorate --all
-	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
+	lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative --all
+	#ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
+	ll = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>%C(cyan)' --numstat --abbrev-commit --date=relative
+	lla = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>%C(cyan)' --numstat --all --abbrev-commit --date=relative
+	lnc = log --pretty=format:"%h\\ %s\\ [%cn]"
+	#ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
+	ls = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
+	lsa = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>' --all --abbrev-commit --date=relative
+	lag = log --oneline --decorate --all --graph
+	la = log --oneline --decorate --all
 	# misc stuff
 	dl = "!git ll -1"
 	dlc = diff --cached HEAD^
@@ -41,7 +45,8 @@
 	grep = grep -Ii
 	gr = grep -Ii
 	gra = "!f() { A=$(pwd) && TOPLEVEL=$(git rev-parse --show-toplevel) && cd $TOPLEVEL && git grep --full-name -In $1 | xargs -I{} echo $TOPLEVEL/{} && cd $A; }; f"
-	la = "!git config -l | grep alias | cut -c 7- | sort"
+	a = config --get-regexp '^alias\\.'
+	as = "!git config -l | grep ^alias\\. | cut -c 7- | sort"
 	done = "!f() { git branch | grep "$1" | cut -c 3- | grep -v done | xargs -I{} git branch -m {} done-{}; }; f"
 	s = status
 	so = show --oneline -s
