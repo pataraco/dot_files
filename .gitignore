@@ -13,6 +13,8 @@
 .bash_history
 .cache
 .config
+.docker
+.elinks
 .fontconfig
 .lesshst
 .rediscli_history
@@ -21,10 +23,13 @@
 .vagrant.d
 .vim
 .viminfo
+.Xauthority
 .zcompdump
+automation
 cloud_automation
 envs
 projects
 repos
+rpmbuild
 scripts
 VirtualBox\ VMs
