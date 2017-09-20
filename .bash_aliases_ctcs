@@ -1,0 +1,569 @@
+#!bash - ~/.bash_aliases_ctcs - sourced by ~/.bashrc_aliases
+
+# if interactive shell - display message
+[ -n "$PS1" ] && echo "sourcing '.bash_aliases_ctcs'"
+
+# define functions
+
+function getpubkey () {	# CTCS
+# get user's public key from cloud_automation users role
+   local _USERS_ROLE_PATH=~/cloud_automation/ansible/roles/users
+   local _user=$1
+   if [ "$_user" ]; then
+      grep -r "ssh.*$_user" $_USERS_ROLE_PATH | cut -d'"' -f2
+   else
+      echo "usage: getpubkey USER"
+   fi
+}
+
+function searchrepos () {	# TOOL
+   local _grep_pattern="$*"
+   #echo "looking for: '$_grep_pattern'"
+   echo "telecomsys: tcs-yum-repos"
+   aws --profile telecomsys s3 ls tcs-yum-repos/amzn/noarch/data/ | grep "$_grep_pattern"
+   echo "corsother: vmedix-yum-repo"
+   aws --profile corsother s3 ls vmedix-yum-repo/amzn/noarch/data/ | grep "$_grep_pattern"
+
+}
+
+function showcf () {	# TOOL
+# show a company specific function
+   ALIASES_FILE="$HOME/.bash_aliases_ctcs"
+   if [[ $1 ]]; then
+      grep -q "^function $1 " $ALIASES_FILE
+      if [ $? -eq 0 ]; then
+         sed -n '/^function '"$1"' /,/^}/p' $ALIASES_FILE
+      else
+         echo "function: '$1' - not found"
+      fi
+   else
+      echo
+      echo "which function do you want to see?"
+      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+      echo -ne "enter function: "
+      read func
+      echo
+      showf $func
+   fi
+}
+
+function vagssh () {
+# ssh in to our vagrant server in a seperate xterm window
+   $XTERM -e 'cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' &
+}
+
+function vmbackups () {	# VMedix
+# show yesterday's and today's backups for VMedix
+   local _USAGE="usage: vmbackups [us|eu] [m|s]"
+   local _backup _region _s3_file_base
+   local _backups="backups elasticsearch"
+   local _regions="us-east-1 eu-west-1"
+   while [ $# -gt 0 ]; do
+      case $1 in
+         us) _regions="us-east-1"    ; shift ;;
+         eu) _regions="eu-west-1"    ; shift ;;
+          m) _backups="backups"      ; shift ;;
+          s) _backups="elasticsearch"; shift ;;
+          *) echo "$_USAGE"          ; return;;
+      esac
+   done
+   _mtoday=$(date +%Y-%m-%d)
+   _myestr=$(date +%Y-%m-%d -d yesterday)
+   _stoday=$(date +%Y_%m_%d)
+   _syestr=$(date +%Y_%m_%d -d yesterday)
+   for _backup in $_backups; do
+      for _region in $_regions; do
+         case $_region in
+            us-east-1) _s3_file_base=s3://virtumedix-$_backup/$_region   ;;
+            eu-west-1) _s3_file_base=s3://virtumedix-eu-$_backup/$_region;;
+         esac
+         case $_backup in
+            backups)
+               echo "MongoDB Backups ($_region)"
+               aws s3 ls $_s3_file_base/production/dump-$_myestr
+               aws s3 ls $_s3_file_base/production/dump-$_mtoday
+               aws s3 ls $_s3_file_base/production/dump-latest
+            ;;
+            elasticsearch)
+               echo "ElasticSearch Backups ($_region)"
+               aws s3 ls $_s3_file_base/snapshot-$_syestr
+               aws s3 ls $_s3_file_base/snapshot-$_stoday
+            ;;
+         esac
+      done
+   done
+}
+
+function vmchkcrts () {	# TOOL
+# check info of SSL certs installed on app_nginx servers or ELBs or in use
+   local _USAGE="vmchkcrts [us|eu] [sb|sg|eb|eg]"
+   local _AUTOMATION_INV=~/cloud_automation/ansible/inventory
+   local _host _hosts _hosts_file
+   local _domain _domains
+   local _project
+   local _vpc _vpcs
+   local _elb _elbs _elb_cluster
+   while [ $# -gt 0 ]; do
+      case $1 in
+         eb) _elb_cluster=blue; shift       ;;
+         eg) _elb_cluster=green; shift      ;;
+         sb) _hosts_file=hosts_blue; shift  ;;
+         sg) _hosts_file=hosts_green; shift ;;
+         us) _vpcs=mirkwood; shift          ;;
+         eu) _vpcs=isengard; shift          ;;
+          *) echo "$_USAGE"; return        ;;
+      esac
+   done
+   [ -z "$_project" ] && _project=VMedix
+   [ -z "$_vpcs" ] && _vpcs="mirkwood isengard"
+   for _vpc in $_vpcs; do
+      _domains=$(grep -r server_name: $_AUTOMATION_INV/$_project/$_vpc | awk '{print $NF}')
+      if [ -n "$_hosts_file" ]; then
+         _hosts=$(ansible --list-hosts -i $_AUTOMATION_INV/$_project/$_vpc/$_hosts_file "*app_nginx1*" --vault-password-file=~/.vault.vm 2> /dev/null | grep -v 'hosts.*:$' | awk '{print $NF }')
+      elif [ -n "$_elb_cluster" ]; then
+         for _domain in $_domains; do
+            _elb=$(host $_domain | \grep $_elb_cluster | head -1 | awk '{print $NF}' | sed 's/\.$//')
+            _elbs+=" $_elb"
+         done
+         _hosts=($_elbs)
+      else
+         _hosts=($_domains)
+      fi
+      i=0
+      for _domain in $_domains; do
+         _host=${_hosts[$i]}
+            echo
+            echo -n " host: $_host | domain: $_domain"
+         [[ -n "$_hosts_file" ]] || (( i++ ))
+         nc -w 2 -z $_host 443 > /dev/null 2>&1
+         if [ $? -eq 0 ]; then
+            echo
+            openssl s_client -connect $_host:443 -servername $_domain </dev/null 2>/dev/null | \
+               openssl x509 -noout -subject -serial -dates | \
+                  awk '{
+                     if ($1~/subject=/) {
+                        gsub("subject=","  sub:",$0)
+                        printf $0" "
+                     }
+                     else if ($1~/notBefore/) {
+                        gsub("notBefore=","dates: ",$0)
+                        printf $0" "
+                     }
+                     else if ($1~/notAfter/) {
+                        gsub("notAfter=","-> ",$0)
+                        print $0
+                     }
+                     else if ($1~/serial=/) {
+                        gsub("serial=","",$0)
+                        print "["$0"]"
+                     }
+                     else {
+                        print $0
+                     }
+                  }'
+         else
+            echo " - NOT reachable"
+         fi
+      done
+      unset _elbs
+   done
+}
+
+function vmcssh () {	# VMedix
+# cssh to VMedix servers
+   local _USAGE="usage: vmcssh us|eu a|1|2|g|b|p [PATTERN]"
+   local _INV_REPO="~/cloud_automation/ansible/inventory/VMedix"
+   local _vpc _h _pat
+   local _country=$1
+   if [[ $_country =~ (us|eu) ]]; then
+      case $_country in
+         us) _vpc="mirkwood"          ;;
+         eu) _vpc="isengard"          ;;
+          *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"
+      return
+   fi
+   local _hosts=$2
+   if [ -n "$_hosts" ]; then
+      case $_hosts in
+         a) _pat="*${_vpc}*"       ;;
+         1) _h=hosts_shared1       ;;
+         2) _h=hosts_shared2       ;;
+         g) _h=hosts_green         ;;
+         b) _h=hosts_blue          ;;
+         p) _h=hosts_production    ;;
+         *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"
+      return
+   fi
+   local _pattern=$3
+   if [ -n "$_pattern" ]; then
+      _pat="*${_pattern}*"
+   elif [ -z "$_pat" ]; then
+      _pat="all"
+   fi
+   #debug#echo "repo: $_INV_REPO | vpc: $_vpc | hosts: $_h | pat: $_pat"
+   #debug#echo -e "csshing to these hosts:\n$(ansible --list-hosts -i $_INV_REPO/$_vpc/$_h "$_pat" --vault-password-file=~/.vault.vm 2>/dev/null | grep -v 'hosts.*:$')"
+   cssh $(ansible --list-hosts -i $_INV_REPO/$_vpc/$_h "$_pat" --vault-password-file=~/.vault.vm 2>/dev/null | egrep -v 'hosts.*:$|localhost$|loghost|vpnhost') &
+}
+
+function vmmanageusers () {	# VMedix
+# add|remove user keys from AWS instances controled via Ansible
+   local _USAGE="usage: vmmanageusers us|eu a|1|2|g|b|p [-l apps|data|PATTERN] add|rem all|USR1 [USR2...]"
+   local _REPO_HOME=~/cloud_automation/ansible
+   local _INV_REPO=$_REPO_HOME/inventory/VMedix
+   local _USERS_ROLE_DEV_VARS=$_REPO_HOME/roles/users/vars/dev_users_present.yml
+   local _USERS_ROLE_MAIN_TASK=$_REPO_HOME/roles/users/tasks/main.yml
+   local _cmd _disable_opt _disable_usrs _h _pat _st _usr _vpc
+   local _country=$1
+   if [[ $_country =~ (us|eu) ]]; then
+      case $_country in
+         us) _vpc=mirkwood          ;;
+         eu) _vpc=isengard          ;;
+          *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"; return
+   fi
+   local _hosts=$2
+   if [ -n "$_hosts" ]; then
+      case $_hosts in
+         a) _pat="*${_vpc}*"       ;;
+         1) _h=hosts_shared1       ;;
+         2) _h=hosts_shared2       ;;
+         g) _h=hosts_green         ;;
+         b) _h=hosts_blue          ;;
+         p) _h=hosts_production    ;;
+         *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"; return
+   fi
+   local _3rd_opt=$3
+   if [ "$_3rd_opt" == "-l" ]; then
+      local _pattern=$4
+      if [ -n "$_pattern" ]; then
+         case $_pattern in
+            apps) _pat="*ap*" ;;
+            data) _pat="mongo*:search*:redis*" ;;
+               *) _pat="$_pattern*" ;;
+         esac
+      else
+         echo "$_USAGE"; return
+      fi
+      _cmd=$5
+      shift 5
+   else
+      _cmd=$3
+      shift 3
+   fi
+   if [ -z "$_pat" ]; then
+      _pat=all
+   fi
+   _pat="'$_pat:!localhost:!logstash*'"
+   local _all_tags=$(\grep "tags: \[" $_USERS_ROLE_MAIN_TASK | \grep -v always | sort -u | cut -d"'" -f2 | tr '\n' ',' | sed 's/,$//')
+   local _all_but_dev_tags=$(echo $_all_tags | sed "s/dev,//;s/,dev//")
+   case $_cmd in
+      add) _st="'$_all_but_dev_tags'" ;;
+      rem) _st="'$_all_tags'"         ;;
+        *) echo "$_USAGE"; return     ;;
+   esac
+   local _usrs=$*
+   local _all_dev_usrs=$(\grep -- "- name:" $_USERS_ROLE_DEV_VARS | awk '{print $NF}' | tr '\n' ',' | sed 's/,$//')
+   if [ -n "$_usrs" ]; then
+      if [ "$_cmd" == "add" ]; then
+         if [ "$_usrs" != "all" ]; then
+            for _usr in $_usrs; do
+               _disable_usrs=$(echo $_all_dev_usrs | sed "s/\"$_usr\",//;s/,\"$_usr\"//")
+               _all_dev_usrs=$_disable_usrs
+            done
+         fi
+      else
+         if [ "$_usrs" != "all" ]; then
+            _disable_usrs="\"$(echo "$_usrs" | sed 's/ /","/g')\""
+         else
+            _disable_usrs="$_all_dev_usrs"
+         fi
+      fi
+   else
+      echo "$_USAGE"; return
+   fi
+   if [ "$_cmd" == "add" -a "$_usrs" == "all" ]; then
+      _disable_opt=""
+   else
+      _disable_opt="-e '{\"disable_users\": [$_disable_usrs]}'"
+   fi
+   echo "ansible-playbook -i $_INV_REPO/$_vpc/$_h --limit "$_pat" --skip-tags "$_st" $_disable_opt --vault-password-file=~/.vault.vm $_REPO_HOME/playbooks/util/manage_users.yml"
+   eval ansible-playbook -i $_INV_REPO/$_vpc/$_h --limit "$_pat" --skip-tags "'$_st'" "$_disable_opt" --vault-password-file=~/.vault.vm $_REPO_HOME/playbooks/util/manage_users.yml
+}
+
+function vmmopmonit () {	# VMedix
+   local _USAGE="usage: vmmopmonit us|eu"
+   local _country=$1
+   local _vpc
+   local _repo="~/cloud_automation/ansible/inventory/VMedix"
+   local _region
+   case $_country in
+      us) _vpc="mirkwood"; _region="us-east-1" ;;
+      eu) _vpc="isengard"; _region="eu-west-1" ;;
+       *) echo "$_USAGE"; return ;;
+   esac
+   local _dns_servers=$(egrep -r 'server_name:|api_server:' ~/cloud_automation/ansible/inventory/VMedix/$_vpc | awk '{print $NF}' | paste -s )
+   # `sstat` on BLUE api servers
+   xterm -xrm '*.allowSendEvents:true' -T "BLUE Cluster services status" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 80x72+7+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${BLU}\\tBlue ${YLW}Cluster services status - ${RED}'"$_vpc"' ['"$_region"']${NRM}\"\; ansible -i '"$_repo/$_vpc"'/hosts_blue \"*api[0-9]*\" -a \"sstat\" --vault-password-file ~/.vault.vm 2>/dev/null \| egrep -v \"WARN\|duplicate\|cloud_auto\|SUCCESS\"''' &
+   # `sstat` on GREEN api servers
+   xterm -xrm '*.allowSendEvents:true' -T "GREEN Cluster services status" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 80x72+523+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${GRN}\\tGreen ${YLW}Cluster services status - ${RED}'"$_vpc"' ['"$_region"']${NRM}\"\; ansible -i '"$_repo/$_vpc"'/hosts_green \"*api[0-9]*\" -a \"sstat\" --vault-password-file ~/.vault.vm 2>/dev/null \| egrep -v \"WARN\|duplicate\|cloud_auto\|SUCCESS\"''' &
+   # `crond` service status on all app, mongo and redis servers
+   xterm -xrm '*.allowSendEvents:true' -T "CROND Service Statuses" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 86x22+1038+30 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tcrond Service Statuses - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; ansible -i '"$_repo/$_vpc"'/hosts_production \"*ap*:mongo*:redis*\" -m shell -a \"/sbin/service crond status\" --vault-password-file ~/.vault.vm \| tr -d \"\\n\" \| sed \"s/\>\>/: /g\;s/running\.\.\./\`printf \"\\033[1\;32mrunning\\033[m\"\`\\n/g\;s/stopped/\`printf \"\\033[1\;31mstopped\\033[m\"\`\\n/g\" \| sort''' &
+   # AWS CloudWatch alarms
+   xterm -xrm '*.allowSendEvents:true' -T "AWS CloudWatch Alarms" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 86x48+1038+358 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tAWS CloudWatch Alarms - ${RED}'"$_vpc"' ['"$_region"']\\n${NRM}\"\; aws cloudwatch describe-alarms --region '"$_region"' --profile locapps \| grep AlarmName \| grep -i VMedix \| sed \"s/^ *//\;s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\"''' &
+   # AWS Route53/DNS entries showing active cluster
+   xterm -xrm '*.allowSendEvents:true' -T "DNS Entries" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 123x26+7-52 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tDNS Entries - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; for h in '"$_dns_servers"'\; do dig \$h \| egrep -v \"^$\|^\;\" \| grep CNAME \| sed \"s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\;s/\\\(\\s\\+[0-9]\\+\\s\\+\\\)/\`printf \"\\033[1\;36m\"\`\\1\`printf \"\\033[m\"\`/g\"\; done''' &
+   # AWS ASG of app servers showing Health Check Type
+   xterm -xrm '*.allowSendEvents:true' -T "AWS AutoScalingGroup Descriptions" -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000 -geometry 129x19+781-52 -e 'source ~/.bash_aliases; wutch ''echo -e \"${BLD}${YLW}\\tAWS AutoScalingGroup Descriptions - ${RED}'"$_vpc"' ['"$_region"']${NRM}\\n\"\; aws autoscaling describe-auto-scaling-groups --profile locapps --region '"$_region"' --query \"AutoScalingGroups[].[AutoScalingGroupName,LaunchConfigurationName,length\(Instances\),DesiredCapacity,MinSize,MaxSize,HealthCheckType,Instances[].HealthStatus\|join\('"\'"', '"\'"',@\),LoadBalancerNames[0]]\" --output table \| egrep -- \"-ap[i,p]\" \| sed \"s/ //g\" \| column -s\"\|\" -t \| sed \"s/\\\(  \\\)\\\([a-zA-Z0-9]\\\)/\| \\2/g\;s/green/\`printf \"\\033[1\;32mgreen\\033[m\"\`/g\;s/blue/\`printf \"\\033[1\;34mblue\\033[m\"\`/g\;s/EC2/\`printf \"\\033[1\;33mEC2\\033[m\"\`/g\;s/ELB/\`printf \"\\033[1\;36mELB\\033[m\"\`/g\"''' &
+   #TODO website status?
+}
+
+function vmmopprep () {	# VMedix
+# grab steps in PCR steps file and add to history file to easily execute them
+# must specify one of "-s|p|r" (staging|production|roll-back) steps desired
+# and the PCR steps file
+   local _ANSIBLE_HOME=~/cloud_automation/ansible
+   local _USAGE="usage: vmmopprep -s|t|p|r [PCR_Steps_File]"
+   local _STEPS=/tmp/.mop_steps
+   local _steps_desired
+   [ $# -lt 1 ] && { echo -e "${RED}ERROR${NRM}: not enough arguments\n$_USAGE"; return; }
+   case "$1" in
+      -s) _steps_desired=STAGING    ;;
+      -t) _steps_desired=TESTING    ;;
+      -p) _steps_desired=PRODUCTION ;;
+      -r) _steps_desired=ROLL-BACK  ;;
+       *) echo -e "${RED}ERROR${NRM}: missing argument 'steps desired' (s|t|p|r)\n$_USAGE"; return ;;
+   esac
+   echo -n "changing working dir to   : "
+   if cd $_ANSIBLE_HOME; then
+      echo -e "[${CYN}$_ANSIBLE_HOME${NRM}]"
+   else
+      echo -e "[${RED}FAILED${NRM}]"
+      echo "couldn't change working dir to: $_ANSIBLE_HOME"
+      return
+   fi
+   local _GIT_BRANCH=$(git branch 2>/dev/null | grep '^*' | colrm 1 2)
+   local pcr_steps_file=$2
+   if [ -z "$pcr_steps_file" ]; then
+      echo -e "no PCR Steps File given   : [${CYN}using git branch: $_GIT_BRANCH${NRM}]"
+      pcr_steps_file="playbooks/VMedix/PCR/${_GIT_BRANCH}.txt"
+   else
+      echo -e "PCR Steps File given      : [${CYN}$pcr_steps_file${NRM}]"
+      pcr_steps_file="playbooks/VMedix/PCR/${pcr_steps_file}.txt"
+   fi
+   echo -e "using the PCR Steps File  : [${CYN}$pcr_steps_file${NRM}]"
+   [ ! -e "$pcr_steps_file" ] && { echo -e "${RED}ERROR${NRM}: no such file: $pcr_steps_file"; return; }
+   echo -n "setting AWS environment to: "
+   sae locapps > /dev/null
+   echo -e "[${CYN}$AWS_DEFAULT_PROFILE - $AWS_ENVIROMENT${NRM}]"
+   echo -n "setting Ansible version to: "
+   act2.2 > /dev/null
+   _ansible_version=$(ansible --version | head -1)
+   echo -e "[${CYN}$_ansible_version${NRM}]"
+   case "$_steps_desired" in
+      STAGING)
+          start_line_no=$((`grep -n '^#.*STAGING.*#$' $pcr_steps_file|cut -d: -f1` - 1))
+            end_line_no=$((`grep -n '^#.*TESTING/PREPPING.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
+      TESTING)
+          start_line_no=$((`grep -n '^#.*TESTING/PREPPING.*#$' $pcr_steps_file|cut -d: -f1` - 1))
+            end_line_no=$((`grep -n '^#.*PRODUCTION.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
+      PRODUCTION)
+          start_line_no=$((`grep -n '^#.*PRODUCTION.*#$' $pcr_steps_file|cut -d: -f1` - 1))
+            end_line_no=$((`grep -n '^#.*ROLL-BACK.*#$' $pcr_steps_file|cut -d: -f1` - 2)) ;;
+      ROLL-BACK)
+          start_line_no=$((`grep -n '^#.*ROLL-BACK.*#$' $pcr_steps_file|cut -d: -f1` - 1))
+            end_line_no=$((`grep -n '^#.*ROLLBACK COMPLETE.*$' $pcr_steps_file|cut -d: -f1`)) ;;
+       *) echo -e "${RED}FATAL ERROR${NRM}: unknown state\n$_USAGE"; return ;;
+   esac
+   sed -n "${start_line_no},${end_line_no}s/^\$ //p" $pcr_steps_file > $_STEPS
+   cp $_STEPS{,.found}
+   sed -i "s,\\\!,\\\\\\\!,g" $_STEPS
+   if [ -s $_STEPS ]; then
+      local _step_no=1
+      history -s "vmmopprep $*"
+      while read _line; do
+         echo "$_line" >> $_STEPS.processed
+      done <<< "`cat $_STEPS`"
+      echo -n "verifying processed steps : "
+      if \diff -q $_STEPS{.found,.processed} > /dev/null; then
+         echo -e "[${GRN}PASSED${NRM}]"
+         echo -n "adding commands to history: "
+         #debug#echo "# BEGIN $_steps_desired STEPS"
+         history -s "# BEGIN $_steps_desired STEPS"
+         while read _line; do
+            #debug#echo "#$_step_no: $_line"
+            echo "$_line" >> $_STEPS.verify
+            history -s "#$_step_no: $_line"
+            (( _step_no++ ))
+         done <<< "`cat $_STEPS`"
+         #debug#echo "# END $_steps_desired STEPS"
+         history -s "# END $_steps_desired STEPS"
+         echo -e "[${GRN}DONE${NRM}]"
+         echo -e "commands added to history : [${MAG}Have fun and good luck!${NRM}]"
+      else
+         echo -e "[${RED}FAILED${NRM}]"
+         echo "NOT adding commands to history"
+         echo "differences found:"
+         diff $_STEPS{.found,.processed}
+      fi
+   else
+      echo "no commands added to history - could not find any"
+   fi
+   rm -f $_STEPS{,.found,.processed}
+}
+
+function vmprodaccess () {	# VMedix
+# add|remove user keys to/from VMedix AWS instances controled via Ansible
+   local _USAGE="usage: vmprodaccess us|eu a|1|2|g|b|p [-l apps|data|PATTERN] add|rem USER"
+   local _REPO_HOME=~/cloud_automation/ansible
+   local _MY_ANS_HOME=~/automation/ansible
+   local _cmd
+   local _h
+   local _pat
+   local _user
+   local _vpc
+   local _country=$1
+   if [[ $_country =~ (us|eu) ]]; then
+      case $_country in
+         us) _vpc=mirkwood          ;;
+         eu) _vpc=isengard          ;;
+          *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"; return
+   fi
+   local _hosts=$2
+   if [ -n "$_hosts" ]; then
+      case $_hosts in
+         a) _pat="*${_vpc}*"       ;;
+         1) _h=hosts_shared1       ;;
+         2) _h=hosts_shared2       ;;
+         g) _h=hosts_green         ;;
+         b) _h=hosts_blue          ;;
+         p) _h=hosts_production    ;;
+         *) echo "$_USAGE"; return ;;
+      esac
+   else
+      echo "$_USAGE"; return
+   fi
+   local _3rd_opt=$3
+   if [ "$_3rd_opt" == "-l" ]; then
+      local _pattern=$4
+      if [ -n "$_pattern" ]; then
+         case $_pattern in
+            apps) _pat="*ap*" ;;
+            data) _pat="mongo*:search*:redis*" ;;
+               *) _pat="$_pattern*" ;;
+         esac
+      else
+         echo "$_USAGE"; return
+      fi
+      _cmd=$5
+      _user=$6
+   else
+      _cmd=$3
+      _user=$4
+   fi
+   if [ -z "$_pat" ]; then
+      _pat=all
+   fi
+   if [ -z "$_cmd" -o -z "$_user" ]; then
+      echo "$_USAGE"; return
+   fi
+   local _ap_cmd="ansible-playbook -i $_REPO_HOME/inventory/VMedix/$_vpc/$_h --limit '$_pat' -e 'c=$_cmd u=$_user' --vault-password-file=~/.vault $_MY_ANS_HOME/playbooks/vm_prod_access.yml"
+   eval $_ap_cmd
+}
+
+function vmrpms () {	# VMedix
+# show RPMs installed on VMedix servers
+   local _USAGE="usage: vmrpms us|eu a|g|b|p [PATTERN]"
+   local _INV_REPO="~/cloud_automation/ansible/inventory/VMedix"
+   local _vpc
+   local _h
+   local _pat
+   local _country=$1
+   case $_country in
+      us) _vpc="mirkwood";;
+      eu) _vpc="isengard";;
+       *) echo "$_USAGE"; return;;
+   esac
+   local _hosts=$2
+   case $_hosts in
+      a) _pat="*api[0-9]*:*app_nginx[0-9]*";;
+      g) _h=hosts_green;;
+      b) _h=hosts_blue;;
+      p) _h=hosts_production;;
+      *) echo "$_USAGE"; return;;
+   esac
+   local _pattern=$3
+   if [ -n "$_pattern" ]; then
+      _pat="*$_pattern*"
+   else
+      _pat="*api[0-9]*:*app_nginx[0-9]*"
+   fi
+   if [ "$_hosts" == "a" ]; then
+      for _h in hosts_blue hosts_green; do
+         ansible -T 1 -i $_INV_REPO/$_vpc/$_h "$_pat:!*api_nginx*" --vault-password-file=~/.vault.vm -m shell -a "rpm -qa | grep VirtuMedix" 2>/dev/null | egrep -v 'changed.*false|SSH Error|unreachable.*true|^}' | sed "s/\(^.* UNREACHABLE!\).*$/$(printf "$BLD$RED")\1$(printf "$NRM")/g;s/\(^.* SUCCESS\).*$/$(printf "$BLD$GRN")\1$(printf "$NRM")/g"
+      done
+   else
+      ansible -T 1 -i $_INV_REPO/$_vpc/$_h "$_pat:!*api_nginx*" --vault-password-file=~/.vault.vm -m shell -a "rpm -qa | grep VirtuMedix" 2>/dev/null | egrep -v 'changed.*false|SSH Error|unreachable.*true|^}' | sed "s/\(^.* UNREACHABLE!\).*$/$(printf "$BLD$RED")\1$(printf "$NRM")/g;s/\(^.* SUCCESS\).*$/$(printf "$BLD$GRN")\1$(printf "$NRM")/g"
+   fi
+}
+
+function zipstuff () {	# MISC
+# zip up specified files for backup
+   SRCSERVER="praco.dev.local"
+   STUFFZIP="/home/praco/stuff.ctcs.zip"
+   FILES="
+      .*rc
+      .bash*
+      .csshrc
+      .aws_commands.txt
+      .commands.txt
+      .gitconfig
+      .gitignore
+      .files.txt
+      .ssh/config
+      .ssh/environment
+      .tmux.conf
+      ansible
+      notes
+      scripts"
+   # didn't figure out how to make this work
+   ##EXCLUDE_FILES="*/.hg/\* repos/.chef/checksums/\* *.zip"
+   thisserver=`hostname`
+   if [ "$thisserver" = "$SRCSERVER" ]; then
+      echo "ziping $FILES to $STUFFZIP... "
+      ##/usr/bin/zip -ru $STUFFZIP $FILES -x $EXCLUDE_FILES
+      ##/usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* repos/.chef/checksums/\* */*/.git/\* */*.zip */*/*.zip
+      /usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* */.git/\* */*/.git/\* */*.zip */*/*.zip
+      echo done
+   else
+      echo "you have to be on $SRCSERVER to run this"
+   fi
+}
+
+# define aliases
+
+alias act1='source ~/envs/Ansible_1.x/bin/activate; ansible --version'
+alias act2.1='source ~/envs/Ansible_2.x/bin/activate; ansible --version'
+alias act2.2='source ~/envs/Ansible_2.2/bin/activate; ansible --version'
+alias arcdiff="arc diff --reviewers akulkarni,pfreeman,sbenjamin,tbenichou,tholcomb,candonov main"
+alias cda="cd ~/cloud_automation/ansible"
+alias cdi="cd ~/cloud_automation/ansible/inventory"
+alias cdp="cd ~/cloud_automation/ansible/playbooks"
+alias cdr="cd ~/cloud_automation/ansible/roles"
+alias cvhf='~/cloud_automation/ansible/playbooks/VMedix/scripts/create_vm_qa_hosts_file.sh'
+alias cvqhf='~/scripts/ctcs/vmedix/create_vm_qa_hosts_file.sh'
+alias cf="grep '^function .* ' ~/.bash_aliases_ctcs | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias scf=showcf
