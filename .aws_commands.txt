@@ -1,27 +1,26 @@
-aws acm request-certificate --domain-name HOST.DOMAIN --domain-validation-options DomainName=HOST.DOMAIN,ValidationDomain=DOMAIN
-aws acm resend-validation-email --certificate-arn ARN --domain HOST.DOMAIN --validation-domain DOMAIN
-aws codecommit create-repository --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
-aws codecommit list-repositories --region us-east-1
-aws ec2 create-tags --resources i-1689170e --tags Key=BranchTag,Value=vm-test-1 --region us-west-2
-aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,PublicIpAddress,State.Name]" --output table
-aws ec2 describe-instances --region=us-east-1 --filters "Name=tag:Project,Values=VMedix" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='Env'].Value|[0],Tags[?Key=='Cluster'].Value|[0],State.Name]" --output table
-aws ec2 describe-instances --region us-east-1 --instance-ids i-0e7ae84d4c75f1033 --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0]]|[0]"
-aws ec2 describe-instances --region=us-west-2 --filters "Name=tag:Project,Values=VMedix" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name,SecurityGroups[].GroupId|join(', ',@)]" --output table
-aws ec2 describe-instances --region=us-west-2 --filters "Name=tag:Project,Values=VMedix" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='Env'].Value|[0],Tags[?Key=='Cluster'].Value|[0],State.Name]" --output table
-aws ec2 describe-instances --region=us-west-2 --filters 'Name=tag:Project,Values=vzfl' --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name]" --output table
-aws ec2 describe-instance-status --instance-id IID
-aws ec2 describe-security-groups --region=us-west-2 --filters "Name=tag:Name,Values=*internet*,*grp-default*,*elk*,*vmedix*,*elasticsearch*,*redis*,*mongodb*,*gunicorn*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
-aws ec2 describe-security-groups --region=us-west-2 --filters "Name=tag:Name,Values=sec-grp*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
-aws ec2 describe-security-groups --region=us-west-2 --filters "Name=tag:Name,Values=*vmedix*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
-aws ec2 modify-instance-attribute --instance-id i-cf8b15d7 --groups sg-0c82f575
-aws ec2 start-instances --instance-ids IID1 [IID2...]
-aws ec2 stop-instances --instance-ids IID1 [IID2...]
-aws ec2 terminate-instances --region eu-west-1 --instance-ids i-UID1 [i-UID2...]
-aws elb describe-load-balancers [--load-balancer-names elb-VMedix-api-blue] --query "LoadBalancerDescriptions[].[LoadBalancerName,Instances[].InstanceId|join(', ',@)]" --output table
+aws acm request-certificate --region REGION --domain-name HOST.DOMAIN --domain-validation-options DomainName=HOST.DOMAIN,ValidationDomain=DOMAIN
+aws acm resend-validation-email --region REGION --certificate-arn ARN --domain HOST.DOMAIN --validation-domain DOMAIN
+aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
+aws codecommit list-repositories --region REGION
+aws ec2 create-tags --region REGION --resources INST_ID --tags Key=KEY,Value=VLAUE
+aws ec2 describe-instances --region REGION --filters "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,PublicIpAddress,State.Name]" --output table
+aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='KEY1'].Value|[0],Tags[?Key=='KEY2'].Value|[0],State.Name]" --output table
+aws ec2 describe-instances --region REGION --instance-ids INST_ID --query "Reservations[].Instances[].[Tags[?Key=='KEY'].Value|[0]]|[0]"
+aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,State.Name,SecurityGroups[].GroupId|join(', ',@)]" --output table
+aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='KEY1'].Value|[0],Tags[?Key=='KEY2'].Value|[0],State.Name]" --output table
+aws ec2 describe-instances --region REGION --filters 'Name=tag:Project,Values=vzfl' --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name]" --output table
+aws ec2 describe-instance-status --region REGION --instance-id INST_ID
+aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=*internet*,*grp-default*,*elk*,*elasticsearch*,*redis*,*mongodb*,*gunicorn*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
+aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=sec-grp*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
+aws ec2 modify-instance-attribute --region REGION --instance-id INST_ID --groups sg-UID
+aws ec2 start-instances --region REGION --instance-ids IID1 [IID2...]
+aws ec2 stop-instances --region REGION --instance-ids IID1 [IID2...]
+aws ec2 terminate-instances --region REGION --instance-ids i-UID1 [i-UID2...]
+aws elb describe-load-balancers --region REGION [--load-balancer-names ELB_NAMES] --query "LoadBalancerDescriptions[].[LoadBalancerName,Instances[].InstanceId|join(', ',@)]" --output table
 aws iam add-user-to-group --group-name GROUP_NAME --user-name USER_NAME
 aws iam attach-group-policy --group-name GROUP_NAME --policy-arn POLICY-ARN
 aws iam create-access-key --user-name USER_NAME
-aws iam create-group --group-name GROUP_NAME # e.g. CodeCommit_repo_infostretch
+aws iam create-group --group-name GROUP_NAME   # e.g. CodeCommit_repo_infostretch
 aws iam create-policy --policy-name POLICY_NAME --policy-document file://FILE_NAME.json
 aws iam create-user --user-name USER_NAME
 aws iam get-group --group-name GROUP_NAME | grep UserName	# get all users
@@ -33,14 +32,13 @@ aws iam list-groups
 aws iam list-groups-for-user --user-name USER_NAME		# list all groups user is in
 aws iam list-policies
 aws iam list-users
-aws s3 sync --profile corsother --exclude \* --include repodata\* s3://tcs-yum-repos/amzn/noarch/data/ s3://vmedix-yum-repo/amzn/noarch/data/
-aws s3 sync --profile corsother --exclude \* --include VirtuMedix\* s3://tcs-yum-repos/amzn/noarch/data/ s3://vmedix-yum-repo/amzn/noarch/data/
-aws s3 sync --profile ptu s3://firefall-stabilization-build-1298-publictest/ /data/1298-download
-aws ses get-identity-verification-attributes --region us-east-1 --identities no-reply@there.care
-aws ses list-identities --region us-east-1 [--identity-type EmailAddress|Domain]
-aws ses verify-email-identity --region us-east-1 --email-address no-reply@there.care
-aws sns list-endpoints-by-platform-application --platform-application-arn ARN
-aws sns list-platform-applications | grep REGEX # get the ARN
+aws s3 sync --profile AWS_PROFILE --exclude \* --include DIR_NAME\* s3://BUCKET_SRC/path/to/files/ s3://BUCKET_DEST/path/to/files/
+aws s3 sync --profile AWS_PROFILE s3://BUCKET_SRC/ /BUCKET_DEST/dir/
+aws ses --region REGION get-identity-verification-attributes --identities EMAIL_ADDR
+aws ses --region REGION list-identities [--identity-type EmailAddress|Domain]
+aws ses --region REGION verify-email-identity --email-address EMAIL_ADDR
+aws sns --region REGION list-endpoints-by-platform-application --platform-application-arn ARN
+aws sns --region REGION list-platform-applications | grep REGEX # get the ARN
 echo -e "protocol=httpsnpath=/v1/repos/testnhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get
-for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling resume-processes --auto-scaling-group-name $asgn; done"
-for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling suspend-processes --auto-scaling-group-name $asgn; done"
+for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling resume-processes --region REGION --auto-scaling-group-name $asgn; done"
+for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling suspend-processes --region REGION --auto-scaling-group-name $asgn; done"
