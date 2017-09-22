@@ -1,14 +1,16 @@
+aws acm describe-certificate --region REGION --certificate-arn ARN
+aws acm list-certificates --region REGION
 aws acm request-certificate --region REGION --domain-name HOST.DOMAIN --domain-validation-options DomainName=HOST.DOMAIN,ValidationDomain=DOMAIN
 aws acm resend-validation-email --region REGION --certificate-arn ARN --domain HOST.DOMAIN --validation-domain DOMAIN
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
 aws codecommit list-repositories --region REGION
 aws ec2 create-tags --region REGION --resources INST_ID --tags Key=KEY,Value=VLAUE
 aws ec2 describe-instances --region REGION --filters "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,PublicIpAddress,State.Name]" --output table
-aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='KEY1'].Value|[0],Tags[?Key=='KEY2'].Value|[0],State.Name]" --output table
-aws ec2 describe-instances --region REGION --instance-ids INST_ID --query "Reservations[].Instances[].[Tags[?Key=='KEY'].Value|[0]]|[0]"
 aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,State.Name,SecurityGroups[].GroupId|join(', ',@)]" --output table
 aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='KEY1'].Value|[0],Tags[?Key=='KEY2'].Value|[0],State.Name]" --output table
+aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='KEY1'].Value|[0],Tags[?Key=='KEY2'].Value|[0],State.Name]" --output table
 aws ec2 describe-instances --region REGION --filters 'Name=tag:Project,Values=vzfl' --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name]" --output table
+aws ec2 describe-instances --region REGION --instance-ids INST_ID --query "Reservations[].Instances[].[Tags[?Key=='KEY'].Value|[0]]|[0]"
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=*internet*,*grp-default*,*elk*,*elasticsearch*,*redis*,*mongodb*,*gunicorn*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=sec-grp*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
