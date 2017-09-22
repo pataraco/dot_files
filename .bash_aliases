@@ -1104,7 +1104,8 @@ function rac () {	# MISC
    COMMANDS_FILE=/home/praco/.aws_commands.txt
    echo "$COMMAND" >> $COMMANDS_FILE
    sort $COMMANDS_FILE > $COMMANDS_FILE.sorted
-   mv -f $COMMANDS_FILE.sorted $COMMANDS_FILE
+   /bin/cp -f $COMMANDS_FILE.sorted $COMMANDS_FILE
+   /bin/rm -f $COMMANDS_FILE.sorted
    echo "added: '$COMMAND'"
    echo "   to: $COMMANDS_FILE"
 }
@@ -1115,10 +1116,10 @@ function rc () {	# MISC
    COMMANDS_FILE=/home/praco/.commands.txt
    echo "$COMMAND" >> $COMMANDS_FILE
    sort $COMMANDS_FILE > $COMMANDS_FILE.sorted
-   mv -f $COMMANDS_FILE.sorted $COMMANDS_FILE
+   /bin/cp -f $COMMANDS_FILE.sorted $COMMANDS_FILE
+   /bin/rm -f $COMMANDS_FILE.sorted
    echo "added: '$COMMAND'"
    echo "   to: $COMMANDS_FILE"
-   ##scp -q $COMMANDS_FILE $OTHERVM:/home/praco
 }
 
 function rf () {	# MISC
@@ -1127,9 +1128,9 @@ function rf () {	# MISC
    FILES_FILE=/home/praco/.files.txt
    echo "$FILE" >> $FILES_FILE
    sort $FILES_FILE > $FILES_FILE.sorted
-   mv -f $FILES_FILE.sorted $FILES_FILE
+   /bin/cp -f $FILES_FILE.sorted $FILES_FILE
+   /bin/rm -f $FILES_FILE.sorted
    echo "added '$FILE' to: $FILES_FILE"
-   ##scp -q $FILES_FILE $OTHERVM:/home/praco
 }
 
 function sae () {	# TOOL
