@@ -132,7 +132,7 @@ function awsci () {
    local _DEFAULT_REGION="us-west-2"
    local _USAGE="usage: awsci [-r REGION] start|stop INSTANCE_NAME # default: $_DEFAULT_REGION"
    local _region=$1
-   [ "$_region" == "-r" ] && { $_region=$2; shift 2; } || $_region=$_DEFAULT_REGION
+   [ "$_region" == "-r" ] && { _region=$2; shift 2; } || _region=$_DEFAULT_REGION
    local _CONTROL_CMD=$1
    local _INSTANCE_NAME=$2
    [ -z "$_CONTROL_CMD" ] && { echo "error: did not specify 'start' or 'stop'"; echo "$_USAGE"; return; }
@@ -1436,7 +1436,8 @@ alias ring="/home/praco/scripts/tools/ring.sh"
 alias rsshk='ssh-keygen -f "/home/praco/.ssh/known_hosts" -R'
 alias rm='rm -i'
 alias sa=alias
-alias sba='echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
+#alias sba='echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
+alias sba='source ~/.bash_aliases | sed "s/$/.../g" | tr "\n" " "; echo "done"'
 alias sdl="export DISPLAY=localhost:10.0"
 alias sf=showf
 alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
@@ -1448,7 +1449,8 @@ alias tt='echo -ne "\033]0;`whoami`@`hostname`\007"'
 alias tskap="_tmux_send_keys_all_panes"
 alias xterm='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
 alias u=uptime
-alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; echo "done"; echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
+#alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; echo "done"; echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
+alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; sba'
 alias vi='`which vim`'
 alias view='`which vim` -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
