@@ -129,7 +129,7 @@ function awsasgcp () {
 
 function awsci () {
 # start or stop an instance
-   local _DEFAULT_REGION="us-west-2"
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _USAGE="usage: awsci [-r REGION] start|stop INSTANCE_NAME # default: $_DEFAULT_REGION"
    local _region=$1
    [ "$_region" == "-r" ] && { _region=$2; shift 2; } || _region=$_DEFAULT_REGION
@@ -164,7 +164,7 @@ function awsci () {
 function awsdami () {
 # some 'aws ec2 describe-images' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
-   local _DEFAULT_REGION="us-west-2"
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSEC2DAMI_CMD="aws ec2 describe-images"
    local _USAGE="usage: \
 awsdami [OPTIONS]
@@ -247,7 +247,7 @@ default display:
 function awsdasg () {
 # some 'aws autoscaling describe-auto-scaling-groups' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
-   local _DEFAULT_REGION="us-west-2"
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSASDASG_CMD="aws autoscaling describe-auto-scaling-groups"
    local _USAGE="usage: \
 awsdasg [OPTIONS]
@@ -315,7 +315,7 @@ default display:
 function awsdi () {
 # some 'aws ec2 describe-instances' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
-   local _DEFAULT_REGION="us-west-2"
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
    local _USAGE="usage: \
 awsdi [OPTIONS]
@@ -387,7 +387,7 @@ default display:
 function awsdlb () {
 # some 'aws elb describe-load-balancer' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
-   local _DEFAULT_REGION="us-west-2"
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSELBDLB_CMD="aws elb describe-load-balancers"
    local _USAGE="usage: \
 awsdlb [OPTIONS]
@@ -449,7 +449,7 @@ default display:
 function awsdlc () {
 # some 'aws autoscaling describe-launch-configurations' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
-   local _DEFAULT_REGION="us-west-2"
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSASDLC_CMD="aws autoscaling describe-launch-configurations"
    local _USAGE="usage: \
 awsdlc [OPTIONS]
@@ -503,7 +503,7 @@ default display:
 function awsdni () {
 # some 'aws ec2 describe-network-interfaces' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
-   local _DEFAULT_REGION="us-west-2"
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSEC2DNI_CMD="aws ec2 describe-network-interfaces"
    local _USAGE="usage: \
 awsdni [OPTIONS]
@@ -1150,12 +1150,14 @@ function sae () {	# TOOL
          unset AWS_DEFAULT_PROFILE
          unset AWS_ACCESS_KEY_ID
          unset AWS_SECRET_ACCESS_KEY
+         unset AWS_DEFAULT_REGION
          echo "environment has been unset"
       else
          export AWS_DEFAULT_PROFILE=$_arg	# for `aws` CLI (instead of using --profile)
          export AWS_ENVIRONMENT=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}' $_AWS_CFG)
          export AWS_ACCESS_KEY_ID=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}' $_AWS_CFG)
          export AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}' $_AWS_CFG)
+         export AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/region/) {print $NF; exit}' $_AWS_CFG)
          _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/environment/) {print $NF; exit}' $_AWS_CFG)
          echo "environment has been set to --> $AWS_ENVIRONMENT"
       fi
@@ -1182,6 +1184,7 @@ function sae () {	# TOOL
       echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
       echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}"
       echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}"
+      echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
    fi
 }
 
