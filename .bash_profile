@@ -3,7 +3,7 @@
 # see /usr/share/doc/bash/examples/startup-files for examples.
 # the files are located in the bash-doc package.
 
-[ -n "$PS1" ] && echo "sourcing '.bash_profile'"
+[ -n "$PS1" ] && echo "sourcing: .bash_profile"
 
 # the default umask is set in /etc/profile; for setting the umask
 # for ssh logins, install and configure the libpam-umask package.

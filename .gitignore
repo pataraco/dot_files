@@ -12,6 +12,7 @@
 .ansible*
 .bash_history
 .cache
+.chef
 .config
 .docker
 .elinks

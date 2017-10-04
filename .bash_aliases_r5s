@@ -1,6 +1,9 @@
-#!bash - ~/.bash_aliases.r5s - sourced by ~/.bash_aliases (if enabled)
+#!bash - ~/.bash_aliases_r5s - sourced by ~/.bash_aliases (if enabled)
 # 
 # these are functions/aliases specific to Red 5 Studios
+
+# if interactive shell - display message
+[ -n "$PS1" ] && echo "sourcing: .bash_aliases_r5s"
 
 # set up some globals
 #CHEF_REPO=/opt/repo

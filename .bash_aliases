@@ -1,7 +1,7 @@
 #!bash - ~/.bash_aliases - sourced by ~/.bashrc
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo "sourcing '.bash_aliases'"
+[ -n "$PS1" ] && echo "sourcing: .bash_aliases"
 
 # some ansi colorizatioin escape sequences
 D2E="\e[K"              # to delete the rest of the chars on a line
@@ -977,6 +977,15 @@ function gh () {	# TOOL
    fi
 }
 
+function kf () {
+# `knife` command wrapper to use my dynamically set knife.rb file
+   if [ -z "$KNIFERB" ]; then
+      echo "KNIFERB environment variable NOT set"
+   else
+      eval knife '$*' -c $KNIFERB
+   fi
+}
+
 function listcrts () {
 # list all info in a crt bundle
 # usage:
@@ -1299,6 +1308,7 @@ function vin () {
              aws) actual_note_file=AWS_Notes.txt            ;;
            awsas) actual_note_file=AWS_AutoScaling_Notes.txt;;
             bash) actual_note_file=Bash_Notes.txt           ;;
+            chef) actual_note_file=Chef_Notes.txt           ;;
           consul) actual_note_file=Consul_Notes.txt         ;;
           docker) actual_note_file=Docker_Notes.txt         ;;
               es) actual_note_file=Elasticsearch_Notes.txt  ;;
@@ -1402,6 +1412,7 @@ alias a="alias | grep -v ^declare | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print
 alias awsrlhz="aws route53 list-hosted-zones |jq -r .HostedZones[].Name|sort|sed 's/\.$//'"
 alias c="clear"
 alias cdh="cd ~; cd"
+alias cds="cd ~/repos/infrastructure-automation/exercises/auto_website"
 alias cols="tsend 'echo \$COLUMNS'"
 alias cp='cp -i'
 alias crt='~/scripts/chef_recipe_tree.sh'
@@ -1435,12 +1446,15 @@ alias pa='ps auxfw'
 #alias pse='ps -ef' # converted to a function
 alias pe='ps -ef'
 alias rcrlf="sed 's/$//g' -i.orig"
+alias ccrlf="sed 's//\n/g' -i.orig"
 alias ring="/home/praco/scripts/tools/ring.sh"
 alias rsshk='ssh-keygen -f "/home/praco/.ssh/known_hosts" -R'
 alias rm='rm -i'
 alias sa=alias
 #alias sba='echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
-alias sba='source ~/.bash_aliases | sed "s/$/.../g" | tr "\n" " "; echo "done"'
+# the following doesn't work and doesn't seem to allow changes to take affect
+#alias sba='source ~/.bash_aliases | sed "s/$/.../g" | tr "\n" " "; echo "done"'
+alias sba='source ~/.bash_aliases'
 alias sdl="export DISPLAY=localhost:10.0"
 alias sf=showf
 alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
@@ -1453,7 +1467,8 @@ alias tskap="_tmux_send_keys_all_panes"
 alias xterm='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
 alias u=uptime
 #alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; echo "done"; echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
-alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; sba'
+#alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; sba'
+alias vba='echo "editing: ~/.bash_aliases"; vi ~/.bash_aliases; sba'
 alias vi='`which vim`'
 alias view='`which vim` -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"

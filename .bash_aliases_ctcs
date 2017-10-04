@@ -1,7 +1,9 @@
 #!bash - ~/.bash_aliases_ctcs - sourced by ~/.bashrc_aliases
+#
+# these are functions/aliases specific to Comtech TCS
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo "sourcing '.bash_aliases_ctcs'"
+[ -n "$PS1" ] && echo "sourcing: .bash_aliases_ctcs"
 
 # define functions
 
