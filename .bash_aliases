@@ -904,6 +904,21 @@ function elbinsts () {
    fi
 }
 
+function fdgr () {
+# find dirty git repos
+
+   local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -exec dirname {} \;)"
+   local _repo
+   local _git_status
+   for _repo in $_REPOS_TO_CHECK; do
+      cd $_repo
+      _gitstatus=$(git status --porcelain 2> /dev/null)
+      #[ -n "$_gitstatus" ] && echo -e "[${RED}DIRTY${NRM}]" || echo -e "[${GRN}CLEAN${NRM}]" 
+      [ -n "$_gitstatus" ] && echo -e "repo: $_repo status [${RED}DIRTY${NRM}]"
+   done
+   cd
+}
+
 function gdate () {
 # convert hex date value to date
    date --date=@`printf "%d\n" 0x$1`
@@ -1313,6 +1328,7 @@ function vin () {
           docker) actual_note_file=Docker_Notes.txt         ;;
               es) actual_note_file=Elasticsearch_Notes.txt  ;;
              git) actual_note_file=Git_Notes.txt            ;;
+         jenkins) actual_note_file=Jenkins_Notes.txt        ;;
             ldap) actual_note_file=LDAP_Notes.txt           ;;
            linux) actual_note_file=Linux_Notes.txt          ;;
         logstash) actual_note_file=Logstash_Notes.txt       ;;
@@ -1409,7 +1425,9 @@ alias -- -="cd -"
 #alias a="alias" # use: `sa`
 #alias a="alias | cut -d= -f1 | sort | awk -v c=6 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
 alias a="alias | grep -v ^declare | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
-alias awsrlhz="aws route53 list-hosted-zones |jq -r .HostedZones[].Name|sort|sed 's/\.$//'"
+#alias awsrlhz="aws route53 list-hosted-zones |jq -r .HostedZones[].Name|sort|sed 's/\.$//'"
+#alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | \"Zone: \" + .Name + \"   ID: \" +  .Id' | sort | sed 's/\. //'"
+alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + \")\"' | sort | sed 's:\./hostedzone/: (:'"
 alias c="clear"
 alias cdh="cd ~; cd"
 alias cds="cd ~/repos/infrastructure-automation/exercises/auto_website"

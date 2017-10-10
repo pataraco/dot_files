@@ -58,6 +58,17 @@
 # [credential]
 # 	helper = !aws --profile rdrake --region us-east-1 codecommit credential-helper $@
 # 	UseHttpPath = true
+# [credential "https://github.com/pataraco"]
+#         username = pataraco
+# 	helper = cache --timeout=604800
+# 	UseHttpPath = false
+# [credential "https://github.com/patrickraco"]
+#         username = patrickraco
+# 	helper = cache --timeout=604800
+# 	UseHttpPath = false
+[credential]
+	helper = cache --timeout=604800
+	UseHttpPath = false
 [credential]
 	helper = !aws codecommit credential-helper $@
 	UseHttpPath = true

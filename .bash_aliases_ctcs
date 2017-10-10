@@ -528,21 +528,27 @@ function zipstuff () {	# MISC
    STUFFZIP="/home/praco/stuff.ctcs.zip"
    FILES="
       .*rc
+      .ansible.cfg
+      .aws_commands.txt
+      .aws/config
       .bash*
       .csshrc
-      .aws_commands.txt
       .commands.txt
       .gitconfig
       .gitignore
+      .git-credentials
       .files.txt
+      .s3cfg
       .ssh/config
       .ssh/environment
       .tmux.conf
-      ansible
+      automation
       notes
+      projects
       scripts"
    # didn't figure out how to make this work
    ##EXCLUDE_FILES="*/.hg/\* repos/.chef/checksums/\* *.zip"
+   cd
    thisserver=`hostname`
    if [ "$thisserver" = "$SRCSERVER" ]; then
       echo "ziping $FILES to $STUFFZIP... "
