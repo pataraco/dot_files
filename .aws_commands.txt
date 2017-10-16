@@ -14,6 +14,11 @@ aws codecommit list-repositories --region REGION
 aws ec2 create-key-pair --key-name $KEY_PAIR_NAME | $JQ_CMD -r .KeyMaterial > $PRIVATE_KEY
 aws ec2 create-tags --region REGION --resources INST_ID --tags Key=KEY,Value=VLAUE
 aws ec2 delete-key-pair --key-name $KEY_PAIR_NAME
+aws ec2 allocate-address
+aws ec2 associate-address --instance-id $INST_ID
+aws ec2 disassociate-address --public-ip $PUBLIC_IP
+aws ec2 release-address --public-ip $PUBLIC_IP
+aws ec2 describe-addresses --output table
 aws ec2 describe-instances --filters Name=tag:Name,Values=$INST_NAME Name=instance-state-name,Values=running
 aws ec2 describe-instances --filters Name=tag:Name,Values=\$INST_NAME Name=instance-state-name,Values=running | jq -r .Reservations[].Instances[].InstanceId
 aws ec2 describe-instances --filters Name=tag:Name,Values=$INST_NAME Name=instance-state-name,Values=running | jq -r .Reservations[].Instances[].PublicIpAddress
