@@ -45,7 +45,7 @@ function showcf () {	# TOOL
       echo -ne "enter function: "
       read func
       echo
-      showf $func
+      showcf $func
    fi
 }
 
@@ -113,7 +113,7 @@ function vmchkcrts () {	# TOOL
          sg) _hosts_file=hosts_green; shift ;;
          us) _vpcs=mirkwood; shift          ;;
          eu) _vpcs=isengard; shift          ;;
-          *) echo "$_USAGE"; return        ;;
+          *) echo "$_USAGE"; return         ;;
       esac
    done
    [ -z "$_project" ] && _project=VMedix
@@ -173,9 +173,14 @@ function vmchkcrts () {	# TOOL
 
 function vmcssh () {	# VMedix
 # cssh to VMedix servers
-   local _USAGE="usage: vmcssh us|eu a|1|2|g|b|p [PATTERN]"
+   local _USAGE="usage: vmcssh [-u user] us|eu a|1|2|g|b|p [PATTERN]"
    local _INV_REPO="~/cloud_automation/ansible/inventory/VMedix"
    local _vpc _h _pat
+   local _user=$1
+   if [ "$_user" == "-u" ]; then
+      _user="--username $2"
+      shift 2
+   fi
    local _country=$1
    if [[ $_country =~ (us|eu) ]]; then
       case $_country in
@@ -208,9 +213,10 @@ function vmcssh () {	# VMedix
    elif [ -z "$_pat" ]; then
       _pat="all"
    fi
+   cssh_hosts=$(ansible --list-hosts -i $_INV_REPO/$_vpc/$_h "$_pat" --vault-password-file=~/.vault.vm 2>/dev/null | egrep -v 'hosts.*:$|localhost$|loghost|vpnhost')
    #debug#echo "repo: $_INV_REPO | vpc: $_vpc | hosts: $_h | pat: $_pat"
-   #debug#echo -e "csshing to these hosts:\n$(ansible --list-hosts -i $_INV_REPO/$_vpc/$_h "$_pat" --vault-password-file=~/.vault.vm 2>/dev/null | grep -v 'hosts.*:$')"
-   cssh $(ansible --list-hosts -i $_INV_REPO/$_vpc/$_h "$_pat" --vault-password-file=~/.vault.vm 2>/dev/null | egrep -v 'hosts.*:$|localhost$|loghost|vpnhost') &
+   #debug#echo -e "csshing to these hosts:\n$cssh_hosts"
+   cssh $_user $cssh_hosts &
 }
 
 function vmmanageusers () {	# VMedix
@@ -511,7 +517,8 @@ function vmrpms () {	# VMedix
    if [ -n "$_pattern" ]; then
       _pat="*$_pattern*"
    else
-      _pat="*api[0-9]*:*app_nginx[0-9]*"
+      #_pat="*api[0-9]*:*app_nginx[0-9]*"
+      _pat="*api[0-9]*:*app[0-9]*:*app_nginx[0-9]*"
    fi
    if [ "$_hosts" == "a" ]; then
       for _h in hosts_blue hosts_green; do
