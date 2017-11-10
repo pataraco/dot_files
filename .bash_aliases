@@ -326,6 +326,7 @@ awsdi [OPTIONS]
   -m MAX       # maximum number of items to display
   -r REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
   +a           # show AMI (ImageId)
+  +an          # show ASG Name
   +az          # show Availability Zone
   +bt          # show Branch Tag
   +c           # show Cluster
@@ -338,6 +339,7 @@ awsdi [OPTIONS]
   +pi          # show Public IP
   +si          # show Security Group Id(s)
   +sn          # show Security Group Name(s)
+  +t           # show Tenancy
   +v           # show VPC Name
   -h           # help (show this message)
 default display:
@@ -350,27 +352,29 @@ default display:
    local _query="Reservations[].Instances[]"
    while [ $# -gt 0 ]; do
       case $1 in
-          -p) _filters="Name=tag:Project,Values=*$2* $_filters"         ; shift 2;;
-          -n) _filters="Name=tag:Name,Values=*$2* $_filters"            ; shift 2;;
-          -s) _filters="Name=instance-state-name,Values=*$2* $_filters" ; shift 2;;
-          -e) _filters="Name=tag:Env,Values=*$2* $_filters"             ; shift 2;;
-          -m) _max_items="--max-items $2"                               ; shift 2;;
-          -r) _region=$2                                                ; shift 2;;
-          +a) _more_qs="ImageId,$_more_qs"                              ; shift  ;;
-         +az) _more_qs="Placement.AvailabilityZone,$_more_qs"           ; shift  ;;
-         +bt) _more_qs="Tags[?Key=='BranchTag'].Value|[0],$_more_qs"    ; shift  ;;
-          +c) _more_qs="Tags[?Key=='Cluster'].Value|[0],$_more_qs"      ; shift  ;;
-         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"   ; shift  ;;
-          +e) _more_qs="Tags[?Key=='Env'].Value|[0],$_more_qs"          ; shift  ;;
-         +it) _more_qs="InstanceType,$_more_qs"                         ; shift  ;;
-         +lt) _more_qs="LaunchTime,$_more_qs"                           ; shift  ;;
-         +mr) _more_qs="Tags[?Key=='MachineRole'].Value|[0],$_more_qs"  ; shift  ;;
-          +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"      ; shift  ;;
-         +pi) _more_qs="PublicIpAddress,$_more_qs"                      ; shift  ;;
-         +si) _more_qs="SecurityGroups[].GroupId|join(', ',@),$_more_qs"; shift  ;;
-         +sn) _more_qs="SecurityGroups[].GroupName|join(', ',@),$_more_qs"; shift  ;;
-          +v) _more_qs="Tags[?Key=='VPCName'].Value|[0],$_more_qs"      ; shift  ;;
-        -h|*) echo "$_USAGE"                                            ; return ;;
+          -p) _filters="Name=tag:Project,Values=*$2* $_filters"                     ; shift 2;;
+          -n) _filters="Name=tag:Name,Values=*$2* $_filters"                        ; shift 2;;
+          -s) _filters="Name=instance-state-name,Values=*$2* $_filters"             ; shift 2;;
+          -e) _filters="Name=tag:Env,Values=*$2* $_filters"                         ; shift 2;;
+          -m) _max_items="--max-items $2"                                           ; shift 2;;
+          -r) _region=$2                                                            ; shift 2;;
+          +a) _more_qs="ImageId,$_more_qs"                                          ; shift  ;;
+         +an) _more_qs="Tags[?Key=='aws:autoscaling:groupName'].Value|[0],$_more_qs"; shift  ;;
+         +az) _more_qs="Placement.AvailabilityZone,$_more_qs"                       ; shift  ;;
+         +bt) _more_qs="Tags[?Key=='BranchTag'].Value|[0],$_more_qs"                ; shift  ;;
+          +c) _more_qs="Tags[?Key=='Cluster'].Value|[0],$_more_qs"                  ; shift  ;;
+         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"               ; shift  ;;
+          +e) _more_qs="Tags[?Key=='Env'].Value|[0],$_more_qs"                      ; shift  ;;
+         +it) _more_qs="InstanceType,$_more_qs"                                     ; shift  ;;
+         +lt) _more_qs="LaunchTime,$_more_qs"                                       ; shift  ;;
+         +mr) _more_qs="Tags[?Key=='MachineRole'].Value|[0],$_more_qs"              ; shift  ;;
+          +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"                  ; shift  ;;
+         +pi) _more_qs="PublicIpAddress,$_more_qs"                                  ; shift  ;;
+         +si) _more_qs="SecurityGroups[].GroupId|join(', ',@),$_more_qs"            ; shift  ;;
+         +sn) _more_qs="SecurityGroups[].GroupName|join(', ',@),$_more_qs"          ; shift  ;;
+          +t) _more_qs="Placement.Tenancy,$_more_qs"                                ; shift  ;;
+          +v) _more_qs="Tags[?Key=='VPCName'].Value|[0],$_more_qs"                  ; shift  ;;
+        -h|*) echo "$_USAGE"                                                        ; return ;;
       esac
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
@@ -661,7 +665,7 @@ function ccc () {
    exit
 }
 
-function chkrepodiffs () {	# TOOL
+function chkrepodiffs () { # TOOL
 # checks files in current dir against file in home dir for diffs
 # only works on https://github.com/pataraco/bash_aliases repo now
 # comparing those files against those in home directory
@@ -694,7 +698,7 @@ function chkrepodiffs () {	# TOOL
    cd - > /dev/null
 }
 
-function chksums () {	# TOOL
+function chksums () { # TOOL
 # Generate 4 kinds of different checksums for a file
    if [ $# -eq 1 ]; then
       file=$1
@@ -713,7 +717,7 @@ function chksums () {	# TOOL
    fi
 }
 
-function cktj () {	# TOOL
+function cktj () { # TOOL
 # convert a key file so that it can be used in a json entry (i.e. change \n -> "\n")
    if [ -n "$1" ]; then
       cat $1 | tr '\n' '_' | sed 's/_/\\n/g'
@@ -759,7 +763,7 @@ function compare_lines () {
 
 # THIS IS COMMENTED OUT BECAUSE IT WAS FOR A PREVIOUS PLACE OF EMPLOYMENT USING INFORMIX
 # TODO: UPDATE FOR MYSQL AND UNCOMMENT
-##function dbgrep () {	# TOOL
+##function dbgrep () { # TOOL
 ### search/grep informix DB for patterns in tables/column names
 ### OPTIONS
 ### -w search for whole words only
@@ -913,7 +917,7 @@ function fdgr () {
    for _repo in $_REPOS_TO_CHECK; do
       cd $_repo
       _gitstatus=$(git status --porcelain 2> /dev/null)
-      #[ -n "$_gitstatus" ] && echo -e "[${RED}DIRTY${NRM}]" || echo -e "[${GRN}CLEAN${NRM}]" 
+      #[ -n "$_gitstatus" ] && echo -e "[${RED}DIRTY${NRM}]" || echo -e "[${GRN}CLEAN${NRM}]"
       [ -n "$_gitstatus" ] && echo -e "repo: $_repo status [${RED}DIRTY${NRM}]"
    done
    cd
@@ -924,7 +928,7 @@ function gdate () {
    date --date=@`printf "%d\n" 0x$1`
 }
 
-##function getramsz () {	# TOOL
+##function getramsz () { # TOOL
 ### get the amount of RAM on a server
 ## JUMP_SERVERS="jump1 jump2 stcgxyjmp01"
 ## USAGE="usage: getramsz [server] [server2] [server3]..."
@@ -981,11 +985,12 @@ function gdate () {
 ##   done
 ##}
 
-function gh () {	# TOOL
+function gh () { # TOOL
    if [[ $1 =~ ^\^.* ]]; then
       pattern=$(echo "$*" | tr -d '^')
       #echo "looking for: ^[0-9]*  $pattern"
-      history | grep "^[0-9]*  $pattern" | grep $pattern
+      #history | grep "^[0-9]*  $pattern" | grep $pattern
+      history | grep "^[ 0-9]*  $pattern" | grep $pattern
    else
       #echo "looking for: $*"
       history | grep "$*"
@@ -999,6 +1004,13 @@ function kf () {
    else
       eval knife '$*' -c $KNIFERB
    fi
+}
+
+function lgr () {
+# list GitHub Repos for a user
+   local _DEFAULT_USER="pataraco"
+   local _USER=${1:-$_DEFAULT_USER}
+   curl -s https://api.github.com/users/$_USER/repos|grep clone_url|awk '{print $2}'|tr -d '",'
 }
 
 function listcrts () {
@@ -1092,7 +1104,7 @@ function listcrts2 () {
    done
 }
 
-function mkalias () {	# TOOL
+function mkalias () { # TOOL
 # make an alias and add it to this file
    if [[ $1 && $2 ]]; then
       echo "alias $1=\"$2\"" >> ~/.bash_aliases
@@ -1100,20 +1112,20 @@ function mkalias () {	# TOOL
    fi
 }
 
-function mktb () {	# MISC
+function mktb () { # MISC
 # get rid of all the MISC, RHUG, and TRUG functions from $BRCSRC
 # and save the rest to $BRCDST
-   local BRCSRC=/home/praco/.bashrc
-   local BRCDST=/home/praco/.bashrc.tools
+   local BRCSRC=$HOME/.bashrc
+   local BRCDST=$HOME/.bashrc.tools
    rm -f $BRCDST
    sed '/^function.*# MISC$/,/^}$/d;/^function.*# RHUG$/,/^}$/d;/^function.*# TRUG$/,/^}$/d' $BRCSRC > $BRCDST
 }
 
-function pag () {	# TOOL
+function pag () { # TOOL
    ps auxfw | grep $*
 }
 
-function peg () {	# TOOL
+function peg () { # TOOL
    ps -ef | grep $*
 }
 
@@ -1122,10 +1134,10 @@ function pl () {
    eval $@ | less
 }
 
-function rac () {	# MISC
+function rac () { # MISC
 # remember AWS CLI command - save the given command for later retreval
    COMMAND="$*"
-   COMMANDS_FILE=/home/praco/.aws_commands.txt
+   COMMANDS_FILE=$HOME/.aws_commands.txt
    echo "$COMMAND" >> $COMMANDS_FILE
    sort $COMMANDS_FILE > $COMMANDS_FILE.sorted
    /bin/cp -f $COMMANDS_FILE.sorted $COMMANDS_FILE
@@ -1134,10 +1146,10 @@ function rac () {	# MISC
    echo "   to: $COMMANDS_FILE"
 }
 
-function rc () {	# MISC
+function rc () { # MISC
 # remember command - save the given command for later retreval
    COMMAND="$*"
-   COMMANDS_FILE=/home/praco/.commands.txt
+   COMMANDS_FILE=$HOME/.commands.txt
    echo "$COMMAND" >> $COMMANDS_FILE
    sort $COMMANDS_FILE > $COMMANDS_FILE.sorted
    /bin/cp -f $COMMANDS_FILE.sorted $COMMANDS_FILE
@@ -1146,10 +1158,10 @@ function rc () {	# MISC
    echo "   to: $COMMANDS_FILE"
 }
 
-function rf () {	# MISC
+function rf () { # MISC
 # remember file - save the given file for later retreval
    FILE="$*"
-   FILES_FILE=/home/praco/.files.txt
+   FILES_FILE=$HOME/.files.txt
    echo "$FILE" >> $FILES_FILE
    sort $FILES_FILE > $FILES_FILE.sorted
    /bin/cp -f $FILES_FILE.sorted $FILES_FILE
@@ -1157,7 +1169,7 @@ function rf () {	# MISC
    echo "added '$FILE' to: $FILES_FILE"
 }
 
-function sae () {	# TOOL
+function sae () { # TOOL
 # set AWS environment
    local _AWS_CFG=$HOME/.aws/config
    local _AWS_PROFILES=$(grep '^\[profile' $_AWS_CFG | awk '{print $2}' | tr ']\n' ' ')
@@ -1177,7 +1189,7 @@ function sae () {	# TOOL
          unset AWS_DEFAULT_REGION
          echo "environment has been unset"
       else
-         export AWS_DEFAULT_PROFILE=$_arg	# for `aws` CLI (instead of using --profile)
+         export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
          export AWS_ENVIRONMENT=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}' $_AWS_CFG)
          export AWS_ACCESS_KEY_ID=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}' $_AWS_CFG)
          export AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}' $_AWS_CFG)
@@ -1212,7 +1224,7 @@ function sae () {	# TOOL
    fi
 }
 
-function showf () {	# TOOL
+function showf () { # TOOL
 # show a function
    ALIASES_FILE="$HOME/.bash_aliases"
    if [[ $1 ]]; then
@@ -1258,7 +1270,7 @@ function sse () {
    fi
 }
 
-##function sshc () {	# TOOL
+##function sshc () { # TOOL
 ##   source_ssh_env
 ##   if [ $# -ge 2 ]; then
 ##      host=$1
@@ -1286,7 +1298,7 @@ function start_ssh_agent () {
    /usr/bin/ssh-add
 }
 
-function stopwatch () {	# TOOL
+function stopwatch () { # TOOL
    trap "return" SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT
    trap 'echo; stty echoctl; trap - SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT RETURN' RETURN
    stty -echoctl # don't echo "^C" when [Ctrl-C] is entered
@@ -1326,8 +1338,9 @@ function vin () {
             chef) actual_note_file=Chef_Notes.txt           ;;
           consul) actual_note_file=Consul_Notes.txt         ;;
           docker) actual_note_file=Docker_Notes.txt         ;;
-              es) actual_note_file=Elasticsearch_Notes.txt  ;;
+              es) actual_note_file=ElasticSearch_Notes.txt  ;;
              git) actual_note_file=Git_Notes.txt            ;;
+          gitlab) actual_note_file=GitLab_Notes.txt         ;;
          jenkins) actual_note_file=Jenkins_Notes.txt        ;;
             ldap) actual_note_file=LDAP_Notes.txt           ;;
            linux) actual_note_file=Linux_Notes.txt          ;;
@@ -1343,30 +1356,30 @@ function vin () {
    fi
 }
 
-function wtac () {	# MISC
+function wtac () { # MISC
 # what's that AWS command - retrieve the given command for use
    COMMAND_PATTERN="$*"
-   COMMANDS_FILE=/home/praco/.aws_commands.txt
+   COMMANDS_FILE=$HOME/.aws_commands.txt
    grep "$COMMAND_PATTERN" $COMMANDS_FILE
    while read _line; do
       history -s "$_line"
    done <<< "`grep "$COMMAND_PATTERN" $COMMANDS_FILE`"
 }
 
-function wtc () {	# MISC
+function wtc () { # MISC
 # what's that command - retrieve the given command for use
    COMMAND_PATTERN="$*"
-   COMMANDS_FILE=/home/praco/.commands.txt
+   COMMANDS_FILE=$HOME/.commands.txt
    grep "$COMMAND_PATTERN" $COMMANDS_FILE
    while read _line; do
       history -s "$_line"
    done <<< "`grep "$COMMAND_PATTERN" $COMMANDS_FILE`"
 }
 
-function wtf () {	# MISC
+function wtf () { # MISC
 # what's that file - retrieve the given file for use
    FILE_PATTERN="$*"
-   FILES_FILE=/home/praco/.files.txt
+   FILES_FILE=$HOME/.files.txt
    thefile=`grep $FILE_PATTERN $FILES_FILE`
    echo "$thefile"
 }
@@ -1465,8 +1478,8 @@ alias pa='ps auxfw'
 alias pe='ps -ef'
 alias rcrlf="sed 's/$//g' -i.orig"
 alias ccrlf="sed 's//\n/g' -i.orig"
-alias ring="/home/praco/scripts/tools/ring.sh"
-alias rsshk='ssh-keygen -f "/home/praco/.ssh/known_hosts" -R'
+alias ring="$HOME/scripts/tools/ring.sh"
+alias rsshk='ssh-keygen -f "$HOME/.ssh/known_hosts" -R'
 alias rm='rm -i'
 alias sa=alias
 #alias sba='echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
@@ -1476,7 +1489,7 @@ alias sba='source ~/.bash_aliases'
 alias sdl="export DISPLAY=localhost:10.0"
 alias sf=showf
 alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
-alias sing="/home/praco/scripts/tools/sing.sh"
+alias sing="$HOME/scripts/tools/sing.sh"
 alias sw=stopwatch
 #alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
