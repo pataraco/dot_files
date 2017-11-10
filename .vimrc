@@ -16,12 +16,16 @@ set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<,conceal:?,nbsp:_
 " turn off search highlight
 "nnoremap <silent> <space> :silent nohlsearch<CR>
 "nnoremap <silent> <space> :nohlsearch<CR>
-syntax on			" turn on syntax highlighting
+syntax on " turn on syntax highlighting
 " key mappings
 " ------------
 " to see key mappings use `:map`
 " one-liner to put & search `:redir @"|silent map|redir END|new|put!`
 "
+" scrolling
+" <C-y> scrolls up and <C-e> scrolls down
+" add <C-b> to scroll down
+map <C-b> <C-E>
 " split windows
 " increase the height of the pane
 map <C-i> <C-W>+
@@ -35,7 +39,7 @@ map <C-p> <C-W><
 map <C-h> <C-W>h
 " move to down pane
 map <C-j> <C-W>j
-" move to up pane 
+" move to up pane
 map <C-k> <C-W>k
 " move to right pane
 map <C-l> <C-W>l
@@ -56,9 +60,9 @@ autocmd VimEnter * if &diff | execute 'windo set wrap' | endif
 " use <Leader>n (below)
 "map <C-n> :set number!<CR>
 " set highlight coloring for line numbering, cursor line/column and searching
-hi LineNr       cterm=none ctermfg=black ctermbg=cyan guifg=black guibg=yellow
-hi CursorLine   cterm=none ctermfg=black ctermbg=cyan guifg=black guibg=yellow
-hi CursorColumn cterm=none ctermfg=black ctermbg=cyan guifg=black guibg=yellow
+hi LineNr       cterm=none ctermfg=black ctermbg=cyan   guifg=black guibg=yellow
+hi CursorLine   cterm=none ctermfg=black ctermbg=cyan   guifg=black guibg=yellow
+hi CursorColumn cterm=none ctermfg=black ctermbg=cyan   guifg=black guibg=yellow
 hi Search       cterm=none ctermfg=black ctermbg=yellow guifg=black guibg=yellow
 hi Visual       cterm=none ctermfg=black ctermbg=green  guifg=black guibg=green
 " Fix the difficult-to-read default setting for diff text highlighting
@@ -68,13 +72,19 @@ hi DiffChange   cterm=none ctermfg=lightgray ctermbg=blue gui=none guifg=bg guib
 hi DiffText     cterm=none ctermfg=lightgray ctermbg=red  gui=none guifg=bg guibg=fg
 " Set other specific colors
 hi StatusLine   cterm=bold ctermfg=black ctermbg=green gui=bold guifg=bg guibg=fg
-hi StatusLineNC cterm=bold ctermfg=black ctermbg=red  gui=bold guifg=bg guibg=fg
+hi StatusLineNC cterm=bold ctermfg=black ctermbg=red   gui=bold guifg=bg guibg=fg
 hi VertSplit    cterm=none ctermfg=black ctermbg=cyan  gui=none guifg=bg guibg=fg
 hi MatchParen   cterm=none ctermfg=black ctermbg=cyan  gui=none guifg=bg guibg=fg
-hi Folded       cterm=none ctermfg=black ctermbg=cyan   gui=none guifg=bg guibg=fg
-hi FoldColumn   cterm=none ctermfg=black ctermbg=cyan   gui=none guifg=bg guibg=fg
+hi Folded       cterm=none ctermfg=black ctermbg=cyan  gui=none guifg=bg guibg=fg
+hi FoldColumn   cterm=none ctermfg=black ctermbg=cyan  gui=none guifg=bg guibg=fg
 "hi Normal       cterm=none ctermfg=grey ctermbg=black   gui=none guifg=bg guibg=fg
 "hi Cursor       cterm=none ctermfg=black ctermbg=magenta gui=none guifg=bg guibg=fg
+" Set the colors for extra white space
+hi ExtraWhitespace cterm=none ctermfg=red ctermbg=red guifg=red guibg=red
+" Show trailing whitepace and spaces before a tab
+"autocmd Syntax * syn match ExtraWhitespace /\s\+$\| \+\ze\t/ containedin=ALL
+" Show trailing whitepace and tabs (NOT WORKING)
+"autocmd Syntax * syn match ExtraWhitespace /\s\+$\|\t/ containedin=ALL
 
 " turn cursor highlighting on/off
 nnoremap <silent> <Leader>x :silent set cursorline! \| set cursorcolumn!<CR>
@@ -84,6 +94,10 @@ nnoremap <silent> <Leader>c :silent set cursorcolumn!<CR>
 nnoremap <silent> <Leader>n :silent set number!<CR>
 " Press Space to turn off highlighting and clear any message already displayed.
 nnoremap <silent> <Space> :nohlsearch<Bar>:echo<CR>
+" highlight extra white space (trailing whitespace and tabs)
+nnoremap <silent> <Leader>w :match ExtraWhitespace /\s\+$\<Bar>\t/<CR>
+nnoremap <silent> <Leader>W :match<CR>
+
 " yank to end of line
 map Y y$
 set laststatus=2
