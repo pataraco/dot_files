@@ -3,6 +3,8 @@
 # if interactive shell - display message
 [ -n "$PS1" ] && echo "sourcing: .bash_aliases"
 
+company_shit=~/.bash_aliases_ctcs
+
 # some ansi colorizatioin escape sequences
 D2E="\e[K"              # to delete the rest of the chars on a line
 BLD="\e[1m"             # bold
@@ -1182,20 +1184,25 @@ function sae () { # TOOL
          return 2
       fi
       if [ "$_arg" == "unset" ]; then
-         unset AWS_ENVIRONMENT
          unset AWS_DEFAULT_PROFILE
+         unset AWS_ENVIRONMENT
          unset AWS_ACCESS_KEY_ID
          unset AWS_SECRET_ACCESS_KEY
          unset AWS_DEFAULT_REGION
          echo "environment has been unset"
       else
          export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
-         export AWS_ENVIRONMENT=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}' $_AWS_CFG)
-         export AWS_ACCESS_KEY_ID=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}' $_AWS_CFG)
-         export AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}' $_AWS_CFG)
-         export AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/region/) {print $NF; exit}' $_AWS_CFG)
-         _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"}; (pfound=="true" && $1~/environment/) {print $NF; exit}' $_AWS_CFG)
+         export AWS_ENVIRONMENT=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
+         export AWS_ACCESS_KEY_ID=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
+         export AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
+         export AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
+         _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
          echo "environment has been set to --> $AWS_ENVIRONMENT"
+         [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
+         [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
+         [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
+         [ -z "$AWS_SECRET_ACCESS_KEY" ] && unset AWS_SECRET_ACCESS_KEY
+         [ -z "$AWS_DEFAULT_REGION" ] && unset AWS_DEFAULT_REGION
       fi
       if [ "$COLOR_PROMPT" == "yes" ]; then
          case $_environment in
@@ -1500,6 +1507,7 @@ alias u=uptime
 #alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; echo "done"; echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
 #alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; sba'
 alias vba='echo "editing: ~/.bash_aliases"; vi ~/.bash_aliases; sba'
+alias vcba='[ -f $company_shit ] && { echo "editing: $company_shit"; vi $company_shit; sba; }'
 alias vi='`which vim`'
 alias view='`which vim` -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
@@ -1507,4 +1515,4 @@ alias which='(alias; declare -f) | /usr/bin/which --tty-only --read-alias --read
 alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less'
 
 # source company specific functions and aliases
-company_shit=~/.bash_aliases_ctcs && [ -f $company_shit ] && source $company_shit
+[ -f $company_shit ] && source $company_shit
