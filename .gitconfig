@@ -5,7 +5,8 @@
 	cam = commit -am
 	co = checkout
 	cob = checkout -b
-	cm = !git add -A && git commit -m
+	#cm = !git add -A && git commit -m
+	cm = commit -m
 	ec = config --global -e
         up = !git pull --rebase --prune $@ && git submodule update --init --recursive
 	# temporarily save work
