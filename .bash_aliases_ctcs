@@ -180,6 +180,8 @@ function vmcssh () {	# VMedix
    if [ "$_user" == "-u" ]; then
       _user="--username $2"
       shift 2
+   else
+      unset _user
    fi
    local _country=$1
    if [[ $_country =~ (us|eu) ]]; then
