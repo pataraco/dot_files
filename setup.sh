@@ -26,7 +26,7 @@ for file in $(ls -a1 | egrep -wv "$EGREP_PAT"); do
       echo "done"
    fi
    echo -en "   creating symlink: $HOME/$file -> $SRC_REPO/$file... "
-   ln $SRC_REPO/$file $HOME/$file
+   ln -s $SRC_REPO/$file $HOME/$file
    echo "done"
 done
 cd -
