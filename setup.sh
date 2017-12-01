@@ -1,4 +1,4 @@
-#!/bin/bash
+#!env bash
 
 # setup the bash_aliases files
 #   1. move existing . files to ~/.orig
