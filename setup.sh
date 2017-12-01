@@ -29,3 +29,4 @@ for file in $(ls -a1 | egrep -wv "$EGREP_PAT"); do
    ln $SRC_REPO/$file $HOME/$file
    echo "done"
 done
+cd -
