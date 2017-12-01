@@ -623,7 +623,8 @@ function bash_prompt () {
    python_version=$(python --version 2>&1 | awk '{print $NF}')
    PS_PY="${PMAG}Py:$python_version$PNRM"
    # get git info
-   local git_branch=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
+   #local git_branch=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
+   local git_branch=$(git branch 2>/dev/null|grep '^*'|awk '{print $NF}')
    git_status=$(git status --porcelain 2> /dev/null)
    [[ $git_status =~ ($'\n'|^).M ]] && local _git_has_mods=true
    [[ $git_status =~ ($'\n'|^)M ]] && local _git_has_mods_cached=true
