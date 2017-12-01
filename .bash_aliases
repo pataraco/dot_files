@@ -1512,7 +1512,11 @@ alias vcba='[ -f $company_shit ] && { echo "editing: $company_shit"; vi $company
 alias vi='`which vim`'
 alias view='`which vim` -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
-alias which='(alias; declare -f) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot'
+if [ "$(uname -so)" == "Linux GNU/Linux" ]; then
+   alias which='(alias; declare -f) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot'
+else
+   alias which='(alias; declare -f) | /usr/bin/which'
+fi
 alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less'
 
 # source company specific functions and aliases
