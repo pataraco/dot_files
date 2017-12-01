@@ -116,6 +116,7 @@ lspci | grep Ethernet
 lspci | grep Ethernet | egrep 'Intel|BCM5703'
 lvcreate -L 10G -n /dev/vg01/data vg01
 md5sum --check --status .md5sum.checklit
+mongo --quiet --ssl --sslAllowInvalidCertificates --host mongo1 --eval "printjson(db.runCommand('ismaster'))"
 mt -f /dev/st0 [status|eject]
 nc -n -v -w 5 -z 10.180.146.95 80
 nc -w 1 -z 10.148.3.11 22
@@ -172,6 +173,7 @@ ssh-copy-id [$USER@]$HOSTNAME
 ssh-keygen -p -f $key_file	# add/change passphrase
 ssh-keygen -R $hostname		# remove host entries from known_hosts
 ssh-keygen -t rsa		# generate RSA key-pair
+ssh mongo1.shared1.mirkwood.nim "mongo --quiet --ssl --sslAllowInvalidCertificates --host mongo1 --eval \\\"printjson(db.runCommand('ismaster'))\\\" | grep primary"
 stty -a < /dev/ttyaa05
 su eci -c '/eci/dev/bin/loader dev XXXXXX'
 su informix -c '/home/informix/bin/start_logical_logs'	# tape | backup
