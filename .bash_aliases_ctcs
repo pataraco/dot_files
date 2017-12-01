@@ -375,7 +375,7 @@ function vmmopprep () {	# VMedix
    [ ! -e "$pcr_steps_file" ] && { echo -e "${RED}ERROR${NRM}: no such file: $pcr_steps_file"; return; }
    echo -n "setting AWS environment to: "
    sae locapps > /dev/null
-   echo -e "[${CYN}$AWS_DEFAULT_PROFILE - $AWS_ENVIROMENT${NRM}]"
+   echo -e "[${CYN}$AWS_DEFAULT_PROFILE - $AWS_ENVIRONMENT${NRM}]"
    echo -n "setting Ansible version to: "
    act2.2 > /dev/null
    _ansible_version=$(ansible --version | head -1)
