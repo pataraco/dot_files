@@ -1198,7 +1198,7 @@ function sae () { # TOOL
          export AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
          export AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
          _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
-         echo "environment has been set to --> $AWS_ENVIRONMENT"
+         echo "environment has been set to --> $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
          [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
          [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
          [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
@@ -1223,7 +1223,7 @@ function sae () { # TOOL
       fi
    else
       echo -n "--- AWS Environment "
-      [ -n "$AWS_ENVIRONMENT" ] && echo "Settings ---" || echo "(NOT set) ---"
+      [ -n "$AWS_DEFAULT_PROFILE" ] && echo "Settings ---" || echo "(NOT set) ---"
       echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
       echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
       echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}"

@@ -29,6 +29,7 @@
 automation
 cloud_automation
 envs
+golang
 projects
 repos
 rpmbuild
