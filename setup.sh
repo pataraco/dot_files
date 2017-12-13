@@ -1,29 +1,24 @@
 #!/bin/bash
 
-# setup the bash_aliases files
-#   1. move existing . files to ~/.orig
-#   2. set up symlinks from ~ to the files in this repo
-#      (excluding this script, .git directory and the README)
+# setup the dot files files
+#   1. move existing dot files in $HOME to $HOME/.orig
+#   2. set up symlinks from $HOME to the files in the $SRC_REPO
+#      (excluding this script, the .git directory and the README file)
 
-SRC_REPO="$HOME/repos/bash_aliases"
+SRC_REPO="$HOME/repos/dot_files"
 ORIG_DIR="$HOME/.orig"
-EXCLUDE_FILES=(
-   .
-   ..
-   .git
-   README.md
-   setup.sh
-)
-EGREP_PAT=$(echo "${EXCLUDE_FILES[*]}" | tr ' ' '|')
 [ ! -d $ORIG_DIR ] && { echo -en "creating dir ($ORIG_DIR)... "; mkdir $ORIG_DIR; echo "done"; }
-#debug#echo "egrep pattern: '$EGREP_PAT'"
 cd $SRC_REPO
-#for file in $(ls -a1 | egrep -wv "$EGREP_PAT"); do
 for file in $(ls -1d .[a-z]* | grep -wv .git); do
    echo "processing file: $file"
-   if [ -e $HOME/$file ]; then
+   if [ -f $HOME/$file ]; then
       echo -en "   moving original file ($HOME/$file) to $ORIG_DIR... "
       mv $HOME/$file $ORIG_DIR
+      echo "done"
+   fi
+   if [ -h $HOME/$file ]; then
+      echo -en "   removing old symlink ($HOME/$file)... "
+      rm -f $HOME/$file
       echo "done"
    fi
    echo -en "   creating symlink: $HOME/$file -> $SRC_REPO/$file... "
