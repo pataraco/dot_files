@@ -570,6 +570,110 @@ default display:
    fi
 }
 
+function awsdsg () {
+# some 'aws ec2 describe-instances' hacks
+   local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+   local _AWS_EC2_DSG_CMD="aws ec2 describe-security-groups"
+   local _USAGE="usage: \
+awsdsg [OPTIONS]
+  -p  PROJECT    # filter results by this Project
+  -e  ENVIRONMNT # filter results by this Environment (e.g. production, staging)
+  -i  GROUP_ID   # filter results by this SG ID
+  -n  SG_NAME    # filter results by this SG Name
+  -c  CIDR       # filter results by this CIDR (Ingress)
+  -v  VPC_ID     # filter results by this VPC ID
+  -gi SG_ID      # filter results by this SG ID that has been granted permission
+  -gn SG_NAME    # filter results by this SG Name that has been granted permission
+  -fp FROM_PORT  # filter results by this starting port number
+  -tp TO_PORT    # filter results by this ending port number
+  -pp PROTOCOL   # filter results by this Protocol
+  -r  REGION     # Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +a           # show AMI (ImageId)
+  +an          # show ASG Name
+  +az          # show Availability Zone
+  +bt          # show Branch Tag
+  +c           # show Cluster
+  +cc          # show Charge Code
+  +e           # show Env (Environment)
+  +it          # show Instance Type
+  +lt          # show Launch Time
+  +mr          # show Machine Role
+  +p           # show Project
+  +pi          # show Public IP
+  +si          # show Security Group Id(s)
+  +sn          # show Security Group Name(s)
+  +t           # show Tenancy
+  +v           # show VPC Name
+  -h           # help (show this message)
+default display:
+  SG ID | SG Name | VPC ID | Description"
+   local _region="$_DEFAULT_REGION"
+   local _filters=""
+   #local _queries="Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name"
+   #local _queries="Tags[?Key=='Name'].Value|[0]"
+   #local _queries="GroupId,IpPermissions[0].IpRanges[0].CidrIp"
+   #local _queries="GroupId,IpPermissions[].IpRanges[].CidrIp|join(', ',@)"
+   local _queries="GroupId"
+   local _default_queries="GroupId,GroupName,VpcId,Description"
+   local _more_qs=""
+   local _query="SecurityGroups[]"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -p) _filters="Name=tag:Project,Values=*$2* $_filters"                     ; shift 2;;
+          -e) _filters="Name=tag:Env,Values=*$2* $_filters"                         ; shift 2;;
+          -i) _filters="Name=group-id,Values=*$2* $_filters"                        ; shift 2;;
+          -c) _filters="Name=ip-permission.cidr,Values=*$2* $_filters"              ; shift 2;;
+         -gi) _filters="Name=ip-permission.group-id,Values=*$2* $_filters"          ; shift 2;;
+         -gn) _filters="Name=ip-permission.group-name,Values=*$2* $_filters"        ; shift 2;;
+         -fp) _filters="Name=ip-permission.from-port,Values=*$2* $_filters"         ; shift 2;;
+         -tp) _filters="Name=ip-permission.to-port,Values=*$2* $_filters"           ; shift 2;;
+         -pp) _filters="Name=ip-permission.protocol,Values=*$2* $_filters"          ; shift 2;;
+          -n) _filters="Name=group-name,Values=*$2* $_filters"                      ; shift 2;;
+          -v) _filters="Name=vpc-id,Values=*$2* $_filters"                          ; shift 2;;
+          -r) _region=$2                                                            ; shift 2;;
+########
+          +e) _more_qs="$_more_qs${_more_qs:+,}IpPermissionsEgress[].IpRanges[].CidrIp|join(', ',@)"       ; shift  ;;
+          +i) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpRanges[].CidrIp|join(', ',@)"             ; shift  ;;
+          #+fp) _more_qs="$_more_qs,IpPermissions[].FromPort|join(', ',to_array(to_string(@)))"             ; shift  ;;
+          +fp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].FromPort|join(', ',to_array(to_string(@)))"             ; shift  ;;
+          #+fp) _more_qs="IpPermissions[].FromPort|to_string(@)|join(', ',@)"             ; shift  ;;
+          #+tp) _more_qs="IpPermissions[].ToPort|to_string(@)|join(', ',@)"             ; shift  ;;
+          #+tp) _more_qs="$_more_qs,IpPermissions[].ToPort|join(', ',to_array(to_string(@)))"             ; shift  ;;
+          +tp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].ToPort|join(', ',to_array(to_string(@)))"             ; shift  ;;
+          #+pp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpProtocol|join(', ',to_array(to_string(@)))"             ; shift  ;;
+          +pp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpProtocol|join(',',@)"             ; shift  ;;
+########
+          +a) _more_qs="ImageId,$_more_qs"                                          ; shift  ;;
+         +an) _more_qs="Tags[?Key=='aws:autoscaling:groupName'].Value|[0],$_more_qs"; shift  ;;
+         +az) _more_qs="Placement.AvailabilityZone,$_more_qs"                       ; shift  ;;
+         +bt) _more_qs="Tags[?Key=='BranchTag'].Value|[0],$_more_qs"                ; shift  ;;
+          +c) _more_qs="Tags[?Key=='Cluster'].Value|[0],$_more_qs"                  ; shift  ;;
+         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"               ; shift  ;;
+          +e) _more_qs="Tags[?Key=='Env'].Value|[0],$_more_qs"                      ; shift  ;;
+         +it) _more_qs="InstanceType,$_more_qs"                                     ; shift  ;;
+         +lt) _more_qs="LaunchTime,$_more_qs"                                       ; shift  ;;
+         +mr) _more_qs="Tags[?Key=='MachineRole'].Value|[0],$_more_qs"              ; shift  ;;
+          +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"                  ; shift  ;;
+         +pi) _more_qs="PublicIpAddress,$_more_qs"                                  ; shift  ;;
+         +si) _more_qs="SecurityGroups[].GroupId|join(', ',@),$_more_qs"            ; shift  ;;
+         +sn) _more_qs="SecurityGroups[].GroupName|join(', ',@),$_more_qs"          ; shift  ;;
+          +t) _more_qs="Placement.Tenancy,$_more_qs"                                ; shift  ;;
+          +v) _more_qs="Tags[?Key=='VPCName'].Value|[0],$_more_qs"                  ; shift  ;;
+        -h|*) echo "$_USAGE"                                                        ; return ;;
+      esac
+   done
+   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   if [ "$_region" == "all" ]; then
+      for _region in $_ALL_REGIONS; do
+         $_AWS_EC2_DSG_CMD --region=$_region $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      done
+   else
+      $_AWS_EC2_DSG_CMD --region=$_region $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+   fi
+}
+
 function awsrlrrs () {
 # some 'aws route53 list-resource-record-sets' hacks
    local _AWSRLRRS_CMD="aws route53 list-resource-record-sets"
@@ -1198,7 +1302,7 @@ function sae () { # TOOL
          export AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
          export AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
          _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
-         echo "environment has been set to --> $AWS_ENVIRONMENT"
+         echo "environment has been set to --> $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
          [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
          [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
          [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
@@ -1223,7 +1327,7 @@ function sae () { # TOOL
       fi
    else
       echo -n "--- AWS Environment "
-      [ -n "$AWS_ENVIRONMENT" ] && echo "Settings ---" || echo "(NOT set) ---"
+      [ -n "$AWS_DEFAULT_PROFILE" ] && echo "Settings ---" || echo "(NOT set) ---"
       echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
       echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
       echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}"
