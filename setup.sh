@@ -18,7 +18,8 @@ EGREP_PAT=$(echo "${EXCLUDE_FILES[*]}" | tr ' ' '|')
 [ ! -d $ORIG_DIR ] && { echo -en "creating dir ($ORIG_DIR)... "; mkdir $ORIG_DIR; echo "done"; }
 #debug#echo "egrep pattern: '$EGREP_PAT'"
 cd $SRC_REPO
-for file in $(ls -a1 | egrep -wv "$EGREP_PAT"); do
+#for file in $(ls -a1 | egrep -wv "$EGREP_PAT"); do
+for file in $(ls -1d .[a-z]* | grep -wv .git); do
    echo "processing file: $file"
    if [ -e $HOME/$file ]; then
       echo -en "   moving original file ($HOME/$file) to $ORIG_DIR... "
