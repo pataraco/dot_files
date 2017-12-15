@@ -1280,11 +1280,11 @@ function sae () { # TOOL
 # set AWS environment
    local _AWS_CFG=$HOME/.aws/config
    local _AWS_PROFILES=$(grep '^\[profile' $_AWS_CFG | awk '{print $2}' | tr ']\n' ' ')
-   local _VALID_ARGS=$(echo $_AWS_PROFILES unset | tr ' ' '|')
+   local _VALID_ARGS=$(echo $_AWS_PROFILES unset | tr ' ' ':')
    local _environment
    local _arg="$1"
    if [ -n "$_arg" ]; then
-      if [[ ! $_arg =~ $_VALID_ARGS ]]; then
+      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
          echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $_AWS_PROFILES
          return 2
       fi
