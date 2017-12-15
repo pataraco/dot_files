@@ -21,6 +21,7 @@
 .rediscli_history
 .rnd
 .ssh/known_hosts*
+.ssh/environment
 .vagrant.d
 .vim
 .viminfo
