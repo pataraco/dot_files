@@ -26,11 +26,19 @@ fi
 [ -n "${SSH_CLIENT%% *}" ] && export DISPLAY="${SSH_CLIENT%% *}:0.0"
 
 # add arcanist to PATH
-export ARC_ROOT=$HOME/repos/phacility/arcanist
-[[ ! $PATH =~ $ARC_ROOT/bin ]] && export PATH="$PATH:$ARC_ROOT/bin"
+arcanist_repo=$HOME/repos/phacility/arcanist
+if [ -d $arcanist_repo ]; then
+   export ARC_ROOT=$arcanist_repo
+   arcanist_bin=$ARC_ROOT/bin
+   [[ -d $arcanist_bin && ! $PATH =~ ^$arcanist_bin:|:$arcanist_bin:|:$arcanist_bin$ ]] && export PATH="$PATH:$arcanist_bin"
+fi
 # add pyenv to PATH
-export PYENV_ROOT=$HOME/repos/pyenv
-[[ ! $PATH =~ $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+pyenv_repo=$HOME/repos/pyenv
+if [ -d $pyenv_repo ]; then
+   export PYENV_ROOT=$pyenv_repo
+   pyenv_bin=$PYENV_ROOT/bin
+   [[ -d $pyenv_bin && ! $PATH =~ ^$pyenv_bin:|:$pyenv_bin:|:$pyenv_bin$ ]] && export PATH="$pyenv_bin:$PATH"
+fi
 
 # Should not need this stuff
 ## add Ruby related info
@@ -96,4 +104,4 @@ else
 fi
 
 # add `pyenv init` to shell to enable shims and autcompletion
-eval "$(pyenv init -)"
+[ $(command -v pyenv) ] && eval "$(pyenv init -)"
