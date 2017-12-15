@@ -1297,9 +1297,9 @@ function sae () { # TOOL
          echo "environment has been unset"
       else
          export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
-         local _aws_env=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
-         local _aws_acct=$(aws sts get-caller-identity | jq -r .Account)
-         export AWS_ENVIRONMENT="${_aws_env%% } [$_aws_acct]"
+         local _aws_env=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG | sed 's/ *$//')
+         local _aws_acct=$(aws sts get-caller-identity --profile $AWS_DEFAULT_PROFILE | jq -r .Account)
+         export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
          export AWS_ACCESS_KEY_ID=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
          export AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
          export AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
