@@ -56,7 +56,9 @@ export ANSIBLE_LIBRARY=$HOME/cloud_automation/ansible/library
 
 # set up VirtualEnv enviroment variables
 export VIRTUAL_ENV_DISABLE_PROMPT=YES	# set to non-empty value to disable
-
+# set up pip list column output formating
+export PIP_FORMAT=columns
+# set up "vi" command line editing
 export EDITOR=vim 
 export VISUAL=vim 
 #export MANPAGER="col -bx | vim -c 'set ft=man nolist nonu ' -MR -"
