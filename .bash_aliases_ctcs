@@ -377,7 +377,7 @@ function vmmopprep () {	# VMedix
    sae locapps > /dev/null
    echo -e "[${CYN}$AWS_DEFAULT_PROFILE - $AWS_ENVIRONMENT${NRM}]"
    echo -n "setting Ansible version to: "
-   act2.2 > /dev/null
+   actvm > /dev/null
    _ansible_version=$(ansible --version | head -1)
    echo -e "[${CYN}$_ansible_version${NRM}]"
    case "$_steps_desired" in
@@ -575,7 +575,7 @@ function zipstuff () {	# MISC
 alias act1='source ~/envs/Ansible_1.x/bin/activate; ansible --version'
 alias act2.1='source ~/envs/Ansible_2.x/bin/activate; ansible --version'
 alias act2.2='source ~/envs/Ansible_2.2/bin/activate; ansible --version'
-alias actvm='source ~/envs/Ansible_2.2/bin/activate; ansible --version'
+alias actvm='source ~/envs/vmedix/bin/activate; ansible --version'
 alias arcdiff="arc diff --reviewers akulkarni,pfreeman,sbenjamin,tbenichou,tholcomb,candonov main"
 alias cda="cd ~/cloud_automation/ansible"
 alias cdi="cd ~/cloud_automation/ansible/inventory"
