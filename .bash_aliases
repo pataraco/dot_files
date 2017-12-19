@@ -1017,7 +1017,7 @@ function elbinsts () {
 
 function fdgr () {
 # find dirty git repos
-
+   local _orig_wd=$(pwd)
    local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -exec dirname {} \;)"
    local _repo
    local _git_status
@@ -1027,7 +1027,7 @@ function fdgr () {
       #[ -n "$_gitstatus" ] && echo -e "[${RED}DIRTY${NRM}]" || echo -e "[${GRN}CLEAN${NRM}]"
       [ -n "$_gitstatus" ] && echo -e "repo: $_repo status [${RED}DIRTY${NRM}]"
    done
-   cd
+   cd $_orig_wd
 }
 
 function gdate () {
