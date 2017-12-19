@@ -1608,6 +1608,7 @@ alias sing="$HOME/scripts/tools/sing.sh"
 alias sw=stopwatch
 #alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
+alias ta='tmux attach -t'
 alias tt='echo -ne "\033]0;`whoami`@`hostname`\007"'
 alias tskap="_tmux_send_keys_all_panes"
 alias xterm='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
