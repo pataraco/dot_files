@@ -393,6 +393,59 @@ default display:
    fi
 }
 
+function awsdis () {
+# some 'aws ec2 describe-instance-status' hacks
+   local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+   local _AWS_EC2_DIS_CMD="aws ec2 describe-instance-status"
+   local _USAGE="usage: \
+awsdis [OPTIONS]
+  -c  CODE       # filter by Event Code ({instance,system}-{reboot,retirement,stop,maintenance})
+  -s  STATE      # filter by Instance State (pending, running, shutting-down, terminated, stopped)
+  -r  REGION     # Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +az            # show Availability Zone
+  +c             # show Events Codes
+  +d             # show Events Descriptions
+  +s             # show Instance State
+  +t             # show Events Dates and Times
+  -h             # help (show this message)
+default display:
+  Instance ID | State | Event Code | Event Description"
+   local _region="$_DEFAULT_REGION"
+   local _filters=""
+   local _queries="InstanceId"
+   #local _default_queries="InstanceId,InstanceState.Name,Events[].Code|join(', ',@),Events[].Description|join(', ',@)"
+   local _default_queries="InstanceId,InstanceState.Name,Events[0].Code,Events[0].Description"
+   local _more_qs=""
+   local _query="InstanceStatuses[]"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -c) _filters="Name=event.code,Values=*$2* $_filters"      ; shift 2;;
+          -s) _filters="Name=instance-state-name,Values=*$2* $_filters"      ; shift 2;;
+          -r) _region=$2                                               ; shift 2;;
+         +az) _more_qs="$_more_qs${_more_qs:+,}AVailabilityZone"      ; shift;;
+          #+c) _more_qs="$_more_qs${_more_qs:+,}Events[].Code|join(', ',@)"      ; shift;;
+          +c) _more_qs="$_more_qs${_more_qs:+,}Events[0].Code"      ; shift;;
+          #+d) _more_qs="$_more_qs${_more_qs:+,}Events[].Description|join(', ',@)"      ; shift;;
+          +d) _more_qs="$_more_qs${_more_qs:+,}Events[0].Description"      ; shift;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}InstanceState.Name"      ; shift;;
+          #+t) _more_qs="$_more_qs${_more_qs:+,}Events[].NotBefore|join(', ',@),Events[].NotAfter|join(', ',@)"      ; shift;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}Events[0].NotBefore,Events[0].NotAfter"      ; shift;;
+         #+fp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].FromPort|join(', ',to_array(to_string(@)))"; shift;;
+        -h|*) echo "$_USAGE"; return;;
+      esac
+   done
+   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   if [ "$_region" == "all" ]; then
+      for _region in $_ALL_REGIONS; do
+         $_AWS_EC2_DIS_CMD --region=$_region $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstanceStatus' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      done
+   else
+      $_AWS_EC2_DIS_CMD --region=$_region $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstanceStatus' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+   fi
+}
+
 function awsdlb () {
 # some 'aws elb describe-load-balancer' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
@@ -569,7 +622,7 @@ default display:
 }
 
 function awsdsg () {
-# some 'aws ec2 describe-instances' hacks
+# some 'aws ec2 describe-security-groups' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DSG_CMD="aws ec2 describe-security-groups"
