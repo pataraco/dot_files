@@ -216,8 +216,8 @@ function vmcssh () {	# VMedix
       _pat="all"
    fi
    cssh_hosts=$(ansible --list-hosts -i $_INV_REPO/$_vpc/$_h "$_pat" --vault-password-file=~/.vault.vm 2>/dev/null | egrep -v 'hosts.*:$|localhost$|loghost|vpnhost')
-   #debug#echo "repo: $_INV_REPO | vpc: $_vpc | hosts: $_h | pat: $_pat"
-   #debug#echo -e "csshing to these hosts:\n$cssh_hosts"
+   #echo "debug: repo: $_INV_REPO | vpc: $_vpc | hosts: $_h | pat: $_pat"
+   #echo -e "debug: csshing to these hosts:\n$cssh_hosts"
    cssh $_user $cssh_hosts &
 }
 
@@ -400,7 +400,6 @@ function vmmopprep () {	# VMedix
    sed -i "s,\\\!,\\\\\\\!,g" $_STEPS
    if [ -s $_STEPS ]; then
       local _step_no=1
-      history -s "vmmopprep $*"
       while read _line; do
          echo "$_line" >> $_STEPS.processed
       done <<< "`cat $_STEPS`"
@@ -426,6 +425,7 @@ function vmmopprep () {	# VMedix
          echo "differences found:"
          diff $_STEPS{.found,.processed}
       fi
+      history -s "vmmopprep $*"
    else
       echo "no commands added to history - could not find any"
    fi
