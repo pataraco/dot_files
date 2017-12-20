@@ -1,64 +1,71 @@
 #!bash - ~/.bash_aliases - sourced by ~/.bashrc
 
+# -------------------- initial directives --------------------
+
 # if interactive shell - display message
 [ -n "$PS1" ] && echo "sourcing: .bash_aliases"
-
-company_shit=~/.bash_aliases_ctcs
-
-# some ansi colorizatioin escape sequences
-D2E="\e[K"              # to delete the rest of the chars on a line
-BLD="\e[1m"             # bold
-ULN="\e[4m"             # underlined
-BLK="\e[30m"            # black FG
-RED="\e[31m"            # red FG
-GRN="\e[32m"            # green FG
-YLW="\e[33m"            # yellow FG
-BLU="\e[34m"            # blue FG
-MAG="\e[35m"            # magenta FG
-CYN="\e[36m"            # cyan FG
-RBG="\e[41m"            # red BG
-GBG="\e[42m"            # green BG
-YBG="\e[43m"            # yellow BG
-BBG="\e[44m"            # blue BG
-MBG="\e[45m"            # magenta BG
-CBG="\e[46m"            # cyan BG
-NRM="\e[m"              # to make text normal
-
-# turn on `vi` command line editing - oh yeah!
-set -o vi
-
-# set xterm defaults
-XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
-
-# set bash prompt command (and bash prompt)
-ORIG_PS1=$PS1
-export PROMPT_DIRTRIM=3
-
-# # change grep color to light yelow highlighting with black fg
-# export GREP_COLOR="5;43;30"
-
-# change grep color to light green fg on black bg
-export GREP_COLOR="1;40;32"
-
-# for changing prompt colors
-PRED='\[\e[1;31m\]'      # red (bold)
-PGRN='\[\e[1;32m\]'      # green (bold)
-PYLW='\[\e[1;33m\]'      # yellow (bold)
-PBLU='\[\e[1;34m\]'      # blue (bold)
-PMAG='\[\e[1;35m\]'      # magenta (bold)
-PCYN='\[\e[1;36m\]'      # cyan (bold)
-PNRM='\[\e[m\]'          # to make text normal
-
-# some bind settings
-bind Space:magic-space
 
 # update change the title bar of the terminal
 echo -ne "\033]0;`whoami`@`hostname`\007"
 
-# set up some globals
+# -------------------- global variables --------------------
+
+# set company specific variable
+COMPANY_SHIT=~/.bash_aliases_ctcs
+
+# some ansi colorizatioin escape sequences
+D2E="\e[K"     # to delete the rest of the chars on a line
+BLD="\e[1m"    # bold
+ULN="\e[4m"    # underlined
+BLK="\e[30m"   # black FG
+RED="\e[31m"   # red FG
+GRN="\e[32m"   # green FG
+YLW="\e[33m"   # yellow FG
+BLU="\e[34m"   # blue FG
+MAG="\e[35m"   # magenta FG
+CYN="\e[36m"   # cyan FG
+RBG="\e[41m"   # red BG
+GBG="\e[42m"   # green BG
+YBG="\e[43m"   # yellow BG
+BBG="\e[44m"   # blue BG
+MBG="\e[45m"   # magenta BG
+CBG="\e[46m"   # cyan BG
+NRM="\e[m"     # to make text normal
+
+# set xterm defaults
+XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
+
+# set/save original bash prompt
+ORIG_PS1=$PS1
+
+# for changing prompt colors
+PRED='\[\e[1;31m\]'   # red (bold)
+PGRN='\[\e[1;32m\]'   # green (bold)
+PYLW='\[\e[1;33m\]'   # yellow (bold)
+PBLU='\[\e[1;34m\]'   # blue (bold)
+PMAG='\[\e[1;35m\]'   # magenta (bold)
+PCYN='\[\e[1;36m\]'   # cyan (bold)
+PNRM='\[\e[m\]'       # to make text normal
+
+# directory where all (most) repos are
 REPO_DIR=$HOME/repos
 
-# define functions
+# -------------------- shell settings --------------------
+
+# turn on `vi` command line editing - oh yeah!
+set -o vi
+
+# show 3 directories of CWD in prompt
+export PROMPT_DIRTRIM=3
+# some bind settings
+bind Space:magic-space
+
+# # change grep color to light yelow highlighting with black fg
+# export GREP_COLOR="5;43;30"
+# change grep color to light green fg on black bg
+export GREP_COLOR="1;40;32"
+
+# -------------------- define functions --------------------
 
 function _tmux_send_keys_all_panes () {
 # send keys to all tmux panes
@@ -96,26 +103,24 @@ function awssnsep () {
 function awsasgcp () {
 # suspend/resume ALL AWS AutoScaling processes
 # (optional: only for a specified autoscaling group name or those matching a reg-ex)
-# defaults to "dry-run" - must use "--no-dry-run" option to perform
-   local _USAGE="usage: awsasgcp -r|--resume or -s|--suspend [--region REGION] [--no-dry-run] [AutoScalingGroupName|RegEx]"
+# defaults to "running" (i.e. run the command) - must use "--dry-run" option to NOT perform
+   local _USAGE="usage: awsasgcp -r|--resume or -s|--suspend [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]"
    local _AWS_CMD=$(/usr/bin/which aws 2> /dev/null) || { echo "'aws' needed to run this function"; exit 3; }
    local _JQ_CMD=$(/usr/bin/which jq 2> /dev/null) || { echo "'jq' needed to run this function"; exit 3; }
-   local _dryrun=dry-run
+   local _dryrun=running
    local _pc_cmd
    local _region
    while true; do
       case "$1" in
-          -r|--resume) _pc_cmd=resume-processes ; shift  ;;
-         -s|--suspend) _pc_cmd=suspend-processes; shift  ;;
+          -r|--resume) _pc_cmd=resume-processes ; shift;;
+         -s|--suspend) _pc_cmd=suspend-processes; shift;;
+            --dry-run) _dryrun=dry-run          ; shift;;
              --region) _region="--region $2"    ; shift 2;;
-         --no-dry-run) _dryrun=running          ; shift  ;;
-                    *) break                             ;;
+                    *) break;;
       esac
    done
    [ -z "$_pc_cmd" ] && { echo "$_USAGE"; return; }
    local _asgn_pattern=$*
-   #asg_names=$(aws $_region autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4 | grep "$_asgn_pattern")
-   #asg_names=$($_AWS_CMD $_region autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4 | grep "$_asgn_pattern")
    asg_names=$($_AWS_CMD $_region autoscaling describe-auto-scaling-groups | $_JQ_CMD -r .AutoScalingGroups[].AutoScalingGroupName | grep "$_asgn_pattern")
    if [ -n "$asg_names" ]; then
       for asg_name in $asg_names; do
@@ -150,7 +155,7 @@ function awsci () {
          [ "$_INSTANCE_STATE" == "stopped" ] && { echo "$_INSTANCE_NAME ($_INSTANCE_ID) is already stopped"; return; }
          _aws_ec2_cmd=stop-instances  ;;
       *)
-         echo "unknown option: exiting..."; echo "$_USAGE" ; return ;;
+         echo "unknown option: exiting..."; echo "$_USAGE"; return;;
    esac
    [ -z "$_INSTANCE_ID" ] && { echo "note: did not find instance named: $_INSTANCE_NAME"; return; }
    local _ans
@@ -218,21 +223,20 @@ default display:
          -vs) _filters="Name=block-device-mapping.volume-size,Values=*$2* $_filters"; shift 2;;
          -vt) _filters="Name=block-device-mapping.volume-type,Values=*$2* $_filters"; shift 2;;
           -r) _region=$2                                                            ; shift 2;;
-          +a) _more_qs="Architecture,$_more_qs"                                     ; shift  ;;
-         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"               ; shift  ;;
-         +cd) _more_qs="CreationDate,$_more_qs"                                     ; shift  ;;
-         +ht) _more_qs="Hypervisor,$_more_qs"                                       ; shift  ;;
-         +it) _more_qs="ImageType,$_more_qs"                                        ; shift  ;;
-          +o) _more_qs="OwnerId,$_more_qs"                                          ; shift  ;;
-          +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"                  ; shift  ;;
-         +ps) _more_qs="Public,$_more_qs"                                           ; shift  ;;
-         +rn) _more_qs="RootDeviceName,$_more_qs"                                   ; shift  ;;
-         +rt) _more_qs="RootDeviceType,$_more_qs"                                   ; shift  ;;
-          +v) _more_qs="VirtualizationType,$_more_qs"                               ; shift  ;;
-         +vs) _more_qs="BlockDeviceMappings[0].Ebs.VolumeSize,$_more_qs"            ; shift  ;;
-         +vt) _more_qs="BlockDeviceMappings[0].Ebs.VolumeType,$_more_qs"            ; shift  ;;
-          -h) echo "$_USAGE"                                                        ; return ;;
-           *) echo "$_USAGE"                                                        ; return ;;
+          +a) _more_qs="$_more_qs${_more_qs:+,}Architecture"                                     ; shift;;
+         +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"               ; shift;;
+         +cd) _more_qs="$_more_qs${_more_qs:+,}CreationDate"                                     ; shift;;
+         +ht) _more_qs="$_more_qs${_more_qs:+,}Hypervisor"                                       ; shift;;
+         +it) _more_qs="$_more_qs${_more_qs:+,}ImageType"                                        ; shift;;
+          +o) _more_qs="$_more_qs${_more_qs:+,}OwnerId"                                          ; shift;;
+          +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"                  ; shift;;
+         +ps) _more_qs="$_more_qs${_more_qs:+,}Public"                                           ; shift;;
+         +rn) _more_qs="$_more_qs${_more_qs:+,}RootDeviceName"                                   ; shift;;
+         +rt) _more_qs="$_more_qs${_more_qs:+,}RootDeviceType"                                   ; shift;;
+          +v) _more_qs="$_more_qs${_more_qs:+,}VirtualizationType"                               ; shift;;
+         +vs) _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeSize"            ; shift;;
+         +vt) _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeType"            ; shift;;
+        -h|*) echo "$_USAGE"; return;;
       esac
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
@@ -278,22 +282,21 @@ default display:
    local _query="AutoScalingGroups[]"
    while [ $# -gt 0 ]; do
       case $1 in
-          -n) _reg_exp="$2"                                             ; shift 2;;
-          -m) _max_items="--max-items $2"                               ; shift 2;;
-          -r) _region=$2                                                ; shift 2;;
-         +bt) _more_qs="Tags[?Key=='BranchTag'].Value|[0],$_more_qs"    ; shift  ;;
-         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"   ; shift  ;;
-          +c) _more_qs="Tags[?Key=='Cluster'].Value|[0],$_more_qs"      ; shift  ;;
-          +e) _more_qs="Tags[?Key=='Env'].Value|[0],$_more_qs"          ; shift  ;;
-         +ht) _more_qs="HealthCheckType,$_more_qs"                      ; shift  ;;
-         +ii) _more_qs="Instances[].InstanceId|join(', ',@),$_more_qs"  ; shift  ;;
-         +ih) _more_qs="Instances[].HealthStatus|join(', ',@),$_more_qs"; shift  ;;
-         +lb) _more_qs="LoadBalancerNames[]|join(', ',@),$_more_qs"     ; shift  ;;
-         +mr) _more_qs="Tags[?Key=='MachineRole'].Value|[0],$_more_qs"  ; shift  ;;
-          +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"      ; shift  ;;
-          +v) _more_qs="Tags[?Key=='VPCName'].Value|[0],$_more_qs"      ; shift  ;;
-          -h) echo "$_USAGE"                                            ; return ;;
-           *) echo "$_USAGE"                                            ; return ;;
+          -n) _reg_exp="$2"              ; shift 2;;
+          -m) _max_items="--max-items $2"; shift 2;;
+          -r) _region=$2                 ; shift 2;;
+         +bt) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='BranchTag'].Value|[0]"    ; shift;;
+         +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"   ; shift;;
+          +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"      ; shift;;
+          +e) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Env'].Value|[0]"          ; shift;;
+         +ht) _more_qs="$_more_qs${_more_qs:+,}HealthCheckType"                      ; shift;;
+         +ii) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', ',@)"  ; shift;;
+         +ih) _more_qs="$_more_qs${_more_qs:+,}Instances[].HealthStatus|join(', ',@)"; shift;;
+         +lb) _more_qs="$_more_qs${_more_qs:+,}LoadBalancerNames[]|join(', ',@)"     ; shift;;
+         +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='MachineRole'].Value|[0]"  ; shift;;
+          +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"      ; shift;;
+          +v) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"      ; shift;;
+        -h|*) echo "$_USAGE"; return;;
       esac
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
@@ -354,29 +357,29 @@ default display:
    local _query="Reservations[].Instances[]"
    while [ $# -gt 0 ]; do
       case $1 in
-          -p) _filters="Name=tag:Project,Values=*$2* $_filters"                     ; shift 2;;
-          -n) _filters="Name=tag:Name,Values=*$2* $_filters"                        ; shift 2;;
-          -s) _filters="Name=instance-state-name,Values=*$2* $_filters"             ; shift 2;;
-          -e) _filters="Name=tag:Env,Values=*$2* $_filters"                         ; shift 2;;
-          -m) _max_items="--max-items $2"                                           ; shift 2;;
-          -r) _region=$2                                                            ; shift 2;;
-          +a) _more_qs="ImageId,$_more_qs"                                          ; shift  ;;
-         +an) _more_qs="Tags[?Key=='aws:autoscaling:groupName'].Value|[0],$_more_qs"; shift  ;;
-         +az) _more_qs="Placement.AvailabilityZone,$_more_qs"                       ; shift  ;;
-         +bt) _more_qs="Tags[?Key=='BranchTag'].Value|[0],$_more_qs"                ; shift  ;;
-          +c) _more_qs="Tags[?Key=='Cluster'].Value|[0],$_more_qs"                  ; shift  ;;
-         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"               ; shift  ;;
-          +e) _more_qs="Tags[?Key=='Env'].Value|[0],$_more_qs"                      ; shift  ;;
-         +it) _more_qs="InstanceType,$_more_qs"                                     ; shift  ;;
-         +lt) _more_qs="LaunchTime,$_more_qs"                                       ; shift  ;;
-         +mr) _more_qs="Tags[?Key=='MachineRole'].Value|[0],$_more_qs"              ; shift  ;;
-          +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"                  ; shift  ;;
-         +pi) _more_qs="PublicIpAddress,$_more_qs"                                  ; shift  ;;
-         +si) _more_qs="SecurityGroups[].GroupId|join(', ',@),$_more_qs"            ; shift  ;;
-         +sn) _more_qs="SecurityGroups[].GroupName|join(', ',@),$_more_qs"          ; shift  ;;
-          +t) _more_qs="Placement.Tenancy,$_more_qs"                                ; shift  ;;
-          +v) _more_qs="Tags[?Key=='VPCName'].Value|[0],$_more_qs"                  ; shift  ;;
-        -h|*) echo "$_USAGE"                                                        ; return ;;
+          -p) _filters="Name=tag:Project,Values=*$2* $_filters"        ; shift 2;;
+          -n) _filters="Name=tag:Name,Values=*$2* $_filters"           ; shift 2;;
+          -s) _filters="Name=instance-state-name,Values=*$2* $_filters"; shift 2;;
+          -e) _filters="Name=tag:Env,Values=*$2* $_filters"            ; shift 2;;
+          -m) _max_items="--max-items $2"                              ; shift 2;;
+          -r) _region=$2                                               ; shift 2;;
+          +a) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
+         +an) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='aws:autoscaling:groupName'].Value|[0]"; shift;;
+         +az) _more_qs="$_more_qs${_more_qs:+,}Placement.AvailabilityZone"                       ; shift;;
+         +bt) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='BranchTag'].Value|[0]"                ; shift;;
+          +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"                  ; shift;;
+         +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"               ; shift;;
+          +e) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Env'].Value|[0]"                      ; shift;;
+         +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
+         +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
+         +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='MachineRole'].Value|[0]"              ; shift;;
+          +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"                  ; shift;;
+         +pi) _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"                                  ; shift;;
+         +si) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupId|join(', ',@)"            ; shift;;
+         +sn) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupName|join(', ',@)"          ; shift;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"                                ; shift;;
+          +v) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"                  ; shift;;
+        -h|*) echo "$_USAGE"; return;;
       esac
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
@@ -419,19 +422,18 @@ default display:
    local _query="LoadBalancerDescriptions[]"
    while [ $# -gt 0 ]; do
       case $1 in
-          -n) _reg_exp="$2"                                          ; shift 2;;
-          -m) _max_items="--max-items $2"                            ; shift 2;;
-          -r) _region=$2                                             ; shift 2;;
-         +az) _more_qs="AvailabilityZones[]|join(', '@),$_more_qs"   ; shift  ;;
-          +d) _more_qs="DNSName,$_more_qs"                           ; shift  ;;
-         +hc) _more_qs="HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold,$_more_qs"; shift;;
-          +i) _more_qs="Instances[].InstanceId|join(', '@),$_more_qs"; shift;;
-         +li) _more_qs="ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol,$_more_qs"; shift;;
-          +s) _more_qs="Scheme,$_more_qs"                            ; shift  ;;
-         +sg) _more_qs="SecurityGroups|join(', ',@),$_more_qs"       ; shift  ;;
-         +sn) _more_qs="Subnets[]|join(', '@),$_more_qs"             ; shift  ;;
-          -h) echo "$_USAGE"                                         ; return ;;
-           *) echo "$_USAGE"                                         ; return ;;
+          -n) _reg_exp="$2"              ; shift 2;;
+          -m) _max_items="--max-items $2"; shift 2;;
+          -r) _region=$2                 ; shift 2;;
+         +az) _more_qs="$_more_qs${_more_qs:+,}AvailabilityZones[]|join(', '@)"   ; shift;;
+          +d) _more_qs="$_more_qs${_more_qs:+,}DNSName"                           ; shift;;
+          +i) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', '@)"; shift;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}Scheme"                            ; shift;;
+         +sg) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"       ; shift;;
+         +sn) _more_qs="$_more_qs${_more_qs:+,}Subnets[]|join(', '@)"             ; shift;;
+         +hc) _more_qs="$_more_qs${_more_qs:+,}HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold"; shift;;
+         +li) _more_qs="$_more_qs${_more_qs:+,}ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol"; shift;;
+        -h|*) echo "$_USAGE"; return;;
       esac
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
@@ -477,15 +479,14 @@ default display:
    local _query="LaunchConfigurations[]"
    while [ $# -gt 0 ]; do
       case $1 in
-          -n) _reg_exp="$2"                                   ; shift 2;;
-          -m) _max_items="--max-items $2"                     ; shift 2;;
-          -r) _region=$2                                      ; shift 2;;
-         +ip) _more_qs="IamInstanceProfile,$_more_qs"         ; shift  ;;
-         +kn) _more_qs="KeyName,$_more_qs"                    ; shift  ;;
-         +pt) _more_qs="PlacementTenancy,$_more_qs"           ; shift  ;;
-         +sg) _more_qs="SecurityGroups|join(', ',@),$_more_qs"; shift  ;;
-          -h) echo "$_USAGE"                                  ; return ;;
-           *) echo "$_USAGE"                                  ; return ;;
+          -n) _reg_exp="$2"              ; shift 2;;
+          -m) _max_items="--max-items $2"; shift 2;;
+          -r) _region=$2                 ; shift 2;;
+         +ip) _more_qs="$_more_qs${_more_qs:+,}IamInstanceProfile"         ; shift;;
+         +kn) _more_qs="$_more_qs${_more_qs:+,}KeyName"                    ; shift;;
+         +pt) _more_qs="$_more_qs${_more_qs:+,}PlacementTenancy"           ; shift;;
+         +sg) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"; shift;;
+        -h|*) echo "$_USAGE"; return;;
       esac
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
@@ -535,34 +536,31 @@ default display:
    local _filters=""
    local _queries="NetworkInterfaceId,Description,PrivateIpAddress,Status"
    local _more_qs=""
-   #local _query="NetworkInterfaces[].Instances[]"
    local _query="NetworkInterfaces[]"
    while [ $# -gt 0 ]; do
       case $1 in
-          -a) _filters="Name=availability-zone,Values=*$2* $_filters"; shift 2;;
-          -d) _filters="Name=description,Values=*$2* $_filters"; shift 2;;
+          -a) _filters="Name=availability-zone,Values=*$2* $_filters"           ; shift 2;;
+          -d) _filters="Name=description,Values=*$2* $_filters"                 ; shift 2;;
           -i) _filters="Name=addresses.private-ip-address,Values=*$2* $_filters"; shift 2;;
-         -id) _filters="Name=network-interface-id,Values=*$2* $_filters"; shift 2;;
-          -p) _filters="Name=association.public-ip,Values=*$2* $_filters"; shift 2;;
-          -r) _region=$2                                                ; shift 2;;
-          -s) _filters="Name=status,Values=*$2* $_filters"; shift 2;;
-         +ai) _more_qs="PrivateIpAddresses[].PrivateIpAddress|join(', ',@),$_more_qs"; shift  ;;
-         +az) _more_qs="AvailabilityZone,$_more_qs"                     ; shift  ;;
-          +m) _more_qs="MacAddress,$_more_qs"                     ; shift  ;;
-          +p) _more_qs="Association.PublicIp,$_more_qs"; shift  ;;
-          +s) _more_qs="SubnetId,$_more_qs"                     ; shift  ;;
-         +si) _more_qs="Groups[].GroupId|join(', ',@),$_more_qs"; shift  ;;
-         +sn) _more_qs="Groups[].GroupName|join(', ',@),$_more_qs"; shift  ;;
-          +v) _more_qs="VpcId,$_more_qs"                     ; shift  ;;
-          -h) echo "$_USAGE"                                            ; return ;;
-           *) echo "$_USAGE"                                            ; return ;;
+         -id) _filters="Name=network-interface-id,Values=*$2* $_filters"        ; shift 2;;
+          -p) _filters="Name=association.public-ip,Values=*$2* $_filters"       ; shift 2;;
+          -r) _region=$2                                                        ; shift 2;;
+          -s) _filters="Name=status,Values=*$2* $_filters"                      ; shift 2;;
+         +ai) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddresses[].PrivateIpAddress|join(', ',@)"; shift;;
+         +az) _more_qs="$_more_qs${_more_qs:+,}AvailabilityZone"                                  ; shift;;
+          +m) _more_qs="$_more_qs${_more_qs:+,}MacAddress"                                        ; shift;;
+          +p) _more_qs="$_more_qs${_more_qs:+,}Association.PublicIp"                              ; shift;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}SubnetId"                                          ; shift;;
+         +si) _more_qs="$_more_qs${_more_qs:+,}Groups[].GroupId|join(', ',@)"                     ; shift;;
+         +sn) _more_qs="$_more_qs${_more_qs:+,}Groups[].GroupName|join(', ',@)"                   ; shift;;
+          +v) _more_qs="$_more_qs${_more_qs:+,}VpcId"                                             ; shift;;
+        -h|*) echo "$_USAGE"; return;;
       esac
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
-         #$_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          $_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$/|'"$_region"'/' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
    else
@@ -589,78 +587,40 @@ awsdsg [OPTIONS]
   -tp TO_PORT    # filter results by this ending port number
   -pp PROTOCOL   # filter results by this Protocol
   -r  REGION     # Region to query (default: $_DEFAULT_REGION, 'all' for all)
-  +a           # show AMI (ImageId)
-  +an          # show ASG Name
-  +az          # show Availability Zone
-  +bt          # show Branch Tag
-  +c           # show Cluster
-  +cc          # show Charge Code
-  +e           # show Env (Environment)
-  +it          # show Instance Type
-  +lt          # show Launch Time
-  +mr          # show Machine Role
-  +p           # show Project
-  +pi          # show Public IP
-  +si          # show Security Group Id(s)
-  +sn          # show Security Group Name(s)
-  +t           # show Tenancy
-  +v           # show VPC Name
-  -h           # help (show this message)
+  +e             # show Egress
+  +i             # show Igress
+  +fp            # show From Ports
+  +tp            # show To Ports
+  +pp            # show Protocols
+  -h             # help (show this message)
 default display:
   SG ID | SG Name | VPC ID | Description"
    local _region="$_DEFAULT_REGION"
    local _filters=""
-   #local _queries="Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name"
-   #local _queries="Tags[?Key=='Name'].Value|[0]"
-   #local _queries="GroupId,IpPermissions[0].IpRanges[0].CidrIp"
-   #local _queries="GroupId,IpPermissions[].IpRanges[].CidrIp|join(', ',@)"
    local _queries="GroupId"
    local _default_queries="GroupId,GroupName,VpcId,Description"
    local _more_qs=""
    local _query="SecurityGroups[]"
    while [ $# -gt 0 ]; do
       case $1 in
-          -p) _filters="Name=tag:Project,Values=*$2* $_filters"                     ; shift 2;;
-          -e) _filters="Name=tag:Env,Values=*$2* $_filters"                         ; shift 2;;
-          -i) _filters="Name=group-id,Values=*$2* $_filters"                        ; shift 2;;
-          -c) _filters="Name=ip-permission.cidr,Values=*$2* $_filters"              ; shift 2;;
-         -gi) _filters="Name=ip-permission.group-id,Values=*$2* $_filters"          ; shift 2;;
-         -gn) _filters="Name=ip-permission.group-name,Values=*$2* $_filters"        ; shift 2;;
-         -fp) _filters="Name=ip-permission.from-port,Values=*$2* $_filters"         ; shift 2;;
-         -tp) _filters="Name=ip-permission.to-port,Values=*$2* $_filters"           ; shift 2;;
-         -pp) _filters="Name=ip-permission.protocol,Values=*$2* $_filters"          ; shift 2;;
-          -n) _filters="Name=group-name,Values=*$2* $_filters"                      ; shift 2;;
-          -v) _filters="Name=vpc-id,Values=*$2* $_filters"                          ; shift 2;;
-          -r) _region=$2                                                            ; shift 2;;
-########
-          +e) _more_qs="$_more_qs${_more_qs:+,}IpPermissionsEgress[].IpRanges[].CidrIp|join(', ',@)"       ; shift  ;;
-          +i) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpRanges[].CidrIp|join(', ',@)"             ; shift  ;;
-          #+fp) _more_qs="$_more_qs,IpPermissions[].FromPort|join(', ',to_array(to_string(@)))"             ; shift  ;;
-          +fp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].FromPort|join(', ',to_array(to_string(@)))"             ; shift  ;;
-          #+fp) _more_qs="IpPermissions[].FromPort|to_string(@)|join(', ',@)"             ; shift  ;;
-          #+tp) _more_qs="IpPermissions[].ToPort|to_string(@)|join(', ',@)"             ; shift  ;;
-          #+tp) _more_qs="$_more_qs,IpPermissions[].ToPort|join(', ',to_array(to_string(@)))"             ; shift  ;;
-          +tp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].ToPort|join(', ',to_array(to_string(@)))"             ; shift  ;;
-          #+pp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpProtocol|join(', ',to_array(to_string(@)))"             ; shift  ;;
-          +pp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpProtocol|join(',',@)"             ; shift  ;;
-########
-          +a) _more_qs="ImageId,$_more_qs"                                          ; shift  ;;
-         +an) _more_qs="Tags[?Key=='aws:autoscaling:groupName'].Value|[0],$_more_qs"; shift  ;;
-         +az) _more_qs="Placement.AvailabilityZone,$_more_qs"                       ; shift  ;;
-         +bt) _more_qs="Tags[?Key=='BranchTag'].Value|[0],$_more_qs"                ; shift  ;;
-          +c) _more_qs="Tags[?Key=='Cluster'].Value|[0],$_more_qs"                  ; shift  ;;
-         +cc) _more_qs="Tags[?Key=='ChargeCode'].Value|[0],$_more_qs"               ; shift  ;;
-          +e) _more_qs="Tags[?Key=='Env'].Value|[0],$_more_qs"                      ; shift  ;;
-         +it) _more_qs="InstanceType,$_more_qs"                                     ; shift  ;;
-         +lt) _more_qs="LaunchTime,$_more_qs"                                       ; shift  ;;
-         +mr) _more_qs="Tags[?Key=='MachineRole'].Value|[0],$_more_qs"              ; shift  ;;
-          +p) _more_qs="Tags[?Key=='Project'].Value|[0],$_more_qs"                  ; shift  ;;
-         +pi) _more_qs="PublicIpAddress,$_more_qs"                                  ; shift  ;;
-         +si) _more_qs="SecurityGroups[].GroupId|join(', ',@),$_more_qs"            ; shift  ;;
-         +sn) _more_qs="SecurityGroups[].GroupName|join(', ',@),$_more_qs"          ; shift  ;;
-          +t) _more_qs="Placement.Tenancy,$_more_qs"                                ; shift  ;;
-          +v) _more_qs="Tags[?Key=='VPCName'].Value|[0],$_more_qs"                  ; shift  ;;
-        -h|*) echo "$_USAGE"                                                        ; return ;;
+          -p) _filters="Name=tag:Project,Values=*$2* $_filters"             ; shift 2;;
+          -e) _filters="Name=tag:Env,Values=*$2* $_filters"                 ; shift 2;;
+          -i) _filters="Name=group-id,Values=*$2* $_filters"                ; shift 2;;
+          -c) _filters="Name=ip-permission.cidr,Values=*$2* $_filters"      ; shift 2;;
+         -gi) _filters="Name=ip-permission.group-id,Values=*$2* $_filters"  ; shift 2;;
+         -gn) _filters="Name=ip-permission.group-name,Values=*$2* $_filters"; shift 2;;
+         -fp) _filters="Name=ip-permission.from-port,Values=*$2* $_filters" ; shift 2;;
+         -tp) _filters="Name=ip-permission.to-port,Values=*$2* $_filters"   ; shift 2;;
+         -pp) _filters="Name=ip-permission.protocol,Values=*$2* $_filters"  ; shift 2;;
+          -n) _filters="Name=group-name,Values=*$2* $_filters"              ; shift 2;;
+          -v) _filters="Name=vpc-id,Values=*$2* $_filters"                  ; shift 2;;
+          -r) _region=$2                                                    ; shift 2;;
+          +e) _more_qs="$_more_qs${_more_qs:+,}IpPermissionsEgress[].IpRanges[].CidrIp|join(', ',@)"      ; shift;;
+          +i) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpRanges[].CidrIp|join(', ',@)"            ; shift;;
+         +fp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].FromPort|join(', ',to_array(to_string(@)))"; shift;;
+         +tp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].ToPort|join(', ',to_array(to_string(@)))"  ; shift;;
+         +pp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpProtocol|join(',',@)"                    ; shift;;
+        -h|*) echo "$_USAGE"; return;;
       esac
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
@@ -696,15 +656,14 @@ default display:
    local _more_qs=""
    while [ $# -gt 0 ]; do
       case $1 in
-          -d) _dns_name="$2"                    ; shift 2;;
-          -m) _max_items="--max-items $2"       ; shift 2;;
-          -n) _reg_exp="$2"                     ; shift 2;;
-          -t) _rec_type="?Type=='$2'"           ; shift 2;;
-          +s) _more_qs="SetIdentifier,$_more_qs"; shift  ;;
-          +t) _more_qs="TTL,$_more_qs"          ; shift  ;;
-          +w) _more_qs="Weight,$_more_qs"       ; shift  ;;
-          -h) echo "$_USAGE"                    ; return ;;
-           *) echo "$_USAGE"                    ; return ;;
+          -d) _dns_name="$2"             ; shift 2;;
+          -m) _max_items="--max-items $2"; shift 2;;
+          -n) _reg_exp="$2"              ; shift 2;;
+          -t) _rec_type="?Type=='$2'"    ; shift 2;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}SetIdentifier"; shift;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}TTL"          ; shift;;
+          +w) _more_qs="$_more_qs${_more_qs:+,}Weight"       ; shift;;
+        -h|*) echo "$_USAGE"; return;;
       esac
    done
    [ -z "$_dns_name" ] && { echo "error: did not specify DNS_NAME"; echo "$_USAGE"; return; }
@@ -1024,7 +983,6 @@ function fdgr () {
    for _repo in $_REPOS_TO_CHECK; do
       cd $_repo
       _gitstatus=$(git status --porcelain 2> /dev/null)
-      #[ -n "$_gitstatus" ] && echo -e "[${RED}DIRTY${NRM}]" || echo -e "[${GRN}CLEAN${NRM}]"
       [ -n "$_gitstatus" ] && echo -e "repo: $_repo status [${RED}DIRTY${NRM}]"
    done
    cd $_orig_wd
@@ -1095,11 +1053,10 @@ function gdate () {
 function gh () { # TOOL
    if [[ $1 =~ ^\^.* ]]; then
       pattern=$(echo "$*" | tr -d '^')
-      #echo "looking for: ^[0-9]*  $pattern"
-      #history | grep "^[0-9]*  $pattern" | grep $pattern
+      #echo "debug: looking for: ^[0-9]*  $pattern"
       history | grep "^[ 0-9]*  $pattern" | grep $pattern
    else
-      #echo "looking for: $*"
+      #echo "debug: looking for: $*"
       history | grep "$*"
    fi
 }
@@ -1145,7 +1102,7 @@ function listcrts () {
    fi
    _openssl_opts=${_openssl_opts:=$_DEFAULT_OPENSSL_OPTS}
    _openssl_opts="$_openssl_opts -noout"
-   #debug#echo "opts: '$_openssl_opts'"
+   #echo "debug: opts: '$_openssl_opts'"
    if [ -z "$_cert_bundle" ]; then
       ls *.crt > /dev/null 2>&1
       if [ $? -eq 0 ]; then
@@ -1423,7 +1380,6 @@ function stopwatch () { # TOOL
    while true; do
       _current=$(date +'%d-%b-%Y %T')
       _current_secs=$(date +%s -d "$_current")
-      #echo -ne "\rStart: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs")${NRM} "
       echo -ne "  Start: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs")${NRM}\r"
    done
 }
@@ -1541,10 +1497,7 @@ function xssh () {
    fi
 }
 
-# set bash prompt command (and bash prompt)
-export PROMPT_COMMAND="bash_prompt"
-
-# define aliases
+# -------------------- define aliases --------------------
 
 alias ~="cd ~"
 alias ..="cd .."
@@ -1616,7 +1569,7 @@ alias u=uptime
 #alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; echo "done"; echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
 #alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; sba'
 alias vba='echo "editing: ~/.bash_aliases"; vi ~/.bash_aliases; sba'
-alias vcba='[ -f $company_shit ] && { echo "editing: $company_shit"; vi $company_shit; sba; }'
+alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 alias vi='`which vim`'
 alias view='`which vim` -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
@@ -1627,5 +1580,10 @@ else
 fi
 alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less'
 
+# -------------------- final touches --------------------
+
 # source company specific functions and aliases
-[ -f $company_shit ] && source $company_shit
+[ -f $COMPANY_SHIT ] && source $COMPANY_SHIT
+
+# set bash prompt command (and bash prompt)
+export PROMPT_COMMAND="bash_prompt"
