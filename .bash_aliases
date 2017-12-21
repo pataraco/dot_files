@@ -135,19 +135,29 @@ function awsasgcp () {
 }
 
 function awsci () {
-# start or stop an instance
+# reboot, start or stop an instance
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _USAGE="usage: awsci [-r REGION] start|stop INSTANCE_NAME # default: $_DEFAULT_REGION"
+   local _USAGE="usage: awsci [-r REGION] reboot|start|stop INSTANCE_ID|INSTANCE_NAME   # default region: $_DEFAULT_REGION"
    local _region=$1
    [ "$_region" == "-r" ] && { _region=$2; shift 2; } || _region=$_DEFAULT_REGION
    local _CONTROL_CMD=$1
    local _INSTANCE_NAME=$2
-   [ -z "$_CONTROL_CMD" ] && { echo "error: did not specify 'start' or 'stop'"; echo "$_USAGE"; return; }
+   [ -z "$_CONTROL_CMD" ] && { echo "error: did not specify 'reboot', 'start' or 'stop'"; echo "$_USAGE"; return; }
    [ -z "$_INSTANCE_NAME" ] && { echo "error: did not specify an instance name"; echo "$_USAGE"; return; }
-   local _INSTANCE_ID=$(/usr/bin/aws ec2 describe-instances --region $_region --filters "Name=tag:Name,Values=$_INSTANCE_NAME" --output json | jq -r .Reservations[].Instances[].InstanceId)
-   local _INSTANCE_STATE=$(/usr/bin/aws ec2 describe-instances --region $_region --filters "Name=tag:Name,Values=$_INSTANCE_NAME" --output json | jq -r .Reservations[].Instances[].State.Name)
+   local _INSTANCE_ID
+   /usr/bin/aws ec2 describe-instances --region $_region --instance-ids $_INSTANCE_NAME > /dev/null 2>&1
+   if [ $? -eq 0 ]; then
+      _INSTANCE_ID=$_INSTANCE_NAME
+      _INSTANCE_NAME=$(/usr/bin/aws ec2 describe-instances --region $_region --instance-ids $_INSTANCE_ID --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text)
+   else
+      _INSTANCE_ID=$(/usr/bin/aws ec2 describe-instances --region $_region --filters "Name=tag:Name,Values=$_INSTANCE_NAME" --output json | jq -r .Reservations[].Instances[].InstanceId)
+   fi
+   local _INSTANCE_STATE=$(/usr/bin/aws ec2 describe-instances --region $_region --instance-ids $_INSTANCE_ID --query "Reservations[].Instances[].State.Name" --output text)
    local _aws_ec2_cmd
    case $_CONTROL_CMD in
+      reboot)
+         [ "$_INSTANCE_STATE" != "running" ] && { echo "$_INSTANCE_NAME ($_INSTANCE_ID) is NOT running"; return; }
+         _aws_ec2_cmd=reboot-instances ;;
       start)
          [ "$_INSTANCE_STATE" == "running" ] && { echo "$_INSTANCE_NAME ($_INSTANCE_ID) is already running"; return; }
          _aws_ec2_cmd=start-instances ;;
@@ -191,12 +201,14 @@ awsdami [OPTIONS]
   +cc           # show Charge Code
   +cd           # show Creation Date
   +ht           # show Hypervisor Type
+  +i            # show Image ID
   +it           # show Image Type
   +o            # show Owner ID
   +p            # show Project
   +ps           # show Public Status
   +rn           # show Root Device Name
   +rt           # show Root Device Type
+  +s            # show State
   +v            # show Virtualization Type
   +vs           # show Volume Size
   +vt           # show Volume Type
@@ -206,7 +218,8 @@ default display:
    local _owners="self"
    local _region="$_DEFAULT_REGION"
    local _filters=""
-   local _queries="Tags[?Key=='Name'].Value|[0],ImageId,State"
+   local _queries="Tags[?Key=='Name'].Value|[0]"
+   local _default_queries="Tags[?Key=='Name'].Value|[0],ImageId,State"
    local _more_qs=""
    local _query="Images[]"
    while [ $# -gt 0 ]; do
@@ -227,12 +240,14 @@ default display:
          +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"               ; shift;;
          +cd) _more_qs="$_more_qs${_more_qs:+,}CreationDate"                                     ; shift;;
          +ht) _more_qs="$_more_qs${_more_qs:+,}Hypervisor"                                       ; shift;;
+          +i) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
          +it) _more_qs="$_more_qs${_more_qs:+,}ImageType"                                        ; shift;;
           +o) _more_qs="$_more_qs${_more_qs:+,}OwnerId"                                          ; shift;;
           +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"                  ; shift;;
          +ps) _more_qs="$_more_qs${_more_qs:+,}Public"                                           ; shift;;
          +rn) _more_qs="$_more_qs${_more_qs:+,}RootDeviceName"                                   ; shift;;
          +rt) _more_qs="$_more_qs${_more_qs:+,}RootDeviceType"                                   ; shift;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}State"                                            ; shift;;
           +v) _more_qs="$_more_qs${_more_qs:+,}VirtualizationType"                               ; shift;;
          +vs) _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeSize"            ; shift;;
          +vt) _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeType"            ; shift;;
@@ -240,7 +255,7 @@ default display:
       esac
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
          $_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
@@ -261,15 +276,21 @@ awsdasg [OPTIONS]
   -m MAX       # maximum number of items to display
   -r REGION    # region to query (default: $_DEFAULT_REGION, 'all' for all)
   +bt          # show Branch Tag
-  +cc          # show Charge Code
   +c           # show Cluster
+  +cc          # show Charge Code
+  +dc          # show Desired Capacity
   +e           # show Env (Environment)
   +ht          # show Health Check Type
   +ii          # show Instance Id(s)
   +ih          # show Instance Health Status
+  +lc          # show Launch Configuration Name
   +lb          # show Load Balancers
   +mr          # show Machine Role
+  +ni          # show Number of Instances
+  +ns          # show Min Size
+  +xs          # show Max Size
   +p           # show Project
+  +sp          # show Suspended Processes
   +v           # show VPC Name
   -h           # help (show this message)
 default display:
@@ -277,7 +298,8 @@ default display:
    local _max_items=""
    local _region="$_DEFAULT_REGION"
    local _reg_exp=""
-   local _queries="AutoScalingGroupName,LaunchConfigurationName,length(Instances),DesiredCapacity,MinSize,MaxSize"
+   local _queries="AutoScalingGroupName"
+   local _default_queries="AutoScalingGroupName,LaunchConfigurationName,length(Instances),DesiredCapacity,MinSize,MaxSize"
    local _more_qs=""
    local _query="AutoScalingGroups[]"
    while [ $# -gt 0 ]; do
@@ -285,21 +307,27 @@ default display:
           -n) _reg_exp="$2"              ; shift 2;;
           -m) _max_items="--max-items $2"; shift 2;;
           -r) _region=$2                 ; shift 2;;
-         +bt) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='BranchTag'].Value|[0]"    ; shift;;
-         +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"   ; shift;;
-          +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"      ; shift;;
-          +e) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Env'].Value|[0]"          ; shift;;
-         +ht) _more_qs="$_more_qs${_more_qs:+,}HealthCheckType"                      ; shift;;
-         +ii) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', ',@)"  ; shift;;
-         +ih) _more_qs="$_more_qs${_more_qs:+,}Instances[].HealthStatus|join(', ',@)"; shift;;
-         +lb) _more_qs="$_more_qs${_more_qs:+,}LoadBalancerNames[]|join(', ',@)"     ; shift;;
-         +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='MachineRole'].Value|[0]"  ; shift;;
-          +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"      ; shift;;
-          +v) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"      ; shift;;
+         +bt) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='BranchTag'].Value|[0]"            ; shift;;
+          +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"              ; shift;;
+         +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"           ; shift;;
+         +dc) _more_qs="$_more_qs${_more_qs:+,}DesiredCapacity"                              ; shift;;
+          +e) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Env'].Value|[0]"                  ; shift;;
+         +ht) _more_qs="$_more_qs${_more_qs:+,}HealthCheckType"                              ; shift;;
+         +ii) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', ',@)"          ; shift;;
+         +ih) _more_qs="$_more_qs${_more_qs:+,}Instances[].HealthStatus|join(', ',@)"        ; shift;;
+         +lc) _more_qs="$_more_qs${_more_qs:+,}LaunchConfigurationName"                      ; shift;;
+         +lb) _more_qs="$_more_qs${_more_qs:+,}LoadBalancerNames[]|join(', ',@)"             ; shift;;
+         +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='MachineRole'].Value|[0]"          ; shift;;
+         +ni) _more_qs="$_more_qs${_more_qs:+,}length(Instances)"                            ; shift;;
+         +ns) _more_qs="$_more_qs${_more_qs:+,}MinSize"                                      ; shift;;
+         +xs) _more_qs="$_more_qs${_more_qs:+,}MaxSize"                                      ; shift;;
+          +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"              ; shift;;
+         +sp) _more_qs="$_more_qs${_more_qs:+,}SuspendedProcesses[].ProcessName|join(', ',@)"; shift;;
+          +v) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"              ; shift;;
         -h|*) echo "$_USAGE"; return;;
       esac
    done
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
@@ -337,11 +365,13 @@ awsdi [OPTIONS]
   +c           # show Cluster
   +cc          # show Charge Code
   +e           # show Env (Environment)
+  +i           # show Private IP
   +it          # show Instance Type
   +lt          # show Launch Time
   +mr          # show Machine Role
   +p           # show Project
   +pi          # show Public IP
+  +s           # show State (e.g. running, stopped...)
   +si          # show Security Group Id(s)
   +sn          # show Security Group Name(s)
   +t           # show Tenancy
@@ -352,7 +382,8 @@ default display:
    local _max_items=""
    local _region="$_DEFAULT_REGION"
    local _filters=""
-   local _queries="Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name"
+   local _queries="Tags[?Key=='Name'].Value|[0],InstanceId"
+   local _default_queries="Tags[?Key=='Name'].Value|[0],InstanceId,PrivateIpAddress,State.Name"
    local _more_qs=""
    local _query="Reservations[].Instances[]"
    while [ $# -gt 0 ]; do
@@ -370,11 +401,13 @@ default display:
           +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"                  ; shift;;
          +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"               ; shift;;
           +e) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Env'].Value|[0]"                      ; shift;;
+          +i) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
          +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
          +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
          +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='MachineRole'].Value|[0]"              ; shift;;
           +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"                  ; shift;;
          +pi) _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"                                  ; shift;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}State.Name"                                       ; shift;;
          +si) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupId|join(', ',@)"            ; shift;;
          +sn) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupName|join(', ',@)"          ; shift;;
           +t) _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"                                ; shift;;
@@ -383,7 +416,7 @@ default display:
       esac
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
          $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
@@ -471,6 +504,7 @@ default display:
    local _region="$_DEFAULT_REGION"
    local _reg_exp=""
    local _queries="LoadBalancerName"
+   local _default_queries="LoadBalancerName"
    local _more_qs=""
    local _query="LoadBalancerDescriptions[]"
    while [ $# -gt 0 ]; do
@@ -489,7 +523,7 @@ default display:
         -h|*) echo "$_USAGE"; return;;
       esac
    done
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
@@ -517,7 +551,9 @@ awsdlc [OPTIONS]
   -n NAME      # filter results by this Launch Config Name
   -m MAX       # the maximum number of items to display
   -r REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +i           # show Image ID
   +ip          # show IAM Instance Profile
+  +it          # show Instance Type
   +kn          # show Key Name
   +pt          # show Placement Tenancy
   +sg          # show Security Groups
@@ -527,7 +563,8 @@ default display:
    local _max_items=""
    local _region="$_DEFAULT_REGION"
    local _reg_exp=""
-   local _queries="LaunchConfigurationName,ImageId,InstanceType"
+   local _queries="LaunchConfigurationName"
+   local _default_queries="LaunchConfigurationName,ImageId,InstanceType"
    local _more_qs=""
    local _query="LaunchConfigurations[]"
    while [ $# -gt 0 ]; do
@@ -535,14 +572,16 @@ default display:
           -n) _reg_exp="$2"              ; shift 2;;
           -m) _max_items="--max-items $2"; shift 2;;
           -r) _region=$2                 ; shift 2;;
+          +i) _more_qs="$_more_qs${_more_qs:+,}ImageId"                    ; shift;;
          +ip) _more_qs="$_more_qs${_more_qs:+,}IamInstanceProfile"         ; shift;;
+         +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"               ; shift;;
          +kn) _more_qs="$_more_qs${_more_qs:+,}KeyName"                    ; shift;;
          +pt) _more_qs="$_more_qs${_more_qs:+,}PlacementTenancy"           ; shift;;
          +sg) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"; shift;;
         -h|*) echo "$_USAGE"; return;;
       esac
    done
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
@@ -575,9 +614,12 @@ awsdni [OPTIONS]
   -r  REGION   # region to query (default: $_DEFAULT_REGION, 'all' for all)
   -s  STATUS   # filter by Status (e.g. in-use, etc.)
   +az          # show Availability Zone
+  +d           # show Description
   +m           # show MAC Address
-  +p           # show Public IPs
-  +s           # show Subnet ID
+  +p           # show Public IP
+  +pi          # show Private IP
+  +s           # show Status
+  +sd          # show Subnet ID
   +si          # show Security Group Id(s)
   +sn          # show Security Group Name(s)
   +v           # show VPC ID
@@ -587,7 +629,8 @@ default display:
    local _max_items=""
    local _region="$_DEFAULT_REGION"
    local _filters=""
-   local _queries="NetworkInterfaceId,Description,PrivateIpAddress,Status"
+   local _queries="NetworkInterfaceId"
+   local _default_queries="NetworkInterfaceId,Description,PrivateIpAddress,Status"
    local _more_qs=""
    local _query="NetworkInterfaces[]"
    while [ $# -gt 0 ]; do
@@ -601,9 +644,12 @@ default display:
           -s) _filters="Name=status,Values=*$2* $_filters"                      ; shift 2;;
          +ai) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddresses[].PrivateIpAddress|join(', ',@)"; shift;;
          +az) _more_qs="$_more_qs${_more_qs:+,}AvailabilityZone"                                  ; shift;;
+          +d) _more_qs="$_more_qs${_more_qs:+,}Description"                                       ; shift;;
           +m) _more_qs="$_more_qs${_more_qs:+,}MacAddress"                                        ; shift;;
-          +p) _more_qs="$_more_qs${_more_qs:+,}Association.PublicIp"                              ; shift;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}SubnetId"                                          ; shift;;
+          +p) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                  ; shift;;
+         +pi) _more_qs="$_more_qs${_more_qs:+,}Association.PublicIp"                              ; shift;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}Status"                                            ; shift;;
+         +sd) _more_qs="$_more_qs${_more_qs:+,}SubnetId"                                          ; shift;;
          +si) _more_qs="$_more_qs${_more_qs:+,}Groups[].GroupId|join(', ',@)"                     ; shift;;
          +sn) _more_qs="$_more_qs${_more_qs:+,}Groups[].GroupName|join(', ',@)"                   ; shift;;
           +v) _more_qs="$_more_qs${_more_qs:+,}VpcId"                                             ; shift;;
@@ -611,7 +657,7 @@ default display:
       esac
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
          $_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$/|'"$_region"'/' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
@@ -705,6 +751,7 @@ default display:
    local _max_items=""
    local _rec_type="*"
    local _queries="Name,Type,ResourceRecords[].Value|[0]"
+   local _default_queries="Name,Type,ResourceRecords[].Value|[0]"
    local _reg_exp=""
    local _more_qs=""
    while [ $# -gt 0 ]; do
@@ -721,7 +768,7 @@ default display:
    done
    [ -z "$_dns_name" ] && { echo "error: did not specify DNS_NAME"; echo "$_USAGE"; return; }
    local _query="ResourceRecordSets[$_rec_type]"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_queries]"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    # get the Hosted Zone Id
    hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name $_dns_name --max-items 1 | jq -r .HostedZones[].Id)
    if [ -z "$_reg_exp" ]; then
