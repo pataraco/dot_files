@@ -1533,7 +1533,7 @@ function wtac () { # MISC
    grep "$COMMAND_PATTERN" $COMMANDS_FILE
    while read _line; do
       history -s "$_line"
-   done <<< "`grep "$COMMAND_PATTERN" $COMMANDS_FILE`"
+   done <<< "$(grep "$COMMAND_PATTERN" $COMMANDS_FILE | sed 's:\\:\\\\:g')"
 }
 
 function wtc () { # MISC
@@ -1543,7 +1543,7 @@ function wtc () { # MISC
    grep "$COMMAND_PATTERN" $COMMANDS_FILE
    while read _line; do
       history -s "$_line"
-   done <<< "`grep "$COMMAND_PATTERN" $COMMANDS_FILE`"
+   done <<< "$(grep "$COMMAND_PATTERN" $COMMANDS_FILE | sed 's:\\:\\\\:g')"
 }
 
 function wtf () { # MISC
