@@ -11,7 +11,7 @@ echo -ne "\033]0;`whoami`@`hostname`\007"
 # -------------------- global variables --------------------
 
 # set company specific variable
-COMPANY_SHIT=~/.bash_aliases_ctcs
+COMPANY_SHIT=~/.bash_aliases_onica
 
 # some ansi colorizatioin escape sequences
 D2E="\e[K"     # to delete the rest of the chars on a line
@@ -1631,13 +1631,21 @@ alias grep="grep --color=auto"
 alias guid='printf "%x\n" `date +%s`'
 alias h="history"
 alias kaj='eval kill $(jobs -p)'
-alias l.='ls -d .* --color=auto'
-alias la='ls -a --color=auto'
-alias laan="for p in \$(grep '^\[profile' ~/.aws/config | awk '{print \$2}' | tr ']\n' ' '); do echo -en \"\$p: \"; echo \$(aws sts get-caller-identity --profile \$p | jq -r .Account); done"
+if [ "$(uname -s)" == "Darwin" ]; then
+   alias l.='ls -dG .*'
+   alias la='ls -aG'
+   alias ll='ls -lG'
+   alias lla='ls -laG'
+   alias ls='ls -CFG'
+else
+   alias l.='ls -d .* --color=auto'
+   alias la='ls -a --color=auto'
+   alias ll='ls -l --color=auto'
+   alias lla='ls -la --color=auto'
+   alias ls='ls -CF --color=auto'
+fi
 alias less="less -FrX"
-alias ll='ls -l --color=auto'
-alias lla='ls -la --color=auto'
-alias ls='ls -CF --color=auto'
+alias laan="for p in \$(grep '^\[profile' ~/.aws/config | awk '{print \$2}' | tr ']\n' ' '); do echo -en \"\$p: \"; echo \$(aws sts get-caller-identity --profile \$p | jq -r .Account); done"
 alias mv='mv -i'
 #alias psa='ps auxfw' # converted to a function
 alias myip='curl http://ipecho.net/plain; echo'
@@ -1673,7 +1681,9 @@ alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY
 alias vi='`which vim`'
 alias view='`which vim` -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
-if [ "$(uname -so)" == "Linux GNU/Linux" ]; then
+if [ "$(uname -s)" == "Darwin" ]; then
+   alias which='(alias; declare -f) | /usr/bin/which'
+elif [ "$(uname -so)" == "Linux GNU/Linux" ]; then
    alias which='(alias; declare -f) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot'
 else
    alias which='(alias; declare -f) | /usr/bin/which'
