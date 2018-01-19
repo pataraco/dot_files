@@ -39,6 +39,15 @@ if [ -d $pyenv_repo ]; then
    pyenv_bin=$PYENV_ROOT/bin
    [[ -d $pyenv_bin && ! $PATH =~ ^$pyenv_bin:|:$pyenv_bin:|:$pyenv_bin$ ]] && export PATH="$pyenv_bin:$PATH"
 fi
+# add Python 2.7 to PATH (for `stacker`)
+KERNEL=$(uname)
+if [[ ${KERNEL} == "Darwin" ]]; then
+   python27_bin="${HOME}/Library/Python/2.7/bin"
+   [[ -d $python27_bin && ! $PATH =~ ^$python27_bin:|:$python27_bin:|:$python27_bin$ ]] && export PATH="$python27_bin:$PATH"
+elif [[ ${KERNEL} == "Linux" ]]; then
+   python27_bin="${HOME}/.local/bin"
+   [[ -d $python27_bin && ! $PATH =~ ^$python27_bin:|:$python27_bin:|:$python27_bin$ ]] && export PATH="$python27_bin:$PATH"
+fi
 
 # Should not need this stuff
 ## add Ruby related info
