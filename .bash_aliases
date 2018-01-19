@@ -1652,8 +1652,8 @@ alias myip='curl http://ipecho.net/plain; echo'
 alias pa='ps auxfw'
 #alias pse='ps -ef' # converted to a function
 alias pe='ps -ef'
-alias rcrlf="sed 's/$//g' -i.orig"
-alias ccrlf="sed 's//\n/g' -i.orig"
+alias ccrlf="sed -e 's//\n/g' -i .orig"
+alias rcrlf="sed -e 's/$//g' -i .orig"
 alias ring="$HOME/scripts/tools/ring.sh"
 alias rsshk='ssh-keygen -f "$HOME/.ssh/known_hosts" -R'
 alias rm='rm -i'
