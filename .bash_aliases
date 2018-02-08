@@ -3,34 +3,40 @@
 # -------------------- initial directives --------------------
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo "sourcing: .bash_aliases"
+#[ -n "$PS1" ] && echo "sourcing: .bash_aliases"
+[ -n "$PS1" ] && echo -n ".bash_aliases (begin)... "
 
 # update change the title bar of the terminal
-echo -ne "\033]0;`whoami`@`hostname`\007"
+echo -ne "\033]0;$(whoami)@$(hostname)\007"
 
 # -------------------- global variables --------------------
 
 # set company specific variable
-COMPANY_SHIT=~/.bash_aliases_onica
+export COMPANY="onica"
+export COMPANY_SHIT=$HOME/.bash_aliases_$COMPANY
 
-# some ansi colorizatioin escape sequences
-D2E="\e[K"     # to delete the rest of the chars on a line
-BLD="\e[1m"    # bold
-ULN="\e[4m"    # underlined
-BLK="\e[30m"   # black FG
-RED="\e[31m"   # red FG
-GRN="\e[32m"   # green FG
-YLW="\e[33m"   # yellow FG
-BLU="\e[34m"   # blue FG
-MAG="\e[35m"   # magenta FG
-CYN="\e[36m"   # cyan FG
-RBG="\e[41m"   # red BG
-GBG="\e[42m"   # green BG
-YBG="\e[43m"   # yellow BG
-BBG="\e[44m"   # blue BG
-MBG="\e[45m"   # magenta BG
-CBG="\e[46m"   # cyan BG
-NRM="\e[m"     # to make text normal
+# set environment specific variable
+export ENVIRONMENT_SHIT=$HOME/.bash_aliases_chef
+
+# some ansi colorization escape sequences
+[ "$(uname)" == "Darwin" ] && ESC="\033" || ESC="\e"
+D2E="${ESC}[K"     # to delete the rest of the chars on a line
+BLD="${ESC}[1m"    # bold
+ULN="${ESC}[4m"    # underlined
+BLK="${ESC}[30m"   # black FG
+RED="${ESC}[31m"   # red FG
+GRN="${ESC}[32m"   # green FG
+YLW="${ESC}[33m"   # yellow FG
+BLU="${ESC}[34m"   # blue FG
+MAG="${ESC}[35m"   # magenta FG
+CYN="${ESC}[36m"   # cyan FG
+RBG="${ESC}[41m"   # red BG
+GBG="${ESC}[42m"   # green BG
+YBG="${ESC}[43m"   # yellow BG
+BBG="${ESC}[44m"   # blue BG
+MBG="${ESC}[45m"   # magenta BG
+CBG="${ESC}[46m"   # cyan BG
+NRM="${ESC}[m"     # to make text normal
 
 # set xterm defaults
 XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
@@ -39,12 +45,14 @@ XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
 ORIG_PS1=$PS1
 
 # for changing prompt colors
+PGRY='\[\e[1;30m\]'   # grey (bold black)
 PRED='\[\e[1;31m\]'   # red (bold)
 PGRN='\[\e[1;32m\]'   # green (bold)
 PYLW='\[\e[1;33m\]'   # yellow (bold)
 PBLU='\[\e[1;34m\]'   # blue (bold)
 PMAG='\[\e[1;35m\]'   # magenta (bold)
 PCYN='\[\e[1;36m\]'   # cyan (bold)
+PWHT='\[\e[1;36m\]'   # white (bold)
 PNRM='\[\e[m\]'       # to make text normal
 
 # directory where all (most) repos are
@@ -779,12 +787,24 @@ default display:
 }
 
 function bash_prompt () {
+   # get Chef version
+   if [ -z "$CHEF_VERSION" ]; then
+      export CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
+   fi
+   #PS_CHF="${PYLW}Chf:$CHEF_VERSION$PNRM"
+   PS_CHF="${PYLW}C:$CHEF_VERSION$PNRM"
    # get Ansible version
-   ansible_version=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
-   PS_ANS="${PCYN}Ans:$ansible_version$PNRM"
+   if [ -z "$ANSIBLE_VERSION" ]; then
+      export ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
+   fi
+   #PS_ANS="${PCYN}Ans:$ANSIBLE_VERSION$PNRM"
+   PS_ANS="${PCYN}A:$ANSIBLE_VERSION$PNRM"
    # get Python version
-   python_version=$(python --version 2>&1 | awk '{print $NF}')
-   PS_PY="${PMAG}Py:$python_version$PNRM"
+   if [ -z "$PYTHON_VERSION" ]; then
+      export PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
+   fi
+   #PS_PY="${PMAG}Py:$PYTHON_VERSION$PNRM"
+   PS_PY="${PMAG}P:$PYTHON_VERSION$PNRM"
    # get git info
    #local git_branch=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
    local git_branch=$(git branch 2>/dev/null|grep '^*'|awk '{print $NF}')
@@ -818,7 +838,24 @@ function bash_prompt () {
    ##PS1="$PGRN\w$PNRM [$PS_GIT]  $PS_ANS  $PS_PY\n$PS_PROJ$PBLU\u@\h$PNRM|$PS_COL$ $PNRM"
    ##PS1="\n$PS_PATH $PS_ANS $PS_PY\n$PS_PROJ$PS_WHO|$PS_COL$ $PNRM"
    ##PS1="\n$PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO|$PS_COL$ $PNRM"
-   PS1="\n$PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO[\j]$PS_COL$ $PNRM"
+   #PS1="\n$PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO[\j]$PS_COL$ $PNRM"
+   if [ "$COMPANY" == "onica" -a -n "$ONICA_SSO_ACCOUNT_KEY" -a -n "$ONICA_SSO_EXPIRES_TS" ]; then
+      local _now_ts=$(date +%s)
+      if [ $ONICA_SSO_EXPIRES_TS -gt $_now_ts ]; then
+         echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007"
+         if [ $(($ONICA_SSO_EXPIRES_TS - $_now_ts)) -lt 300 ]; then
+            PS_PROJ="$PYLW[$ONICA_SSO_ACCOUNT_KEY]$PNRM"
+         else
+            PS_PROJ="$PRED[$ONICA_SSO_ACCOUNT_KEY]$PNRM"
+         fi
+      else
+         echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY](EXPIRED)\007"
+         PS_PROJ="$PGRY[$ONICA_SSO_ACCOUNT_KEY]$PNRM"
+      fi
+   else
+      echo -ne "\033]0;$(whoami)@$(hostname)\007"
+   fi
+   PS1="\n$PS_CHF $PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO[\j]$PS_COL$ $PNRM"
 }
 
 function ccc () {
@@ -1056,6 +1093,14 @@ function decimal_to_baseN () {
    return 0
 }
 
+function dlecr () {
+# run `docker login` command returned from `aws ecr get-login`
+   local _DEFAULT_REGION="us-east-1"
+   local _region=$1
+   [ -z "$_region" ] && _region=$_DEFAULT_REGION
+   eval $(aws ecr get-login --no-include-email --region $_region)
+}
+
 function elbinsts () {
 # convert instance ids to instance names that are attached to an AWS ELB
    local _elb_name=$1
@@ -1158,6 +1203,19 @@ function gh () { # TOOL
    else
       #echo "debug: looking for: $*"
       history | grep "$*"
+   fi
+}
+
+function gl () { # TOOL
+   eval grep --color=always $@ | less
+}
+
+function j2y () {
+# convert JSON to YAML (from either STDIN or by specifying a file
+   if [ -n $1 ]; then
+      cat $1 | python -c 'import json, sys, yaml; yaml.safe_dump(json.load(sys.stdin), sys.stdout)'
+   else
+      python -c 'import json, sys, yaml; yaml.safe_dump(json.load(sys.stdin), sys.stdout)'
    fi
 }
 
@@ -1597,6 +1655,50 @@ function xssh () {
    fi
 }
 
+function y2j () {
+# convert YAML to JSON (from either STDIN or by specifying a file
+   if [ -n $1 ]; then
+      cat $1 | python -c 'import json, sys, yaml; json.dump(yaml.load(sys.stdin), sys.stdout, indent=4)'
+   else
+      #python -c 'import json, sys, yaml; y=yaml.load(sys.stdin.read()); print json.dump(y)'
+      python -c 'import json, sys, yaml; json.dump(yaml.load(sys.stdin), sys.stdout, indent=4)'
+   fi
+}
+
+function zipstuff () {	# MISC
+# zip up specified files for backup
+   STUFFZIP="$HOME/.$COMPANY.stuff.zip"
+   FILES="
+      .*rc
+      .ansible.cfg
+      .aws_commands.txt
+      .aws/config
+      .bash*
+      .csshrc
+      .commands.txt
+      .gitconfig
+      .gitignore
+      .git-credentials
+      .files.txt
+      .s3cfg
+      .ssh/config
+      .ssh/environment
+      .tmux.conf
+      automation
+      notes
+      projects
+      scripts"
+   # didn't figure out how to make this work
+   ##EXCLUDE_FILES="*/.hg/\* repos/.chef/checksums/\* *.zip"
+   cd
+   thisserver=`hostname`
+   echo "ziping $FILES to $STUFFZIP... "
+   ##/usr/bin/zip -ru $STUFFZIP $FILES -x $EXCLUDE_FILES
+   ##/usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* repos/.chef/checksums/\* */*/.git/\* */*.zip */*/*.zip
+   /usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* */.git/\* */*/.git/\* */*.zip */*/*.zip
+   echo done
+}
+
 # -------------------- define aliases --------------------
 
 alias ~="cd ~"
@@ -1618,9 +1720,13 @@ alias crt='~/scripts/chef_recipe_tree.sh'
 alias diff="colordiff -u"
 alias disp="tsend 'echo \$DISPLAY'"
 alias eaf="eval \"$(declare -F | sed -e 's/-f /-fx /')\""
+alias egrep="egrep --color=auto"
+alias egrpq="egrep --color=always"
 #alias f="declare -F | awk '{print \$3}' | more"
 #alias f="declare -F | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-15s\",\$3}else{printf \"  %-15s\n\",\$3}}END{print CR}'"
 alias f="grep '^function .* ' ~/.bash_aliases | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias fgrep="fgrep --color=auto"
+alias fgrpq="fgrep --color=always"
 alias fuck='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 # alias gh="history | grep" # now a function
 alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
@@ -1628,6 +1734,7 @@ alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
 alias ghwt='sudo dmidecode | grep "Product Name"'
 #alias grep="grep --color=always"
 alias grep="grep --color=auto"
+alias grpa="grep --color=always"
 alias guid='printf "%x\n" `date +%s`'
 alias h="history"
 alias kaj='eval kill $(jobs -p)'
@@ -1654,7 +1761,8 @@ alias pa='ps auxfw'
 alias pe='ps -ef'
 alias ccrlf="sed -e 's//\n/g' -i .orig"
 alias rcrlf="sed -e 's/$//g' -i .orig"
-alias ring="$HOME/scripts/tools/ring.sh"
+#alias ring="$HOME/scripts/tools/ring.sh"
+alias ring="$HOME/repos/ring/ring.sh"
 alias rsshk='ssh-keygen -f "$HOME/.ssh/known_hosts" -R'
 alias rm='rm -i'
 alias sa=alias
@@ -1670,7 +1778,7 @@ alias sw=stopwatch
 #alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
 alias ta='tmux attach -t'
-alias tt='echo -ne "\033]0;`whoami`@`hostname`\007"'
+alias tt='echo -ne "\033]0;$(whoami)@$(hostname)\007"'
 alias tskap="_tmux_send_keys_all_panes"
 alias xterm='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
 alias u=uptime
@@ -1678,6 +1786,7 @@ alias u=uptime
 #alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; sba'
 alias vba='echo "editing: ~/.bash_aliases"; vi ~/.bash_aliases; sba'
 alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
+alias veba='[ -f $ENVIRONMENT_SHIT ] && { echo "editing: $ENVIRONMENT_SHIT"; vi $ENVIRONMENT_SHIT; sba; }'
 alias vi='`which vim`'
 alias view='`which vim` -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
@@ -1695,5 +1804,11 @@ alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less'
 # source company specific functions and aliases
 [ -f $COMPANY_SHIT ] && source $COMPANY_SHIT
 
+# source environment specific functions and aliases
+[ -f $ENVIRONMENT_SHIT ] && source $ENVIRONMENT_SHIT
+
 # set bash prompt command (and bash prompt)
+export OLD_PROMPT_COMMAND=$PROMPT_COMMAND
 export PROMPT_COMMAND="bash_prompt"
+
+[ -n "$PS1" ] && echo -n ".bash_aliases (end)... "
