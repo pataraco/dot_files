@@ -3,7 +3,8 @@
 # these are functions/aliases specific to Red 5 Studios
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo "sourcing: .bash_aliases_r5s"
+#[ -n "$PS1" ] && echo "sourcing: .bash_aliases_r5s"
+[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (begin)... "
 
 # set up some globals
 #CHEF_REPO=/opt/repo
@@ -1109,3 +1110,5 @@ alias pushba='echo -n "pushing ~/.bash_aliases to $OTHERVM... "; scp -q /home/pr
 alias pullba='echo -n "pulling ~/.bash_aliases from $OTHERVM... "; scp -q $OTHERVM:/home/praco/.bash_aliases /home/praco/.bash_aliases; echo "done"'
 alias vvaf=~/scripts/verify_vipsnfips.sh
 alias vsy='vi $SW_YAML_FILE' 
+
+[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (end)... "

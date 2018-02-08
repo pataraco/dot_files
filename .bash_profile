@@ -3,19 +3,12 @@
 # see /usr/share/doc/bash/examples/startup-files for examples.
 # the files are located in the bash-doc package.
 
-[ -n "$PS1" ] && echo "sourcing: .bash_profile"
+#[ -n "$PS1" ] && echo "sourcing: .bash_profile"
+[ -n "$PS1" ] && echo -n ".bash_profile (begin)... "
 
 # the default umask is set in /etc/profile; for setting the umask
 # for ssh logins, install and configure the libpam-umask package.
 #umask 022
-
-# if running bash
-if [ -n "$BASH_VERSION" ]; then
-   # include .bashrc if it exists
-   if [ -f "$HOME/.bashrc" ]; then
-      source "$HOME/.bashrc"
-   fi
-fi
 
 # set PATH so it includes user's private bin if it exists
 if [ -d "$HOME/bin" ] ; then
@@ -54,6 +47,14 @@ fi
 #export PATH=$PATH:$HOME/.gem/ruby/1.9.1/bin:$HOME/.gem/ruby/2.2.0/bin
 #export GEM_PATH=$HOME/.gem/ruby/1.9.1
 #export GEM_HOME=$GEM_PATH
+
+# if running bash
+if [ -n "$BASH_VERSION" ]; then
+   # include .bashrc if it exists
+   if [ -f "$HOME/.bashrc" ]; then
+      source "$HOME/.bashrc"
+   fi
+fi
 
 # set up some Ansible environment variable
 #export ANSIBLE_HOME=$HOME/repos/cloud_automation/ansible
@@ -116,3 +117,5 @@ fi
 
 # add `pyenv init` to shell to enable shims and autcompletion
 [ $(command -v pyenv) ] && eval "$(pyenv init -)"
+
+[ -n "$PS1" ] && echo -n ".bash_profile (end)... "
