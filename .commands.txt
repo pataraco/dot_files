@@ -63,6 +63,7 @@ dig MX virtumedix.com
 dig NS us-east-1.amazonaws.com
 dmidecode | egrep -i 'date|bios'
 dmidecode | grep Product
+docker tag APP:latest AWS_ACCT_NO.dkr.ecr.us-east-1.amazonaws.com/APP:latest
 du -hsx * | sort -rh | head -10
 echo "SELECT * FROM ls_hotelconfig WHERE parameter like '%mail%'"|dbaccess dev
 echo "SELECT hotelnum,banklive FROM bank_parms"|dbaccess dev
@@ -136,6 +137,7 @@ ntpdate ntphost1.star
 openssl ciphers -v 'ALL:eNULL'
 openssl enc -d -in ENCRYPTED_FILE -out DECRYPTED_FILE -pass file:/path/to/key -aes-256-cbc
 openssl enc -e -in DECRYPTED_FILE -out ENCRYPTED_FILE -pass file:/path/to/key -aes-256-cbc
+openssl rand -base64 24   # generate 32 char password
 openssl req -in DOMAIN_NAME.csr -noout -subject
 openssl req -in consult.firecrackerhealth.com.csr.orig -noout -subject
 openssl req -new -newkey rsa:2048 -nodes -keyout DOMAIN_NAME.key -out DOMAIN_NAME.csr
@@ -174,6 +176,7 @@ ssh-copy-id [$USER@]$HOSTNAME
 ssh-keygen -R $hostname		# remove host entries from known_hosts
 ssh-keygen -p -f $key_file	# add/change passphrase
 ssh-keygen -t rsa		# generate RSA key-pair
+ssh-keygen -y -f PRIVATE_KEY | pbcopy
 stty -a < /dev/ttyaa05
 su eci -c '/eci/dev/bin/loader dev XXXXXX'
 su informix -c '/home/informix/bin/start_logical_logs'	# tape | backup
