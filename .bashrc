@@ -6,14 +6,18 @@
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
 
-echo "sourcing: .bashrc"
+#echo "sourcing: .bashrc"
+[ -n "$PS1" ] && echo -n ".bashrc (begin)... "
 
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
-HISTCONTROL='ignoreboth:erasedups'
+export HISTCONTROL='ignoreboth:erasedups'
+
+# set to share history between terminals
+export HISTFILE=$HOME/.bash_history
 
 # don't record these commands
-HISTIGNORE='ls:cd:h:..:history: *:sae:uname *:f:a:sa:sf:cd[aphir]:c:clear'
+export HISTIGNORE='ls:cd:h:..:history: *:sae:uname *:f:a:sa:sf:cd[aphir]:c:clear'
 
 # append to the history file, don't overwrite it
 shopt -s histappend
@@ -23,8 +27,8 @@ shopt -s histappend
 # export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000		# how many lines to load in memory
-HISTFILESIZE=50000	# how many lines to save in file
+export HISTSIZE=1000		# how many lines to load in memory
+export HISTFILESIZE=50000	# how many lines to save in file
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -146,3 +150,5 @@ fi
 ## [[ ! $PATH =~ $ARC_ROOT/bin ]] && export PATH="$PATH:$ARC_ROOT/bin"
 ## export PYENV_ROOT=$HOME/repos/pyenv
 ## [[ ! $PATH =~ $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+
+[ -n "$PS1" ] && echo -n ".bashrc (end)... "
