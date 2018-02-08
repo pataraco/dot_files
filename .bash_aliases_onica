@@ -1,0 +1,116 @@
+#!bash - ~/.bash_aliases_onica - sourced by ~/.bashrc_aliases
+#
+# these are functions/aliases specific to Comtech TCS
+
+# if interactive shell - display message
+#[ -n "$PS1" ] && echo "sourcing: .bash_aliases_$COMPANY"
+[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (begin)... "
+
+# set up shell for Onica Single Sign-on (onica-sso)
+eval "$(onica-sso shell-init bash)"
+
+# define functions
+
+function showcf () {	# TOOL
+# show a company specific function
+   if [ -n "$COMPANY_SHIT" ]; then
+      ALIASES_FILE=$COMPANY_SHIT
+      if [[ $1 ]]; then
+         grep -q "^function $1 " $ALIASES_FILE
+         if [ $? -eq 0 ]; then
+            sed -n '/^function '"$1"' /,/^}/p' $ALIASES_FILE
+         else
+            echo "function: '$1' - not found"
+         fi
+      else
+         echo
+         echo "which function do you want to see?"
+         grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+         echo -ne "enter function: "
+         read func
+         echo
+         showcf $func
+      fi
+   else
+      echo "company alias file not set (COMPANY_SHIT)"
+   fi
+}
+
+function sso-login () 
+# sso-login override until it gets updated to return correct return codes
+{ 
+    _exports=$(onica-sso login $* 2>/dev/null)
+    local _retcode=$?
+    if [ $_retcode -eq 0 ]; then
+        eval $_exports
+        sso-title $1
+    else
+        echo $_exports
+    fi
+    unset _exports
+    return $_retcode
+}
+
+function ssol () {	# TOOL
+# wrapper for `sso-login`
+# usage: ssol ACCT_ABBRVTN|ACCT_SHORT_NAME [MFA_CODE]
+   local _acct_short_name
+   local _accnt_abbrvtn=$1
+   local _mfa_code=$2
+   if [ -n "$_accnt_abbrvtn" ]; then
+      case $_accnt_abbrvtn in
+         sil) _acct_short_name="sturdy-internal-lab"    ;;
+         sss) _acct_short_name="sturdy-sentientscience" ;;
+         unset) 
+            unset ONICA_SSO_ACCOUNT_TAGS
+            unset ONICA_SSO_ACCOUNT_NAME
+            unset ONICA_SSO_EXPIRES_TS
+            unset ONICA_SSO_ACCOUNT_ID
+            unset ONICA_SSO_ACCOUNT_KEY
+            unset ONICA_SSO_EXPIRES_ISO
+            unset AWS_ENVIRONMENT
+            unset AWS_ACCESS_KEY_ID
+            unset AWS_SECRET_ACCESS_KEY
+            PS_PROJ="$PNRM"
+            echo "environment has been unset"
+            return                                      ;;
+         *) _acct_short_name=$_accnt_abbrvtn            ;;
+      esac
+      local _acct_long_name=$(sso-list | grep "^$_acct_short_name " | cut -d ' ' -f3-)
+      if [ -n "$_acct_long_name" ]; then
+         sso-login $_acct_short_name $_mfa_code
+         if [ $? -eq 0 ]; then
+            local _aws_env=$ONICA_SSO_ACCOUNT_NAME
+            #local _aws_acct=$(aws sts get-caller-identity | jq -r .Account)
+            local _aws_acct=$ONICA_SSO_ACCOUNT_ID
+            export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
+            PS_PROJ="$PRED[$ONICA_SSO_ACCOUNT_KEY]$PNRM"
+            echo -e "environment set:\n $AWS_ENVIRONMENT ($_acct_short_name)"
+         else
+            echo -e "environment could not be set"
+         fi
+      else
+         echo "can't find account with short name: $_acct_short_name"
+      fi
+   else
+      echo -n "--- AWS Environment "
+      [ -n "$AWS_ENVIRONMENT" ] && echo "($ONICA_SSO_ACCOUNT_KEY) Settings ---" || echo "(NOT set) ---"
+      echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
+      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}"
+      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}"
+   fi
+}
+
+# define aliases
+
+alias actss="source $HOME/envs/sentient-science/bin/activate"
+alias cdss="cd $HOME/repos/projects/sentient-science/onica-sentient-science"
+if [ -n "$COMPANY_SHIT" ]; then
+   alias cf="grep '^function .* ' ~/.bash_aliases_ctcs | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+   alias scf=showcf
+else
+   alias cd="echo 'company alias file not set (COMPANY_SHIT)'"
+   alias scf="echo 'company alias file not set (COMPANY_SHIT)'"
+fi
+
+[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (end)... "
