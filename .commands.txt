@@ -156,6 +156,7 @@ printf "%x\n" `date +%s`
 prsetup					# printer setup
 prtlock					# /eci/dev/bin/prtlock
 put &res.guestnum &resrooms.roomnum into guest-room-tbl(#guest-room-index+1)	# Club Data (clbdata.sqr)
+python -c "from passlib.hash import sha512_crypt; print sha512_crypt.encrypt(raw_input('clear-text password: '))"
 rgn=us-east-1; watch -n1 -d 'awsdasg -r '"$rgn"' -n vmedix +bt; echo "--"; awsdlc -r '"$rgn"' -n vmedix; echo "--"; awsdi -r '"$rgn"' -p VMedix -n log +bt +c'
 rpm -qa | grep MQSeries | grep -v 6.0.0
 rsync -nvcrlDz
