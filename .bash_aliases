@@ -9,6 +9,11 @@
 # update change the title bar of the terminal
 echo -ne "\033]0;$(whoami)@$(hostname)\007"
 
+# show Ansible, Chef or Python versions in prompt
+PS_SHOW_AV=0
+PS_SHOW_CV=0
+PS_SHOW_PV=0
+
 # -------------------- global variables --------------------
 
 # set company specific variable
@@ -82,6 +87,25 @@ function _tmux_send_keys_all_panes () {
    done
 }
 
+function awsdr () {
+# AWS Set Default Region
+   local _region=$1
+   if [ -n "$_region" ]; then
+      case $_region in
+         uw1)   export AWS_DEFAULT_REGION="us-west-1";;
+         uw2)   export AWS_DEFAULT_REGION="us-west-2";;
+         ue1)   export AWS_DEFAULT_REGION="us-east-1";;
+         ue2)   export AWS_DEFAULT_REGION="us-east-2";;
+         ew1)   export AWS_DEFAULT_REGION="eu-west-1";;
+         ew2)   export AWS_DEFAULT_REGION="eu-west-2";;
+         unset) unset AWS_DEFAULT_REGION;;
+         *)     echo "unknown region TLA"; return;;
+      esac
+   else
+      echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
+   fi
+}
+
 function awssnsep () {
 # AWS SNS list platform application endpoints
    local _USAGE="usage: awssnsep APPLICATION [REGION]  # can use 'all'"
@@ -143,44 +167,53 @@ function awsasgcp () {
 }
 
 function awsci () {
-# reboot, start or stop an instance
+# reboot, start, stop or terminate an instance
+   local _AWS_CMD=$(which aws)
+   [ -z "$_AWS_CMD" ] && { echo "error: aws command not found"; return 2; }
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _USAGE="usage: awsci [-r REGION] reboot|start|stop INSTANCE_ID|INSTANCE_NAME   # default region: $_DEFAULT_REGION"
+   local _USAGE="usage: awsci [-r REGION] reboot|start|stop|terminate INSTANCE_ID|INSTANCE_NAME   # default region: $_DEFAULT_REGION"
    local _region=$1
    [ "$_region" == "-r" ] && { _region=$2; shift 2; } || _region=$_DEFAULT_REGION
    local _CONTROL_CMD=$1
-   local _INSTANCE_NAME=$2
-   [ -z "$_CONTROL_CMD" ] && { echo "error: did not specify 'reboot', 'start' or 'stop'"; echo "$_USAGE"; return; }
-   [ -z "$_INSTANCE_NAME" ] && { echo "error: did not specify an instance name"; echo "$_USAGE"; return; }
-   local _INSTANCE_ID
-   /usr/bin/aws ec2 describe-instances --region $_region --instance-ids $_INSTANCE_NAME > /dev/null 2>&1
+   local _INSTANCE_PATTERN=$2
+   [ -z "$_CONTROL_CMD" ] && { echo "error: did not specify 'reboot', 'start', 'stop' or 'terminate'"; echo "$_USAGE"; return; }
+   [ -z "$_INSTANCE_PATTERN" ] && { echo "error: did not specify an instance name or ID"; echo "$_USAGE"; return; }
+   local _instance_id
+   local _instance_name
+   _instance_name=$($_AWS_CMD ec2 describe-instances --region $_region --instance-ids $_INSTANCE_PATTERN --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text 2> /dev/null)
    if [ $? -eq 0 ]; then
-      _INSTANCE_ID=$_INSTANCE_NAME
-      _INSTANCE_NAME=$(/usr/bin/aws ec2 describe-instances --region $_region --instance-ids $_INSTANCE_ID --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text)
+      _instance_id=$_INSTANCE_PATTERN
    else
-      _INSTANCE_ID=$(/usr/bin/aws ec2 describe-instances --region $_region --filters "Name=tag:Name,Values=$_INSTANCE_NAME" --output json | jq -r .Reservations[].Instances[].InstanceId)
+      _instance_id=$($_AWS_CMD ec2 describe-instances --region $_region --filters "Name=tag:Name,Values=*${_INSTANCE_PATTERN}*" --output json | jq -r .Reservations[].Instances[].InstanceId 2> /dev/null)
+      _instance_name=$($_AWS_CMD ec2 describe-instances --region $_region --instance-ids $_instance_id --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text 2> /dev/null)
    fi
-   local _INSTANCE_STATE=$(/usr/bin/aws ec2 describe-instances --region $_region --instance-ids $_INSTANCE_ID --query "Reservations[].Instances[].State.Name" --output text)
+   [ -z "$_instance_name" ] && { echo "note: did not find an instance with ID: $_instance_id"; return; }
+   [ -z "$_instance_id" ] && { echo "note: did not find instance named: $_instance_name"; return; }
+   local _no_of_ids=$(echo "$_instance_id" | wc -l)
+   [ $_no_of_ids -gt 1 ] && { echo "note: found more than one instance - please be more specific"; return; }
+   local _instance_state=$($_AWS_CMD ec2 describe-instances --region $_region --instance-ids $_instance_id --query "Reservations[].Instances[].State.Name" --output text)
    local _aws_ec2_cmd
    case $_CONTROL_CMD in
       reboot)
-         [ "$_INSTANCE_STATE" != "running" ] && { echo "$_INSTANCE_NAME ($_INSTANCE_ID) is NOT running"; return; }
+         [ "$_instance_state" != "running" ] && { echo "$_instance_name ($_instance_id) is NOT running"; return; }
          _aws_ec2_cmd=reboot-instances ;;
       start)
-         [ "$_INSTANCE_STATE" == "running" ] && { echo "$_INSTANCE_NAME ($_INSTANCE_ID) is already running"; return; }
+         [ "$_instance_state" == "running" ] && { echo "$_instance_name ($_instance_id) is already running"; return; }
          _aws_ec2_cmd=start-instances ;;
       stop)
-         [ "$_INSTANCE_STATE" == "stopped" ] && { echo "$_INSTANCE_NAME ($_INSTANCE_ID) is already stopped"; return; }
+         [ "$_instance_state" == "stopped" ] && { echo "$_instance_name ($_instance_id) is already stopped"; return; }
          _aws_ec2_cmd=stop-instances  ;;
+      terminate)
+         _aws_ec2_cmd=terminate-instances ;;
       *)
          echo "unknown option: exiting..."; echo "$_USAGE"; return;;
    esac
-   [ -z "$_INSTANCE_ID" ] && { echo "note: did not find instance named: $_INSTANCE_NAME"; return; }
    local _ans
-   echo "Instance: $_INSTANCE_NAME ($_INSTANCE_ID) is $_INSTANCE_STATE"
-   read -p "Are you sure that you want to ${_CONTROL_CMD^^} it [yes/no]? " _ans
+   echo "Instance: $_instance_name ($_instance_id) is $_instance_state"
+   #read -p "Are you sure that you want to ${_CONTROL_CMD^^} it [yes/no]? " _ans
+   read -p "Are you sure that you want to '${_CONTROL_CMD}' it [yes/no]? " _ans
    if [ "$_ans" == "yes" -o "$_ans" == "YES" ]; then
-      /usr/bin/aws ec2 $_aws_ec2_cmd --region $_region --instance-ids $_INSTANCE_ID
+      $_AWS_CMD ec2 $_aws_ec2_cmd --region $_region --instance-ids $_instance_id
    else
       echo "Did not enter 'yes'; NOT going to ${_CONTROL_CMD} the instance"
    fi
@@ -787,50 +820,92 @@ default display:
 }
 
 function bash_prompt () {
-   # get Chef version
-   if [ -z "$CHEF_VERSION" ]; then
-      export CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
+   # customize Bash Prompt
+   local _versions_len=0
+   if [ $PS_SHOW_CV -eq 1 ]; then
+      # get Chef version
+      if [ -z "$CHEF_VERSION" ]; then
+         export CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
+      fi
+      PS_CHF="${PYLW}C$CHEF_VERSION$PNRM"
+      (( _versions_len += ${#CHEF_VERSION} + 1 ))
    fi
-   #PS_CHF="${PYLW}Chf:$CHEF_VERSION$PNRM"
-   PS_CHF="${PYLW}C:$CHEF_VERSION$PNRM"
+   if [ $PS_SHOW_AV -eq 1 ]; then
    # get Ansible version
-   if [ -z "$ANSIBLE_VERSION" ]; then
-      export ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
+      if [ -z "$ANSIBLE_VERSION" ]; then
+         export ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
+      fi
+      PS_ANS="${PCYN}A$ANSIBLE_VERSION$PNRM"
+      (( _versions_len += ${#ANSIBLE_VERSION} + 1 ))
    fi
-   #PS_ANS="${PCYN}Ans:$ANSIBLE_VERSION$PNRM"
-   PS_ANS="${PCYN}A:$ANSIBLE_VERSION$PNRM"
-   # get Python version
-   if [ -z "$PYTHON_VERSION" ]; then
-      export PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
+   if [ $PS_SHOW_PV -eq 1 ]; then
+      # get Python version
+      if [ -z "$PYTHON_VERSION" ]; then
+         export PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
+      fi
+      PS_PY="${PMAG}P$PYTHON_VERSION$PNRM"
+      (( _versions_len += ${#PYTHON_VERSION} + 1 ))
    fi
-   #PS_PY="${PMAG}Py:$PYTHON_VERSION$PNRM"
-   PS_PY="${PMAG}P:$PYTHON_VERSION$PNRM"
    # get git info
-   #local git_branch=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
-   local git_branch=$(git branch 2>/dev/null|grep '^*'|awk '{print $NF}')
-   git_status=$(git status --porcelain 2> /dev/null)
-   [[ $git_status =~ ($'\n'|^).M ]] && local _git_has_mods=true
-   [[ $git_status =~ ($'\n'|^)M ]] && local _git_has_mods_cached=true
-   [[ $git_status =~ ($'\n'|^)A ]] && local _git_has_adds=true
-   [[ $git_status =~ ($'\n'|^).D ]] && local _git_has_dels=true
-   [[ $git_status =~ ($'\n'|^)D ]] && local _git_has_dels_cached=true
-   [[ $git_status =~ ($'\n'|^)\?\? ]] && local _git_has_untracked_files=true
-   [[ $git_status =~ ($'\n'|^)[MAD] && ! $git_status =~ ($'\n'|^).[MAD\?] ]] && local _git_ready_to_commit=true
-   if [ "$_git_ready_to_commit" ]; then
-      PS_GIT="$PGRN$git_branch✔$PNRM"
-   elif [ "$_git_has_mods_cached" -o "$_git_has_dels_cached" ]; then
-      PS_GIT="$PCYN$git_branch+$PNRM"
-   elif [ "$_git_has_mods" -o "$_git_has_adds" -o "$_git_has_dels" ]; then
-      PS_GIT="$PRED$git_branch*$PNRM"
-   elif [ "$_git_has_untracked_files" ]; then
-      PS_GIT="$PYLW$git_branch$PNRM"
+   git branch &> /dev/null
+   if [ $? -eq 0 ]; then   # in a git repo
+      #local _git_branch=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
+      local _git_branch=$(git branch 2>/dev/null|grep '^*'|awk '{print $NF}')
+      local _git_branch_len=$(( ${#_git_branch} + 2 ))
+      local _git_status=$(git status --porcelain 2> /dev/null)
+      [[ $_git_status =~ ($'\n'|^).M ]] && local _git_has_mods=true
+      [[ $_git_status =~ ($'\n'|^)M ]] && local _git_has_mods_cached=true
+      [[ $_git_status =~ ($'\n'|^)A ]] && local _git_has_adds=true
+      [[ $_git_status =~ ($'\n'|^)R ]] && local _git_has_renames=true
+      [[ $_git_status =~ ($'\n'|^).D ]] && local _git_has_dels=true
+      [[ $_git_status =~ ($'\n'|^)D ]] && local _git_has_dels_cached=true
+      [[ $_git_status =~ ($'\n'|^)\?\? ]] && local _git_has_untracked_files=true
+      [[ $_git_status =~ ($'\n'|^)[ADMR] && ! $_git_status =~ ($'\n'|^).[ADMR\?] ]] && local _git_ready_to_commit=true
+      if [ "$_git_ready_to_commit" ]; then
+         #for debug#echo "git ready to commit"
+         PS_GIT="$PNRM[$PGRN${_git_branch}✔$PNRM]"
+         (( _git_branch_len++ ))
+      elif [ "$_git_has_mods_cached" -o "$_git_has_dels_cached" ]; then
+         #for debug#echo "git has mods cached or has dels cached"
+         PS_GIT="$PNRM[$PCYN${_git_branch}+$PNRM]"
+         (( _git_branch_len++ ))
+      elif [ "$_git_has_mods" -o "$_git_has_renames" -o "$_git_has_adds" -o "$_git_has_dels" ]; then
+         #for debug#echo "git has mods or adds or dels"
+         PS_GIT="$PNRM[$PRED${_git_branch}*$PNRM]"
+         (( _git_branch_len++ ))
+      elif [ "$_git_has_untracked_files" ]; then
+         #for debug#echo "git has untracked files"
+         PS_GIT="$PNRM[$PYLW${_git_branch}$PNRM]"
+      else
+         #for debug#echo "git has ???"
+         _git_status=$(git status -bs 2> /dev/null)
+         if [[ $_git_status =~ "[ahead " ]]; then
+            local _gitahead=$(echo $_git_status | awk '{print $NF}' | cut -d']' -f1)
+            PS_GIT="$PNRM[$PMAG${_git_branch}>$_gitahead$PNRM]"
+            (( _git_branch_len += 1 + ${#_gitahead} ))
+         else
+            PS_GIT="$PNRM[$PNRM${_git_branch}$PNRM]"
+         fi
+      fi
+      if [ "$_git_has_untracked_files" ]; then
+         PS_GIT="$PNRM[$PS_GIT$PYLW?$PNRM]"
+         (( _git_branch_len++ ))
+      fi
+   else   # NOT in a git repo
+      local _git_branch_len=0
+      PS_GIT=""
+   fi
+   # customize path depending on width/space available
+   local _space_for_path=$(( $COLUMNS - $_versions_len - $_git_branch_len ))
+   local _pwd=${PWD/$HOME/'~'}
+   if [  ${#_pwd} -lt $_space_for_path ]; then
+      PS_PATH="$PGRN\w$PNRM"
    else
-      PS_GIT="$PNRM$git_branch$PNRM"
+      (( _space_for_path -= 3 ))
+      local _ps_path_start_pos=$(( ${#_pwd} - $_space_for_path ))
+      local _ps_path_chopped="...${_pwd:$_ps_path_start_pos:$_space_for_path}"
+      PS_PATH="$PGRN${_ps_path_chopped}$PNRM"
    fi
-   if [ "$_git_has_untracked_files" ]; then
-      PS_GIT="$PS_GIT$PYLW?$PNRM"
-   fi
-   PS_PATH="$PGRN\w$PNRM [$PS_GIT]"
    PS_WHO="$PBLU\u@\h$PNRM"
    # different themes
    ##PS1="$PS_PROJ $PS_GIT $PS_ANS $PS_PY $PGRN\w$PBLU\n\u@\h$PNRM|$PS_COL$ $PNRM"
@@ -845,17 +920,22 @@ function bash_prompt () {
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007"
          if [ $(($ONICA_SSO_EXPIRES_TS - $_now_ts)) -lt 300 ]; then
             PS_PROJ="$PYLW[$ONICA_SSO_ACCOUNT_KEY]$PNRM"
+            PS_COL=$PYLW
          else
             PS_PROJ="$PRED[$ONICA_SSO_ACCOUNT_KEY]$PNRM"
+            PS_COL=$PRED
          fi
       else
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY](EXPIRED)\007"
          PS_PROJ="$PGRY[$ONICA_SSO_ACCOUNT_KEY]$PNRM"
+         PS_COL=$PGRY
       fi
    else
       echo -ne "\033]0;$(whoami)@$(hostname)\007"
    fi
-   PS1="\n$PS_CHF $PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO[\j]$PS_COL$ $PNRM"
+   #PS1="\n$PS_CHF $PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO[\j]$PS_COL$ $PNRM"
+   #PS1="\n$PS_CHF$PS_ANS$PS_PY $PS_PATH\n$PS_PROJ$PS_WHO[\j]$PS_COL$ $PNRM"
+   PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_WHO(\j)$PS_COL$ $PNRM"
 }
 
 function ccc () {
@@ -1485,17 +1565,19 @@ function source_ssh_env () {
 }
 
 function sse () {
-# ssh in to a server as user: "ec2-user" and run optional command
+# ssh in to a server as user "ec2-user" and run optional command
+   local _this_function="sse"
+   local _user="ec2-user"
    if [ "$1" != "" ]; then
       _server=$1
       shift
       if [ "$*" == "" ]; then
-         ssh ec2-user@${_server}
+         ssh $_user@${_server}
       else
-         ssh ec2-user@${_server} "$*"
+         ssh $_user@${_server} "$*"
       fi
    else
-      echo "USAGE: sse HOST [COMMAND(S)]"
+      echo "USAGE: $_this_function HOST [COMMAND(S)]"
    fi
 }
 
@@ -1516,6 +1598,23 @@ function sse () {
 ##      echo "you did not specify the 'host' and 'cmd'"
 ##   fi
 ##}
+
+function ssu () {
+# ssh in to a server as user "ubuntu" and run optional command
+   local _this_function="ssu"
+   local _user="ubuntu"
+   if [ "$1" != "" ]; then
+      _server=$1
+      shift
+      if [ "$*" == "" ]; then
+         ssh $_user@${_server}
+      else
+         ssh $_user@${_server} "$*"
+      fi
+   else
+      echo "USAGE: $_this_function HOST [COMMAND(S)]"
+   fi
+}
 
 function start_ssh_agent () {
    SSH_ENV="$HOME/.ssh/environment"
@@ -1759,6 +1858,14 @@ alias myip='curl http://ipecho.net/plain; echo'
 alias pa='ps auxfw'
 #alias pse='ps -ef' # converted to a function
 alias pe='ps -ef'
+alias pssav='PS_SHOW_AV=1'
+alias psscv='PS_SHOW_CV=1'
+alias psspv='PS_SHOW_PV=1'
+alias pssallv='PS_SHOW_AV=1; PS_SHOW_CV=1; PS_SHOW_PV=1'
+alias pshav='PS_SHOW_AV=0; unset PS_ANS'
+alias pshcv='PS_SHOW_CV=0; unset PS_CHF'
+alias pshpv='PS_SHOW_PV=0; unset PS_PY'
+alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_PV=0; unset PS_ANS; unset PS_CHF; unset PS_PY'
 alias ccrlf="sed -e 's//\n/g' -i .orig"
 alias rcrlf="sed -e 's/$//g' -i .orig"
 #alias ring="$HOME/scripts/tools/ring.sh"
