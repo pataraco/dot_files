@@ -12,4 +12,4 @@ fi
 # write commands to history
 history -a
 
-[ -n "$PS1" ] && echo -n ".bash_logout (end)... "
+[ -n "$PS1" ] && echo -n ".bash_logout (end). "

@@ -1016,4 +1016,4 @@ alias kcl='kf client list'
 alias knl='kf node list'
 alias vsy='vi $SW_YAML_FILE' 
 
-[ -n "$PS1" ] && echo -n ".bash_aliases_chef (end)... "
+[ -n "$PS1" ] && echo -n ".bash_aliases_chef (end). "

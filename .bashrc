@@ -151,4 +151,4 @@ fi
 ## export PYENV_ROOT=$HOME/repos/pyenv
 ## [[ ! $PATH =~ $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
 
-[ -n "$PS1" ] && echo -n ".bashrc (end)... "
+[ -n "$PS1" ] && echo -n ".bashrc (end). "

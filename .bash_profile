@@ -118,4 +118,4 @@ fi
 # add `pyenv init` to shell to enable shims and autcompletion
 [ $(command -v pyenv) ] && eval "$(pyenv init -)"
 
-[ -n "$PS1" ] && echo -n ".bash_profile (end)... "
+[ -n "$PS1" ] && echo -n ".bash_profile (end). "

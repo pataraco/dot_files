@@ -114,4 +114,4 @@ else
    alias scf="echo 'company alias file not set (COMPANY_SHIT)'"
 fi
 
-[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (end)... "
+[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (end). "

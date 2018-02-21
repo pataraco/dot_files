@@ -851,7 +851,7 @@ function bash_prompt () {
    if [ $? -eq 0 ]; then   # in a git repo
       #local _git_branch=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
       local _git_branch=$(git branch 2>/dev/null|grep '^*'|awk '{print $NF}')
-      local _git_branch_len=$(( ${#_git_branch} + 2 ))
+      local _git_branch_len=$(( ${#_git_branch} + 1 ))
       local _git_status=$(git status --porcelain 2> /dev/null)
       [[ $_git_status =~ ($'\n'|^).M ]] && local _git_has_mods=true
       [[ $_git_status =~ ($'\n'|^)M ]] && local _git_has_mods_cached=true
@@ -863,37 +863,40 @@ function bash_prompt () {
       [[ $_git_status =~ ($'\n'|^)[ADMR] && ! $_git_status =~ ($'\n'|^).[ADMR\?] ]] && local _git_ready_to_commit=true
       if [ "$_git_ready_to_commit" ]; then
          #for debug#echo "git ready to commit"
-         PS_GIT="$PNRM[$PGRN${_git_branch}✔$PNRM]"
+         PS_GIT="$PNRM$PGRN${_git_branch}✔$PNRM"
          (( _git_branch_len++ ))
       elif [ "$_git_has_mods_cached" -o "$_git_has_dels_cached" ]; then
          #for debug#echo "git has mods cached or has dels cached"
-         PS_GIT="$PNRM[$PCYN${_git_branch}+$PNRM]"
+         PS_GIT="$PNRM$PCYN${_git_branch}+$PNRM"
          (( _git_branch_len++ ))
       elif [ "$_git_has_mods" -o "$_git_has_renames" -o "$_git_has_adds" -o "$_git_has_dels" ]; then
          #for debug#echo "git has mods or adds or dels"
-         PS_GIT="$PNRM[$PRED${_git_branch}*$PNRM]"
+         PS_GIT="$PNRM$PRED${_git_branch}*$PNRM"
          (( _git_branch_len++ ))
       elif [ "$_git_has_untracked_files" ]; then
          #for debug#echo "git has untracked files"
-         PS_GIT="$PNRM[$PYLW${_git_branch}$PNRM]"
+         PS_GIT="$PNRM$PYLW${_git_branch}$PNRM"
       else
          #for debug#echo "git has ???"
          _git_status=$(git status -bs 2> /dev/null)
          if [[ $_git_status =~ "[ahead " ]]; then
             local _gitahead=$(echo $_git_status | awk '{print $NF}' | cut -d']' -f1)
-            PS_GIT="$PNRM[$PMAG${_git_branch}>$_gitahead$PNRM]"
+            PS_GIT="$PNRM$PMAG${_git_branch}>$_gitahead$PNRM"
             (( _git_branch_len += 1 + ${#_gitahead} ))
          else
-            PS_GIT="$PNRM[$PNRM${_git_branch}$PNRM]"
+            PS_GIT="$PNRM$PNRM${_git_branch}$PNRM"
          fi
       fi
       if [ "$_git_has_untracked_files" ]; then
-         PS_GIT="$PNRM[$PS_GIT$PYLW?$PNRM]"
+         #PS_GIT="$PNRM[$PS_GIT$PYLW?$PNRM]"
+         PS_GIT="$PNRM$PS_GIT$PYLW?$PNRM"
          (( _git_branch_len++ ))
       fi
+      #PS_GIT="[$PS_GIT]"
+      PS_GIT="$PS_GIT|"
    else   # NOT in a git repo
-      local _git_branch_len=0
       PS_GIT=""
+      local _git_branch_len=0
    fi
    # customize path depending on width/space available
    local _space_for_path=$(( $COLUMNS - $_versions_len - $_git_branch_len ))
@@ -901,9 +904,9 @@ function bash_prompt () {
    if [  ${#_pwd} -lt $_space_for_path ]; then
       PS_PATH="$PGRN\w$PNRM"
    else
-      (( _space_for_path -= 3 ))
+      (( _space_for_path -= 2 ))
       local _ps_path_start_pos=$(( ${#_pwd} - $_space_for_path ))
-      local _ps_path_chopped="...${_pwd:$_ps_path_start_pos:$_space_for_path}"
+      local _ps_path_chopped="..${_pwd:$_ps_path_start_pos:$_space_for_path}"
       PS_PATH="$PGRN${_ps_path_chopped}$PNRM"
    fi
    PS_WHO="$PBLU\u@\h$PNRM"
@@ -1918,4 +1921,4 @@ alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less'
 export OLD_PROMPT_COMMAND=$PROMPT_COMMAND
 export PROMPT_COMMAND="bash_prompt"
 
-[ -n "$PS1" ] && echo -n ".bash_aliases (end)... "
+[ -n "$PS1" ] && echo -n ".bash_aliases (end). "

@@ -587,4 +587,4 @@ alias cvqhf='~/scripts/ctcs/vmedix/create_vm_qa_hosts_file.sh'
 alias cf="grep '^function .* ' ~/.bash_aliases_ctcs | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
 alias scf=showcf
 
-[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (end)... "
+[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (end). "
