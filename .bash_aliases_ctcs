@@ -8,8 +8,8 @@
 
 # define functions
 
-function getpubkey () {	# CTCS
-# get user's public key from cloud_automation users role
+function getpubkey {	# CTCS
+   # get user's public key from cloud_automation users role
    local _USERS_ROLE_PATH=~/cloud_automation/ansible/roles/users
    local _user=$1
    if [ "$_user" ]; then
@@ -19,7 +19,8 @@ function getpubkey () {	# CTCS
    fi
 }
 
-function searchrepos () {	# TOOL
+function searchrepos {	# TOOL
+   # search S3 repos for PATTERN
    local _grep_pattern="$*"
    #echo "looking for: '$_grep_pattern'"
    echo "telecomsys: tcs-yum-repos"
@@ -29,8 +30,8 @@ function searchrepos () {	# TOOL
 
 }
 
-function showcf () {	# TOOL
-# show a company specific function
+function showcf {	# TOOL
+   # show a company specific function
    ALIASES_FILE="$HOME/.bash_aliases_ctcs"
    if [[ $1 ]]; then
       grep -q "^function $1 " $ALIASES_FILE
@@ -50,13 +51,13 @@ function showcf () {	# TOOL
    fi
 }
 
-function vagssh () {
-# ssh in to our vagrant server in a seperate xterm window
+function vagssh {
+   # ssh in to our vagrant server in a seperate xterm window
    $XTERM -e 'cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' &
 }
 
-function vmbackups () {	# VMedix
-# show yesterday's and today's backups for VMedix
+function vmbackups {	# VMedix
+   # show yesterday's and today's backups for VMedix
    local _USAGE="usage: vmbackups [us|eu] [m|s]"
    local _backup _region _s3_file_base
    local _backups="backups elasticsearch"
@@ -97,8 +98,8 @@ function vmbackups () {	# VMedix
    done
 }
 
-function vmchkcrts () {	# TOOL
-# check info of SSL certs installed on app_nginx servers or ELBs or in use
+function vmchkcrts {	# TOOL
+   # check info of SSL certs installed on app_nginx servers or ELBs or in use
    local _USAGE="vmchkcrts [us|eu] [sb|sg|eb|eg]"
    local _AUTOMATION_INV=~/cloud_automation/ansible/inventory
    local _host _hosts _hosts_file
@@ -172,8 +173,8 @@ function vmchkcrts () {	# TOOL
    done
 }
 
-function vmcssh () {	# VMedix
-# cssh to VMedix servers
+function vmcssh {	# VMedix
+   # cssh to VMedix servers
    local _USAGE="usage: vmcssh [-u user] us|eu a|1|2|g|b|p [PATTERN]"
    local _INV_REPO="~/cloud_automation/ansible/inventory/VMedix"
    local _vpc _h _pat
@@ -222,8 +223,8 @@ function vmcssh () {	# VMedix
    cssh $_user $cssh_hosts &
 }
 
-function vmmanageusers () {	# VMedix
-# add|remove user keys from AWS instances controled via Ansible
+function vmmanageusers {	# VMedix
+   # add|remove user keys from AWS instances controled via Ansible
    local _USAGE="usage: vmmanageusers us|eu a|1|2|g|b|p [-l apps|data|PATTERN] add|rem all|USR1 [USR2...]"
    local _REPO_HOME=~/cloud_automation/ansible
    local _INV_REPO=$_REPO_HOME/inventory/VMedix
@@ -312,7 +313,8 @@ function vmmanageusers () {	# VMedix
    eval ansible-playbook -i $_INV_REPO/$_vpc/$_h --limit "$_pat" --skip-tags "'$_st'" "$_disable_opt" --vault-password-file=~/.vault.vm $_REPO_HOME/playbooks/util/manage_users.yml
 }
 
-function vmmopmonit () {	# VMedix
+function vmmopmonit {	# VMedix
+   # bring up xterm windows to monitor MOP
    local _USAGE="usage: vmmopmonit us|eu"
    local _country=$1
    local _vpc
@@ -339,10 +341,10 @@ function vmmopmonit () {	# VMedix
    #TODO website status?
 }
 
-function vmmopprep () {	# VMedix
-# grab steps in PCR steps file and add to history file to easily execute them
-# must specify one of "-s|p|r" (staging|production|roll-back) steps desired
-# and the PCR steps file
+function vmmopprep {	# VMedix
+   # grab steps in PCR steps file and add to history file to easily execute them
+   # must specify one of "-s|p|r" (staging|production|roll-back) steps desired
+   # and the PCR steps file
    local _ANSIBLE_HOME=~/cloud_automation/ansible
    local _USAGE="usage: vmmopprep -s|t|p|r [PCR_Steps_File]"
    local _STEPS=/tmp/.mop_steps
@@ -433,8 +435,8 @@ function vmmopprep () {	# VMedix
    rm -f $_STEPS{,.found,.processed}
 }
 
-function vmprodaccess () {	# VMedix
-# add|remove user keys to/from VMedix AWS instances controled via Ansible
+function vmprodaccess {	# VMedix
+   # add|remove user keys to/from VMedix AWS instances controled via Ansible
    local _USAGE="usage: vmprodaccess us|eu a|1|2|g|b|p [-l apps|data|PATTERN] add|rem USER"
    local _REPO_HOME=~/cloud_automation/ansible
    local _MY_ANS_HOME=~/automation/ansible
@@ -495,8 +497,8 @@ function vmprodaccess () {	# VMedix
    eval $_ap_cmd
 }
 
-function vmrpms () {	# VMedix
-# show RPMs installed on VMedix servers
+function vmrpms {	# VMedix
+   # show RPMs installed on VMedix servers
    local _USAGE="usage: vmrpms us|eu a|g|b|p [PATTERN]"
    local _INV_REPO="~/cloud_automation/ansible/inventory/VMedix"
    local _vpc
@@ -532,8 +534,8 @@ function vmrpms () {	# VMedix
    fi
 }
 
-function zipstuff () {	# MISC
-# zip up specified files for backup
+function zipstuff {	# MISC
+   # zip up specified files for backup
    SRCSERVER="praco.dev.local"
    STUFFZIP="/home/praco/stuff.ctcs.zip"
    FILES="

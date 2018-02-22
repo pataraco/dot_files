@@ -11,8 +11,8 @@
 CHEF_REPO=$HOME/repos
 REPO_DIR=$HOME/repos
 
-function bon () {	# TOOL
-# Bootstrap OpenStack Node
+function bon {	# TOOL
+   # Bootstrap OpenStack Node
    if knife_env_set; then
       update_spiceweasel_repo
       sgp=$1
@@ -58,8 +58,8 @@ function bon () {	# TOOL
    fi
 }
 
-function fric () {
-# find roles that I've changed
+function fric {
+   # find roles that I've changed
    cd $CHEF_REPO/cookbooks
    for cookbook_dir in `/bin/ls`; do
       echo " ------- $cookbook_dir	-------"
@@ -68,8 +68,8 @@ function fric () {
    cd -
 }
 
-function fsic () {
-# find stuff that I've changed in the sub dirs of the cwd
+function fsic {
+   # find stuff that I've changed in the sub dirs of the cwd
    for sub_dir in `/bin/ls`; do
       if [ -d $sub_dir ]; then
          echo " ------- $sub_dir	-------"
@@ -78,8 +78,8 @@ function fsic () {
    done
 }
 
-function fsip () {
-# find stuff that I've pushed in the sub dirs of the cwd
+function fsip {
+   # find stuff that I've pushed in the sub dirs of the cwd
    for sub_dir in `/bin/ls`; do
       if [ -d $sub_dir ]; then
          echo " ------- $sub_dir	-------"
@@ -88,14 +88,15 @@ function fsip () {
    done
 }
 
-function hgd () {
+function hgd {
+   # show mercurial diff
    local _rev=$1
    echo "hg diff -r $((--_rev)) -r $((++_rev))"
    hg diff -r $((--_rev)) -r $((++_rev))
 }
 
-function kcl () {
-# preform a client node list (and optionally grep for a pattern)
+function kcl {
+   # preform a client node list (and optionally grep for a pattern)
    if knife_env_set; then
       if [ -n "$1" ]; then
          chef_clients=`/usr/bin/knife client list -c $KNIFERB | grep $*`
@@ -115,8 +116,8 @@ function kcl () {
    fi
 }
 
-function kcn () {
-# knife Create Node - using spiceweasel
+function kcn {
+   # knife Create Node - using spiceweasel
    sgp=$1
    shift
    arg=$1
@@ -214,8 +215,9 @@ function kcn () {
    fi
 }
 
-function kcssh () {
-# cssh to servers matching PATTERN provided by user via `knife ssh` and internal FQDN's
+function kcssh {
+   # cssh to servers matching PATTERN provided by user
+   # via `knife ssh` and internal FQDN's
    if knife_env_set; then
       source_ssh_env 
       servers=$1
@@ -228,8 +230,9 @@ function kcssh () {
    fi
 }
 
-function kcssha () {
-# cssh to servers matching multiple PATTERNs provided via `knife node list` and `cssh`
+function kcssha {
+   # cssh to servers matching multiple PATTERNs provided
+   # via `knife node list` and `cssh`
  local fqdn_srvr_list
    if knife_env_set; then
       knife_node_list=`mktemp /tmp/knl.XXXX`
@@ -256,9 +259,10 @@ function kcssha () {
    fi
 }
 
-function kcsshau () {
-# cssh to servers matching multiple PATTERNs provided via `knife node list` and `cssh`
- local fqdn_srvr_list
+function kcsshau {
+   # cssh to servers matching multiple PATTERNs provided
+   # via `knife node list` and `cssh`
+   local fqdn_srvr_list
    if knife_env_set; then
       knife_node_list=`mktemp /tmp/knl.XXXX`
       /usr/bin/knife node list -c $KNIFERB > $knife_node_list
@@ -285,8 +289,9 @@ function kcsshau () {
    fi
 }
 
-function kcsshi () {
-# cssh to servers matching PATTERN provided by user via `knife ssh` and IP addresses
+function kcsshi {
+   # cssh to servers matching PATTERN provided by user
+   # via `knife ssh` and IP addresses
    if knife_env_set; then
       source_ssh_env 
       servers=$1
@@ -299,8 +304,9 @@ function kcsshi () {
    fi
 }
 
-function kcsshu () {
-# cssh to servers matching PATTERN provided by user via `knife ssh` and as ubuntu
+function kcsshu {
+   # cssh to servers matching PATTERN provided by user
+   # via `knife ssh` and as ubuntu
    if knife_env_set; then
       source_ssh_env 
       servers=$1
@@ -317,10 +323,11 @@ function kcsshu () {
    fi
 }
 
-function kcurla () {
-# curl to servers matching multiple PATTERNs provided via `knife node list` to check their health/build status
-# usage: kcurla PATTERN
- local fqdn_srvr_list
+function kcurla {
+   # curl to servers matching multiple PATTERNs provided
+   # via `knife node list` to check their health/build status
+   # usage: kcurla PATTERN
+   local fqdn_srvr_list
    if knife_env_set; then
       knife_node_list=`mktemp /tmp/knl.XXXX`
       /usr/bin/knife node list -c $KNIFERB > $knife_node_list
@@ -347,8 +354,8 @@ function kcurla () {
    fi
 }
 
-function kesd () {
-# knife ec2 server delete
+function kesd {
+   # knife ec2 server delete
    if knife_env_set; then
       ans="n"
       if [ -n "$1" ]; then
@@ -384,8 +391,8 @@ function kesd () {
    fi
 }
 
-function kf () {
-# `knife` command wrapper to use my dynamically set knife.rb file
+function kf {
+   # `knife` command wrapper to use my dynamically set knife.rb file
    if [ -z "$KNIFERB" ]; then
       echo "chef/knife environment NOT set - use 'ske'"
    else
@@ -393,8 +400,8 @@ function kf () {
    fi
 }
 
-function knife_env_set () {
-# check if knife environment set (specifically the knife.rb file)
+function knife_env_set {
+   # check if knife environment set (specifically the knife.rb file)
    if [ -z "$KNIFERB" ]; then
       echo "chef/knife environment NOT set - use 'ske'"
       return 1
@@ -406,8 +413,8 @@ function knife_env_set () {
    fi
 }
 
-function knl () {
-# preform a knife node list (and optionally grep for a pattern)
+function knl {
+   # preform a knife node list (and optionally grep for a pattern)
    if knife_env_set; then
       if [ -n "$1" ]; then
          chef_nodes=`/usr/bin/knife node list -c $KNIFERB | grep $*`
@@ -427,9 +434,10 @@ function knl () {
    fi
 }
 
-function kns () {
-# perform knife node show for one or more node and optional specify an attribute
-# you can give -a option to show only one attribute
+function kns {
+   # perform knife node show for one or more node and
+   # optionally specify an attribute
+   # you can give -a option to show only one attribute
    if knife_env_set; then
       local _chef_node_nc
       local _chef_node
@@ -475,8 +483,8 @@ function kns () {
    fi
 }
 
-function knsc () {
-# find the creator of one or more nodes
+function knsc {
+   # find the creator of one or more nodes
    if knife_env_set; then
       for srvr in `knife node list -c $KNIFERB | \grep $1`; do
          echo -n "$srvr:	"
@@ -485,8 +493,8 @@ function knsc () {
    fi
 }
 
-function kosd () {
-# knife openstack server delete
+function kosd {
+   # knife openstack server delete
    if knife_env_set; then
       if [ -n "$1" ]; then
          server=$1
@@ -506,8 +514,8 @@ function kosd () {
    fi
 }
 
-function kscp () {
-# perform `scp` using knife to get IP's of hosts given via a pattern
+function kscp {
+   # perform `scp` using knife to get IP's of hosts given via a pattern
    declare -A from_servers_ips
    declare -A to_servers_ips
    local multiple_froms=false
@@ -614,8 +622,8 @@ function kscp () {
   fi
 }
 
-function kssh () {
-# ssh into a server matching a pattern or run a command on it if given
+function kssh {
+   # ssh into a server matching a pattern or run a command on it if given
    if knife_env_set; then
       serverpattern=$1
       shift
@@ -717,12 +725,12 @@ function kssh () {
    fi
 }
 
-function kssha () {
-# run a command on multiple servers matching a given pattern
-# options
-#	-a	run on all servers
-#	-l	run on this list of servers
-#	-q	run quietly - less verbose - output on single lines
+function kssha {
+   # run a command on multiple servers matching a given pattern
+   # options
+   #   -a   run on all servers
+   #   -l   run on this list of servers
+   #   -q   run quietly - less verbose - output on single lines
    if [ "$1" == "-q" ]; then
       QUIET=true
       shift
@@ -793,8 +801,8 @@ function kssha () {
    fi
 }
 
-function ksshu () {
-# ssh as ubuntu into a server using knife to get the IP
+function ksshu {
+   # ssh as ubuntu into a server using knife to get the IP
    if knife_env_set; then
       source_ssh_env
       server=`/usr/bin/knife node list -c $KNIFERB | \grep $1`
@@ -821,12 +829,12 @@ function ksshu () {
    fi
 }
 
-function ske () {	# TOOL
-# set knife environment
- local REPO=$CHEF_REPO
- local CHEF=$REPO/.chef
- local arg="$1"
- local SPICEWEASELREPO=$REPO_DIR/spiceweasel
+function ske {	# TOOL
+   # set knife environment
+   local REPO=$CHEF_REPO
+   local CHEF=$REPO/.chef
+   local arg="$1"
+   local SPICEWEASELREPO=$REPO_DIR/spiceweasel
 
    if [ -n "$arg" ]; then
       case $arg in
@@ -943,8 +951,8 @@ function ske () {	# TOOL
    fi
 }
 
-function son () {	# TOOL
-# ssh as ubuntu to an server via IP supplied by user
+function son {	# TOOL
+   # ssh as ubuntu to an server via IP supplied by user
    nip=$1
    if [ -n "$nip" ]; then
       snauc=`ssh ubuntu@$nip -i ~/.ssh/Red5China.pem`
@@ -962,8 +970,8 @@ function son () {	# TOOL
    fi
 }
 
-function sons () {	# TOOL
-# ssh as ubuntu to an server via IP using knife
+function sons {	# TOOL
+   # ssh as ubuntu to an server via IP using knife
    if knife_env_set; then
       source_ssh_env 
       server=`/usr/bin/knife node list -c $KNIFERB | \grep $1`
@@ -995,9 +1003,9 @@ function sons () {	# TOOL
    fi
 }
 
-function update_spiceweasel_repo () {
-# set which spiceweasel YAML file to use
- SPICEWEASELREPO=$REPO_DIR/spiceweasel
+function update_spiceweasel_repo {
+   # set which spiceweasel YAML file to use
+   SPICEWEASELREPO=$REPO_DIR/spiceweasel
    cd $SPICEWEASELREPO > /dev/null
    hg incoming > /dev/null
    if [ $? -eq 0 ]; then

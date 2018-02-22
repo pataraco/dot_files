@@ -81,14 +81,14 @@ export GREP_COLOR="1;40;32"
 # -------------------- define functions --------------------
 
 function _tmux_send_keys_all_panes {
-# send keys to all tmux panes
+   # send keys to all tmux panes
    for _pane in $(tmux list-panes -F '#P'); do
       tmux send-keys -t ${_pane} "$@" Enter
    done
 }
 
 function awsdr {
-# AWS Set Default Region
+   # AWS Set Default Region
    local _region=$1
    if [ -n "$_region" ]; then
       case $_region in
@@ -107,7 +107,7 @@ function awsdr {
 }
 
 function awssnsep {
-# AWS SNS list platform application endpoints
+   # AWS SNS list platform application endpoints
    local _USAGE="usage: awssnsep APPLICATION [REGION]  # can use 'all'"
    local _app=$1
    [ -z "$_app" ] && { echo "$_USAGE"; return; }
@@ -133,9 +133,15 @@ function awssnsep {
 }
 
 function awsasgcp {
-# suspend/resume ALL AWS AutoScaling processes
-# (optional: only for a specified autoscaling group name or those matching a reg-ex)
-# defaults to "running" (i.e. run the command) - must use "--dry-run" option to NOT perform
+   # usage:
+   #   awsasgcp 
+   #     -r|--resume or -s|--suspend
+   #     [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]
+   # suspend/resume ALL AWS AutoScaling processes
+   # optional: AutoScalingGroupName or RegEx
+   #   only for a specified autoscaling group name or those matching a reg-ex
+   # defaults to "running" (i.e. run the command)
+   #   must use "--dry-run" option to NOT perform
    local _USAGE="usage: awsasgcp -r|--resume or -s|--suspend [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]"
    local _AWS_CMD=$(/usr/bin/which aws 2> /dev/null) || { echo "'aws' needed to run this function"; exit 3; }
    local _JQ_CMD=$(/usr/bin/which jq 2> /dev/null) || { echo "'jq' needed to run this function"; exit 3; }
@@ -167,7 +173,7 @@ function awsasgcp {
 }
 
 function awsci {
-# reboot, start, stop or terminate an instance
+   # reboot, start, stop or terminate an instance
    local _AWS_CMD=$(which aws)
    [ -z "$_AWS_CMD" ] && { echo "error: aws command not found"; return 2; }
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
@@ -220,7 +226,7 @@ function awsci {
 }
 
 function awsdami {
-# some 'aws ec2 describe-images' hacks
+   # some 'aws ec2 describe-images' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSEC2DAMI_CMD="aws ec2 describe-images"
@@ -307,7 +313,7 @@ default display:
 }
 
 function awsdasg {
-# some 'aws autoscaling describe-auto-scaling-groups' hacks
+   # some 'aws autoscaling describe-auto-scaling-groups' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSASDASG_CMD="aws autoscaling describe-auto-scaling-groups"
@@ -387,7 +393,7 @@ default display:
 }
 
 function awsdi {
-# some 'aws ec2 describe-instances' hacks
+   # some 'aws ec2 describe-instances' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
@@ -468,7 +474,7 @@ default display:
 }
 
 function awsdis {
-# some 'aws ec2 describe-instance-status' hacks
+   # some 'aws ec2 describe-instance-status' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DIS_CMD="aws ec2 describe-instance-status"
@@ -521,7 +527,7 @@ default display:
 }
 
 function awsdlb {
-# some 'aws elb describe-load-balancer' hacks
+   # some 'aws elb describe-load-balancer' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSELBDLB_CMD="aws elb describe-load-balancers"
@@ -583,7 +589,7 @@ default display:
 }
 
 function awsdlc {
-# some 'aws autoscaling describe-launch-configurations' hacks
+   # some 'aws autoscaling describe-launch-configurations' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSASDLC_CMD="aws autoscaling describe-launch-configurations"
@@ -641,7 +647,7 @@ default display:
 }
 
 function awsdni {
-# some 'aws ec2 describe-network-interfaces' hacks
+   # some 'aws ec2 describe-network-interfaces' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSEC2DNI_CMD="aws ec2 describe-network-interfaces"
@@ -709,7 +715,7 @@ default display:
 }
 
 function awsdsg {
-# some 'aws ec2 describe-security-groups' hacks
+   # some 'aws ec2 describe-security-groups' hacks
    local _ALL_REGIONS="us-west-1 us-west-2 us-east-1 us-east-2 eu-west-1 eu-west-2 eu-central-1"
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DSG_CMD="aws ec2 describe-security-groups"
@@ -775,7 +781,7 @@ default display:
 }
 
 function awsrlrrs {
-# some 'aws route53 list-resource-record-sets' hacks
+   # some 'aws route53 list-resource-record-sets' hacks
    local _AWSRLRRS_CMD="aws route53 list-resource-record-sets"
    local _USAGE="usage: \
 awsrlrrs DNS_NAME [OPTIONS]
@@ -947,7 +953,7 @@ function bash_prompt {
 }
 
 function ccc {
-# Synchronize tmux windows
+   # Synchronize tmux windows
    for I in $@; do
       tmux splitw "ssh $I"
       tmux select-layout tiled
@@ -957,10 +963,10 @@ function ccc {
 }
 
 function chkrepodiffs { # TOOL
-# checks files in current dir against file in home dir for diffs
-# only works on https://github.com/pataraco/bash_aliases repo now
-# comparing those files against those in home directory
-# usage: chkrepodiffs [-v] [file]
+   # usage: chkrepodiffs [-v] [file]
+   # checks files in current dir against file in home dir for diffs
+   # only works on https://github.com/pataraco/bash_aliases repo now
+   # comparing those files against those in home directory
    cd ~/repos/bash_aliases
    local _verbose=$1
    if [ "$_verbose" == "-v" ]; then
@@ -990,7 +996,7 @@ function chkrepodiffs { # TOOL
 }
 
 function chksums { # TOOL
-# Generate 4 kinds of different checksums for a file
+   # Generate 4 kinds of different checksums for a file
    if [ $# -eq 1 ]; then
       file=$1
       echo "File: $file"
@@ -1009,7 +1015,8 @@ function chksums { # TOOL
 }
 
 function cktj { # TOOL
-# convert a key file so that it can be used in a json entry (i.e. change \n -> "\n")
+   # convert a key file so that it can be used in a 
+   # json entry (i.e. change \n -> "\n")
    if [ -n "$1" ]; then
       cat $1 | tr '\n' '_' | sed 's/_/\\n/g'
       echo
@@ -1019,7 +1026,7 @@ function cktj { # TOOL
 }
 
 function compare_lines {
-# compare two lines and colorize the diffs
+   # compare two lines and colorize the diffs
    local line1="$1 "
    local line2="$2 "
    local line1diffs
@@ -1052,22 +1059,23 @@ function compare_lines {
    echo -e "$line2diffs"
 }
 
-# THIS IS COMMENTED OUT BECAUSE IT WAS FOR A PREVIOUS PLACE OF EMPLOYMENT USING INFORMIX
-# TODO: UPDATE FOR MYSQL AND UNCOMMENT
+# This is commented out because it was for a previous place of 
+# employment using Informix
+# TODO: update for mysql and uncomment
 ##function dbgrep { # TOOL
-### search/grep informix DB for patterns in tables/column names
-### OPTIONS
-### -w search for whole words only
-### -t search table  names for a pattern:
-###     display "matching table names"
-### -c search column names for a pattern:
-###     display "matching column names"
-### -i search table  names for a pattern and get info:
-###     display "table name: column1, column2, etc."
-### -a search for tables containing patterns in column name:
-###     display "table name1, table name2, etc."
-## NOT_VALID_HOSTS="jump1 jump2 stcgxyjmp01"
-## USAGE="dbgrep [-w] -t|c|i|a PATTERN"
+##   # search/grep informix DB for patterns in tables/column names
+##   # OPTIONS
+##   # -w search for whole words only
+##   # -t search table  names for a pattern:
+##   #     display "matching table names"
+##   # -c search column names for a pattern:
+##   #     display "matching column names"
+##   # -i search table  names for a pattern and get info:
+##   #     display "table name: column1, column2, etc."
+##   # -a search for tables containing patterns in column name:
+##   #     display "table name1, table name2, etc."
+##   NOT_VALID_HOSTS="jump1 jump2 stcgxyjmp01"
+##   USAGE="dbgrep [-w] -t|c|i|a PATTERN"
 ##
 ##   echo "$NOT_VALID_HOSTS" | grep -w $HOSTNAME >/dev/null 2>&1
 ##   if [ $? -eq 0 ]; then
@@ -1140,7 +1148,7 @@ function compare_lines {
 ##}
 
 function decimal_to_base32 {
-# convert a decimal number to base 32
+   # convert a decimal number to base 32
    BASE32=($(echo {0..9} {a..v}))
    arg1=$@
    for i in $(bc <<< "obase=32; $arg1"); do
@@ -1149,7 +1157,7 @@ function decimal_to_base32 {
 }
 
 function decimal_to_base36 {
-# convert a decimal number to base 36
+   # convert a decimal number to base 36
    BASE36=($(echo {0..9} {a..z}))
    arg1=$@
    for i in $(bc <<< "obase=36; $arg1"); do
@@ -1158,7 +1166,7 @@ function decimal_to_base36 {
 }
 
 function decimal_to_baseN {
-# convert a decimal number to any base
+   # convert a decimal number to any base
    DIGITS=($(echo {0..9} {a..z}))
    if [ $# -eq 2 ]; then
       base=$1
@@ -1182,7 +1190,7 @@ function decimal_to_baseN {
 }
 
 function dlecr {
-# run `docker login` command returned from `aws ecr get-login`
+   # run `docker login` command returned from `aws ecr get-login`
    local _DEFAULT_REGION="us-east-1"
    local _region=$1
    [ -z "$_region" ] && _region=$_DEFAULT_REGION
@@ -1190,7 +1198,7 @@ function dlecr {
 }
 
 function elbinsts {
-# convert instance ids to instance names that are attached to an AWS ELB
+   # convert instance ids to instance names that are attached to an AWS ELB
    local _elb_name=$1
    local _region=$2
    local _inst_id
@@ -1208,7 +1216,7 @@ function elbinsts {
 }
 
 function fdgr {
-# find dirty git repos
+   # find dirty git repos
    local _orig_wd=$(pwd)
    local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -exec dirname {} \;)"
    local _repo
@@ -1222,7 +1230,7 @@ function fdgr {
 }
 
 function gdate {
-# convert hex date value to date
+   # convert hex date value to date
    date --date=@`printf "%d\n" 0x$1`
 }
 
@@ -1284,6 +1292,7 @@ function gdate {
 ##}
 
 function gh { # TOOL
+   # grep bash history for a PATTERN
    if [[ $1 =~ ^\^.* ]]; then
       pattern=$(echo "$*" | tr -d '^')
       #echo "debug: looking for: ^[0-9]*  $pattern"
@@ -1295,11 +1304,12 @@ function gh { # TOOL
 }
 
 function gl { # TOOL
+   # grep and pipe to less
    eval grep --color=always $@ | less
 }
 
 function j2y {
-# convert JSON to YAML (from either STDIN or by specifying a file
+   # convert JSON to YAML (from either STDIN or by specifying a file
    if [ -n $1 ]; then
       cat $1 | python -c 'import json, sys, yaml; yaml.safe_dump(json.load(sys.stdin), sys.stdout)'
    else
@@ -1308,7 +1318,7 @@ function j2y {
 }
 
 function kf {
-# `knife` command wrapper to use my dynamically set knife.rb file
+   # `knife` command wrapper to use my dynamically set knife.rb file
    if [ -z "$KNIFERB" ]; then
       echo "KNIFERB environment variable NOT set"
    else
@@ -1317,22 +1327,22 @@ function kf {
 }
 
 function lgr {
-# list GitHub Repos for a user
+   # list GitHub Repos for a user
    local _DEFAULT_USER="pataraco"
    local _USER=${1:-$_DEFAULT_USER}
    curl -s https://api.github.com/users/$_USER/repos|grep clone_url|awk '{print $2}'|tr -d '",'
 }
 
 function listcrts {
-# list all info in a crt bundle
-# usage:
-#    listcrts [cert_file] [openssl_options]
-#       cert_file       (arg 1) - name of cert file
-#         (optional - otherwise all *.crt files)
-#       openssl_options (arg 2) - openssl options
-#         (e.g. -subject|dates|text|serial|pubkey|modulus
-#               -purpose|fingerprint|alias|hash|issuer_hash)
-#    (default options: -subject -dates -issuer and always: -noout)
+   # list all info in a crt bundle
+   # usage:
+   #    listcrts [cert_file] [openssl_options]
+   #       cert_file       (arg 1) - name of cert file
+   #         (optional - otherwise all *.crt files)
+   #       openssl_options (arg 2) - openssl options
+   #         (e.g. -subject|dates|text|serial|pubkey|modulus
+   #               -purpose|fingerprint|alias|hash|issuer_hash)
+   #    (default options: -subject -dates -issuer and always: -noout)
    local _DEFAULT_OPENSSL_OPTS="-subject -dates -issuer"
    local _cbs _cb
    local _cert_bundle=$1
@@ -1393,6 +1403,7 @@ function listcrts {
 }
 
 function listcrts2 {
+   # another way to list all info in a crt bundle
    for _c; do
       echo
       echo "Certificate: $_c"
@@ -1415,7 +1426,7 @@ function listcrts2 {
 }
 
 function mkalias { # TOOL
-# make an alias and add it to this file
+   # make an alias and add it to this file
    if [[ $1 && $2 ]]; then
       echo "alias $1=\"$2\"" >> ~/.bash_aliases
       alias $1="$2"
@@ -1423,8 +1434,8 @@ function mkalias { # TOOL
 }
 
 function mktb { # MISC
-# get rid of all the MISC, RHUG, and TRUG functions from $BRCSRC
-# and save the rest to $BRCDST
+   # get rid of all the MISC, RHUG, and TRUG functions from $BRCSRC
+   # and save the rest to $BRCDST
    local BRCSRC=$HOME/.bashrc
    local BRCDST=$HOME/.bashrc.tools
    rm -f $BRCDST
@@ -1432,20 +1443,22 @@ function mktb { # MISC
 }
 
 function pag { # TOOL
+   # run ps and grep for a pattern
    ps auxfw | grep $*
 }
 
 function peg { # TOOL
+   # run ps and grep for a pattern
    ps -ef | grep $*
 }
 
 function pl {
-# run a command and pipe it through `less`
+   # run a command and pipe it through `less`
    eval $@ | less
 }
 
 function rac { # MISC
-# remember AWS CLI command - save the given command for later retreval
+   # remember AWS CLI command - save the given command for later retreval
    COMMAND="$*"
    COMMANDS_FILE=$HOME/.aws_commands.txt
    echo "$COMMAND" >> $COMMANDS_FILE
@@ -1457,7 +1470,7 @@ function rac { # MISC
 }
 
 function rc { # MISC
-# remember command - save the given command for later retreval
+   # remember command - save the given command for later retreval
    COMMAND="$*"
    COMMANDS_FILE=$HOME/.commands.txt
    echo "$COMMAND" >> $COMMANDS_FILE
@@ -1469,7 +1482,7 @@ function rc { # MISC
 }
 
 function rf { # MISC
-# remember file - save the given file for later retreval
+   # remember file - save the given file for later retreval
    FILE="$*"
    FILES_FILE=$HOME/.files.txt
    echo "$FILE" >> $FILES_FILE
@@ -1480,7 +1493,7 @@ function rf { # MISC
 }
 
 function sae { # TOOL
-# set AWS environment
+   # set AWS environment variables from ~/.aws/config file and profiles in it
    local _AWS_CFG=$HOME/.aws/config
    local _AWS_PROFILES=$(grep '^\[profile' $_AWS_CFG | awk '{print $2}' | tr ']\n' ' ')
    local _VALID_ARGS=$(echo $_AWS_PROFILES unset | tr ' ' ':')
@@ -1542,7 +1555,7 @@ function sae { # TOOL
 }
 
 function showf { # TOOL
-# show a function
+   # show a function defined in in this file
    ALIASES_FILE="$HOME/.bash_aliases"
    if [[ $1 ]]; then
       grep -q "^function $1 " $ALIASES_FILE
@@ -1563,6 +1576,7 @@ function showf { # TOOL
 }
 
 function source_ssh_env {
+   # shource ~/.ssh/environment file for ssh-agent
    SSH_ENV="$HOME/.ssh/environment"
    if [ -f "$SSH_ENV" ]; then
       source $SSH_ENV > /dev/null
@@ -1573,7 +1587,7 @@ function source_ssh_env {
 }
 
 function sse {
-# ssh in to a server as user "ec2-user" and run optional command
+   # ssh in to a server as user "ec2-user" and run optional command
    local _this_function="sse"
    local _user="ec2-user"
    if [ "$1" != "" ]; then
@@ -1608,7 +1622,7 @@ function sse {
 ##}
 
 function ssu {
-# ssh in to a server as user "ubuntu" and run optional command
+   # ssh in to a server as user "ubuntu" and run optional command
    local _this_function="ssu"
    local _user="ubuntu"
    if [ "$1" != "" ]; then
@@ -1625,6 +1639,7 @@ function ssu {
 }
 
 function start_ssh_agent {
+   # start ssh-add agent
    SSH_ENV="$HOME/.ssh/environment"
    echo -n "Initializing new SSH agent... "
    /usr/bin/ssh-agent | sed 's/^echo/#echo/' > $SSH_ENV
@@ -1635,6 +1650,7 @@ function start_ssh_agent {
 }
 
 function stopwatch { # TOOL
+   # display a "stopwatch"
    trap "return" SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT
    trap 'echo; stty echoctl; trap - SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT RETURN' RETURN
    stty -echoctl # don't echo "^C" when [Ctrl-C] is entered
@@ -1650,18 +1666,19 @@ function stopwatch { # TOOL
 }
 
 function tb {
+   # set xterm title to custom value
    echo -ne "\033]0; $* \007"
 }
 
 function tsend {
-# Send same command to all panes
+   # Send same command to all tmux panes
    tmux set-window-option synchronize-panes on
    tmux send-keys "$@" Enter
    tmux set-window-option synchronize-panes off
 }
 
 function vin {
-# vim certain files by alias
+   # vim certain files by alias
    NOTES_DIR="notes"
    note_file=$1
    if [ -n "$note_file" ]; then
@@ -1692,7 +1709,7 @@ function vin {
 }
 
 function wtac { # MISC
-# what's that AWS command - retrieve the given command for use
+   # what's that AWS command - retrieve the given command for use
    COMMAND_PATTERN="$*"
    COMMANDS_FILE=$HOME/.aws_commands.txt
    grep "$COMMAND_PATTERN" $COMMANDS_FILE
@@ -1702,7 +1719,7 @@ function wtac { # MISC
 }
 
 function wtc { # MISC
-# what's that command - retrieve the given command for use
+   # what's that command - retrieve the given command for use
    COMMAND_PATTERN="$*"
    COMMANDS_FILE=$HOME/.commands.txt
    grep "$COMMAND_PATTERN" $COMMANDS_FILE
@@ -1712,7 +1729,7 @@ function wtc { # MISC
 }
 
 function wtf { # MISC
-# what's that file - retrieve the given file for use
+   # what's that file - retrieve the given file for use
    FILE_PATTERN="$*"
    FILES_FILE=$HOME/.files.txt
    thefile=`grep $FILE_PATTERN $FILES_FILE`
@@ -1720,8 +1737,9 @@ function wtf { # MISC
 }
 
 function wutch {
-# like `watch` but colorful
-   # couldn't get the trap to work - just remove all - they'll get quickly replaced
+   # like `watch` but colorful
+   # couldn't get the trap to work
+   #   just remove all "out" files - they'll get quickly replaced
    #trap "rm -f $_TMP_WUTCH_OUT; return" SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT
    rm -f /tmp/.wutch.out.*
    local _TMP_WUTCH_OUT=$(mktemp /tmp/.wutch.out.XXX)
@@ -1743,7 +1761,7 @@ function wutch {
 }
 
 function xsse {
-# ssh in to a server in a seperate xterm window as user: "ec2-user"
+   # ssh in to a server in a seperate xterm window as user: "ec2-user"
    if [ -n "$1" ]; then
       local _server=$1
       $XTERM -e 'eval /usr/bin/ssh -q ec2-user@'"$_server"'' &
@@ -1753,7 +1771,7 @@ function xsse {
 }
 
 function xssh {
-# ssh in to a server in a seperate xterm window
+   # ssh in to a server in a seperate xterm window
    if [ -n "$1" ]; then
       local _server=$1
       $XTERM -e 'eval /usr/bin/ssh -q '"$_server"'' &
@@ -1763,7 +1781,7 @@ function xssh {
 }
 
 function y2j {
-# convert YAML to JSON (from either STDIN or by specifying a file
+   # convert YAML to JSON (from either STDIN or by specifying a file
    if [ -n $1 ]; then
       cat $1 | python -c 'import json, sys, yaml; json.dump(yaml.load(sys.stdin), sys.stdout, indent=4)'
    else
@@ -1773,7 +1791,7 @@ function y2j {
 }
 
 function zipstuff {	# MISC
-# zip up specified files for backup
+   # zip up specified files for backup
    STUFFZIP="$HOME/.$COMPANY.stuff.zip"
    FILES="
       .*rc

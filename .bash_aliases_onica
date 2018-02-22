@@ -11,8 +11,8 @@ eval "$(onica-sso shell-init bash)"
 
 # define functions
 
-function showcf () {	# TOOL
-# show a company specific function
+function showcf {	# TOOL
+   # show a company specific function
    if [ -n "$COMPANY_SHIT" ]; then
       ALIASES_FILE=$COMPANY_SHIT
       if [[ $1 ]]; then
@@ -36,24 +36,23 @@ function showcf () {	# TOOL
    fi
 }
 
-function sso-login () 
-# sso-login override until it gets updated to return correct return codes
-{ 
-    _exports=$(onica-sso login $* 2>/dev/null)
-    local _retcode=$?
-    if [ $_retcode -eq 0 ]; then
-        eval $_exports
-        sso-title $1
-    else
-        echo $_exports
-    fi
-    unset _exports
-    return $_retcode
+function sso-login { 
+   # sso-login override until it gets updated to return correct return codes
+   _exports=$(onica-sso login $* 2>/dev/null)
+   local _retcode=$?
+   if [ $_retcode -eq 0 ]; then
+       eval $_exports
+       sso-title $1
+   else
+       echo $_exports
+   fi
+   unset _exports
+   return $_retcode
 }
 
-function ssol () {	# TOOL
-# wrapper for `sso-login`
-# usage: ssol ACCT_ABBRVTN|ACCT_SHORT_NAME [MFA_CODE]
+function ssol {	# TOOL
+   # wrapper for `sso-login`
+   # usage: ssol ACCT_ABBRVTN|ACCT_SHORT_NAME [MFA_CODE]
    local _acct_short_name
    local _accnt_abbrvtn=$1
    local _mfa_code=$2
