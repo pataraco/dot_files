@@ -1,5 +1,3 @@
-aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --output text); echo $aws_acct  # get AWS account
-aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct  # get AWS account
 aws acm describe-certificate --region REGION --certificate-arn ARN
 aws acm list-certificates --region REGION
 aws acm request-certificate --region REGION --domain-name HOST.DOMAIN --domain-validation-options DomainName=HOST.DOMAIN,ValidationDomain=DOMAIN
@@ -19,18 +17,18 @@ aws ec2 create-key-pair --key-name $KEY_PAIR_NAME | $JQ_CMD -r .KeyMaterial > $P
 aws ec2 create-tags --region REGION --resources INST_ID --tags Key=KEY,Value=VLAUE
 aws ec2 delete-key-pair --key-name $KEY_PAIR_NAME
 aws ec2 describe-addresses --output table
+aws ec2 describe-instance-status --region REGION --instance-id INST_ID
+aws ec2 describe-instance-status --region REGION --instance-id INST_ID
+aws ec2 describe-instance-status --region REGION --instance-id INST_ID | jq .InstanceStatuses[].Events
 aws ec2 describe-instances --filters Name=tag:Name,Values=$INST_NAME Name=instance-state-name,Values=running
-aws ec2 describe-instances --filters Name=tag:Name,Values=\$INST_NAME Name=instance-state-name,Values=running | jq -r .Reservations[].Instances[].InstanceId
 aws ec2 describe-instances --filters Name=tag:Name,Values=$INST_NAME Name=instance-state-name,Values=running | jq -r .Reservations[].Instances[].PublicIpAddress
+aws ec2 describe-instances --filters Name=tag:Name,Values=\$INST_NAME Name=instance-state-name,Values=running | jq -r .Reservations[].Instances[].InstanceId
 aws ec2 describe-instances --region REGION --filters "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,PublicIpAddress,State.Name]" --output table
 aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,State.Name,SecurityGroups[].GroupId|join(', ',@)]" --output table
 aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='KEY1'].Value|[0],Tags[?Key=='KEY2'].Value|[0],State.Name]" --output table
 aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='KEY1'].Value|[0],Tags[?Key=='KEY2'].Value|[0],State.Name]" --output table
 aws ec2 describe-instances --region REGION --filters 'Name=tag:Project,Values=vzfl' --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name]" --output table
 aws ec2 describe-instances --region REGION --instance-ids INST_ID --query "Reservations[].Instances[].[Tags[?Key=='KEY'].Value|[0]]|[0]"
-aws ec2 describe-instance-status --region REGION --instance-id INST_ID
-aws ec2 describe-instance-status --region REGION --instance-id INST_ID
-aws ec2 describe-instance-status --region REGION --instance-id INST_ID | jq .InstanceStatuses[].Events
 aws ec2 describe-key-pairs --key-name $KEY_PAIR_NAME
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=*internet*,*grp-default*,*elk*,*elasticsearch*,*redis*,*mongodb*,*gunicorn*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=sec-grp*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
@@ -41,6 +39,8 @@ aws ec2 release-address --public-ip $PUBLIC_IP
 aws ec2 start-instances --region REGION --instance-ids IID1 [IID2...]
 aws ec2 stop-instances --region REGION --instance-ids IID1 [IID2...]
 aws ec2 terminate-instances --region REGION --instance-ids i-UID1 [i-UID2...]
+aws ecr describe-images --repository-name REPO --region REGION
+aws ecr describe-repositories --region REGION
 aws elb describe-load-balancers --load-balancer-name $ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName
 aws elb describe-load-balancers --load-balancer-name $ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName # get ELB DNS
 aws elb describe-load-balancers --region REGION [--load-balancer-names ELB_NAMES] --query "LoadBalancerDescriptions[].[LoadBalancerName,Instances[].InstanceId|join(', ',@)]" --output table
@@ -50,8 +50,8 @@ aws iam create-access-key --user-name USER_NAME
 aws iam create-group --group-name GROUP_NAME   # e.g. CodeCommit_repo_infostretch
 aws iam create-policy --policy-name POLICY_NAME --policy-document file://FILE_NAME.json
 aws iam create-user --user-name USER_NAME
-aws iam get-group --group-name GROUP_NAME | grep UserName	# get all users
 aws iam get-group --group-name GROUP_NAME | grep USER_NAME	# search for specific user
+aws iam get-group --group-name GROUP_NAME | grep UserName	# get all users
 aws iam list-access-keys --user-name USER_NAME
 aws iam list-attached-group-policies --group-name GROUP_NAME
 aws iam list-group-policies --group-name GROUP_NAME
@@ -67,13 +67,15 @@ aws s3 sync --profile AWS_PROFILE s3://BUCKET_SRC/ /BUCKET_DEST/dir/
 aws ses --region REGION get-identity-verification-attributes --identities EMAIL_ADDR
 aws ses --region REGION list-identities [--identity-type EmailAddress|Domain]
 aws ses --region REGION verify-email-identity --email-address EMAIL_ADDR
+aws sns --region REGION list-endpoints-by-platform-application --platform-application-arn ARN
+aws sns --region REGION list-platform-applications | grep REGEX # get the ARN
 aws sns create-topic --name "$TOPIC_NAME" | $JQ_CMD -r .TopicArn
 aws sns delete-topic --topic-arn $NOTIFICATION_ARN
 aws sns list-subscriptions
 aws sns list-topics | grep "$TOPIC_NAME" | cut -d '"' -f4 # get SNS notification ARN
-aws sns --region REGION list-endpoints-by-platform-application --platform-application-arn ARN
-aws sns --region REGION list-platform-applications | grep REGEX # get the ARN
 aws sns subscribe --topic-arn $ARN --protocol email --notification-endpoint $END_POINT
+aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --output text); echo $aws_acct  # get AWS account
+aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct  # get AWS account
 echo -e "protocol=httpsnpath=/v1/repos/testnhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get
 for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling resume-processes --region REGION --auto-scaling-group-name $asgn; done"
 for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling suspend-processes --region REGION --auto-scaling-group-name $asgn; done"
