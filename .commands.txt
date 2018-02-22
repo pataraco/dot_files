@@ -63,7 +63,10 @@ dig MX virtumedix.com
 dig NS us-east-1.amazonaws.com
 dmidecode | egrep -i 'date|bios'
 dmidecode | grep Product
+docker pull AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/REPO:TAG
+docker pull AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/REPO@DIGEST
 docker tag APP:latest AWS_ACCT_NO.dkr.ecr.us-east-1.amazonaws.com/APP:latest
+docker tag ORIG_IMAGE:TAG NEW_IMAGE:TAG
 du -hsx * | sort -rh | head -10
 echo "SELECT * FROM ls_hotelconfig WHERE parameter like '%mail%'"|dbaccess dev
 echo "SELECT hotelnum,banklive FROM bank_parms"|dbaccess dev
