@@ -96,7 +96,10 @@ nnoremap <silent> <Leader>n :silent set number!<CR>
 nnoremap <silent> <Space> :nohlsearch<Bar>:echo<CR>
 " highlight extra white space (trailing whitespace and tabs)
 nnoremap <silent> <Leader>w :match ExtraWhitespace /\s\+$\<Bar>\t/<CR>
-nnoremap <silent> <Leader>W :match<CR>
+nnoremap <silent> <Leader>W /\s\+$\<Bar>\t/<CR>
+nnoremap <silent> <Leader>m :match<CR>
+" highlight lines longer than 79 chars
+nnoremap <silent> <Leader>L /\%>79v.\+<CR>
 
 " yank to end of line
 map Y y$
