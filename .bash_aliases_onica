@@ -75,8 +75,16 @@ function ssol {	# TOOL
             return                                      ;;
          *) _acct_short_name=$_accnt_abbrvtn            ;;
       esac
-      local _acct_long_name=$(sso-list | grep "^$_acct_short_name " | cut -d ' ' -f3-)
+      #local _acct_long_name=$(sso-list | grep "^$_acct_short_name " | cut -d ' ' -f3-)
+      local _acct_long_name=$(sso-list | grep -i "$_acct_short_name" | cut -d ' ' -f3-)
       if [ -n "$_acct_long_name" ]; then
+         local _number_matching=$(echo "$_acct_long_name" | wc -l | tr -d ' ')
+         if [ $_number_matching -gt 1 ]; then
+            echo "more than 1 matching result - please be more specific:"
+            sso-list | grep -i "$_acct_short_name"
+            return
+         fi
+         _acct_short_name=$(sso-list | grep -i "$_acct_short_name" | cut -d ' ' -f1)
          sso-login $_acct_short_name $_mfa_code
          if [ $? -eq 0 ]; then
             local _aws_env=$ONICA_SSO_ACCOUNT_NAME
@@ -84,7 +92,7 @@ function ssol {	# TOOL
             local _aws_acct=$ONICA_SSO_ACCOUNT_ID
             export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
             PS_PROJ="$PRED[$ONICA_SSO_ACCOUNT_KEY]$PNRM"
-            echo -e "environment set:\n $AWS_ENVIRONMENT ($_acct_short_name)"
+            echo -e "environment set to:\n$AWS_ENVIRONMENT ($_acct_short_name)"
          else
             echo -e "environment could not be set"
          fi
@@ -113,5 +121,6 @@ else
    alias scf="echo 'company alias file not set (COMPANY_SHIT)'"
 fi
 alias ssoc="sso-console"
+alias ssocnb="sso-console --no-browser >& /dev/null"
 
 [ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (end). "
