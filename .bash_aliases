@@ -1864,17 +1864,17 @@ alias guid='printf "%x\n" `date +%s`'
 alias h="history"
 alias kaj='eval kill $(jobs -p)'
 if [ "$(uname -s)" == "Darwin" ]; then
-   alias l.='ls -dG .*'
-   alias la='ls -aG'
-   alias ll='ls -lG'
-   alias lla='ls -laG'
-   alias ls='ls -CFG'
+   alias l.='ls -dGh .*'
+   alias la='ls -aGh'
+   alias ll='ls -lGh'
+   alias lla='ls -laGh'
+   alias ls='ls -CFGh'
 else
-   alias l.='ls -d .* --color=auto'
-   alias la='ls -a --color=auto'
-   alias ll='ls -l --color=auto'
-   alias lla='ls -la --color=auto'
-   alias ls='ls -CF --color=auto'
+   alias l.='ls -dh .* --color=auto'
+   alias la='ls -ah --color=auto'
+   alias ll='ls -lh --color=auto'
+   alias lla='ls -lah --color=auto'
+   alias ls='ls -CFh --color=auto'
 fi
 alias less="less -FrX"
 alias laan="for p in \$(grep '^\[profile' ~/.aws/config | awk '{print \$2}' | tr ']\n' ' '); do echo -en \"\$p: \"; echo \$(aws sts get-caller-identity --profile \$p | jq -r .Account); done"
@@ -1911,6 +1911,9 @@ alias sw=stopwatch
 #alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
 alias ta='tmux attach -t'
+alias tmx='tmux new-session -s Raco -n MYSHIT'
+alias tspo='tmux set-window-option synchronize-panes on'
+alias tspx='tmux set-window-option synchronize-panes off'
 alias tt='echo -ne "\033]0;$(whoami)@$(hostname)\007"'
 alias tskap="_tmux_send_keys_all_panes"
 alias xterm='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
