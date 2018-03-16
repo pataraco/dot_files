@@ -88,6 +88,9 @@ export LESS_TERMCAP_ue=$'\E[0m'           # end underline
 #export LESS_TERMCAP_us=$'\E[04;38;5;146m' # begin underline
 export LESS_TERMCAP_us=$'\E[04;38;5;45m' # begin underline
 
+# set up `ls` colors (see the man page)
+export LSCOLORS=ExFxBxDxCxegedabagacad
+
 # set up GIT pager
 export GIT_PAGER='less -FrX'
 
