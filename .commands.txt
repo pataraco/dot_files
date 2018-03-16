@@ -63,9 +63,13 @@ dig MX virtumedix.com
 dig NS us-east-1.amazonaws.com
 dmidecode | egrep -i 'date|bios'
 dmidecode | grep Product
+docker exec -u 0 -it NAME bash
+docker ps -a
 docker pull AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/REPO:TAG
 docker pull AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/REPO@DIGEST
-docker tag APP:latest AWS_ACCT_NO.dkr.ecr.us-east-1.amazonaws.com/APP:latest
+docker rm -v NAME
+docker run -it --rm -P IMAGE
+docker tag APP:latest AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/APP:latest
 docker tag ORIG_IMAGE:TAG NEW_IMAGE:TAG
 du -hsx * | sort -rh | head -10
 echo "SELECT * FROM ls_hotelconfig WHERE parameter like '%mail%'"|dbaccess dev
@@ -181,6 +185,8 @@ ssh-keygen -R $hostname		# remove host entries from known_hosts
 ssh-keygen -p -f $key_file	# add/change passphrase
 ssh-keygen -t rsa		# generate RSA key-pair
 ssh-keygen -y -f PRIVATE_KEY | pbcopy
+stacker build -i -r REGION ENV_FILE YAML_FILE
+stacker destroy --force -r REGION ENV_FILE YAML_FILE
 stty -a < /dev/ttyaa05
 su eci -c '/eci/dev/bin/loader dev XXXXXX'
 su informix -c '/home/informix/bin/start_logical_logs'	# tape | backup
