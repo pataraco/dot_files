@@ -25,14 +25,15 @@
 	ld = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=relative
 	lds = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=short
 	le = log --oneline --decorate
-	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
+	#lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
+	lg = log --graph --pretty=format:'%C(bold)%Cred%h%C(yellow)%d%Creset%C(bold) %s %Cgreen(%cr) %C(blue)<%cn>' --abbrev-commit --date=relative
 	lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative --all
 	#ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
 	ll = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>%C(cyan)' --numstat --abbrev-commit --date=relative
 	lla = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>%C(cyan)' --numstat --all --abbrev-commit --date=relative
 	lnc = log --pretty=format:"%h\\ %s\\ [%cn]"
 	#ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
-	ls = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
+	ls = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
 	lsa = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>' --all --abbrev-commit --date=relative
 	lag = log --oneline --decorate --all --graph
 	la = log --oneline --decorate --all
