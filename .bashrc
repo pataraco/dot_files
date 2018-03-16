@@ -27,7 +27,7 @@ shopt -s histappend
 # export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-export HISTSIZE=1000		# how many lines to load in memory
+export HISTSIZE=5000		# how many lines to load in memory
 export HISTFILESIZE=50000	# how many lines to save in file
 
 # check the window size after each command and, if necessary,
