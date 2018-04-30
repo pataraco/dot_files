@@ -112,7 +112,14 @@ function ssol {	# TOOL
 # define aliases
 
 alias actss="source $HOME/envs/sentient-science/bin/activate"
-alias cdss="cd $HOME/repos/projects/sentient-science/onica-sentient-science"
+alias cd-bd="cd $HOME/repos/projects/baxter/dclink"
+alias cd-h="cd $HOME/repos/projects/heuristics/onica-heuristics"
+alias cd-i="cd $HOME/repos/projects/infogix/infogix"
+alias cd-ods="cd $HOME/repos/projects/ormco/sturdy-ormco-devops/stacker/ods"
+alias cd-odsc="cd $HOME/repos/projects/ormco/ormco-ods-code"
+alias cd-ss="cd $HOME/repos/projects/sentient-science/onica-sentient-science"
+alias cd-spi="cd $HOME/repos/Onica/sturdy-platform-infrastructure"
+alias cd-sli="cd $HOME/repos/Onica/sturdy-lab-infrastructure"
 if [ -n "$COMPANY_SHIT" ]; then
    alias cf="grep '^function .* ' ~/.bash_aliases_ctcs | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
    alias scf=showcf
@@ -121,6 +128,7 @@ else
    alias scf="echo 'company alias file not set (COMPANY_SHIT)'"
 fi
 alias ssoc="sso-console"
+alias ssor="sso-relogin"
 alias ssocnb="sso-console --no-browser >& /dev/null"
 
 [ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (end). "
