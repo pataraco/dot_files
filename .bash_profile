@@ -10,14 +10,13 @@
 # for ssh logins, install and configure the libpam-umask package.
 #umask 022
 
+# set DISPLAY to forward X11
+[ -n "${SSH_CLIENT%% *}" ] && export DISPLAY="${SSH_CLIENT%% *}:0.0"
+
 # set PATH so it includes user's private bin if it exists
 if [ -d "$HOME/bin" ] ; then
     [[ ! $PATH =~ $HOME/bin ]] && export PATH="$HOME/bin:$PATH"
 fi
-
-# set DISPLAY to forward X11
-[ -n "${SSH_CLIENT%% *}" ] && export DISPLAY="${SSH_CLIENT%% *}:0.0"
-
 # add arcanist to PATH
 arcanist_repo=$HOME/repos/phacility/arcanist
 if [ -d $arcanist_repo ]; then
