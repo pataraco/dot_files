@@ -65,10 +65,15 @@ dmidecode | egrep -i 'date|bios'
 dmidecode | grep Product
 docker exec -u 0 -it NAME bash
 docker ps -a
+docker ps -a --format "table {{.ID}} {{.Image}}\t{{.Status}}\t{{.Ports}}"
 docker pull AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/REPO:TAG
 docker pull AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/REPO@DIGEST
+docker rm $(docker-entrypoint.sh ps --all -q -f status=exited)
+docker rm -v $(docker ps -q -f status=exited)
 docker rm -v NAME
+docker rmi [--force] $(docker images -a -q)
 docker run -it --rm -P IMAGE
+docker system prune -a
 docker tag APP:latest AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/APP:latest
 docker tag ORIG_IMAGE:TAG NEW_IMAGE:TAG
 du -hsx * | sort -rh | head -10
@@ -186,7 +191,7 @@ ssh-keygen -p -f $key_file	# add/change passphrase
 ssh-keygen -t rsa		# generate RSA key-pair
 ssh-keygen -y -f PRIVATE_KEY | pbcopy
 stacker build -i -r REGION ENV_FILE YAML_FILE
-stacker destroy --force -r REGION ENV_FILE YAML_FILE
+stacker destroy -f -r REGION ENV_FILE YAML_FILE
 stty -a < /dev/ttyaa05
 su eci -c '/eci/dev/bin/loader dev XXXXXX'
 su informix -c '/home/informix/bin/start_logical_logs'	# tape | backup

@@ -2,56 +2,76 @@ aws acm describe-certificate --region REGION --certificate-arn ARN
 aws acm list-certificates --region REGION
 aws acm request-certificate --region REGION --domain-name HOST.DOMAIN --domain-validation-options DomainName=HOST.DOMAIN,ValidationDomain=DOMAIN
 aws acm resend-validation-email --region REGION --certificate-arn ARN --domain HOST.DOMAIN --validation-domain DOMAIN
-aws cloudformation create-stack --stack-name $CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file:/$CF_STACK_TEMPLATE --disable-rollback --notification-arns $NOTIFICATION_ARN --tags Key=Name,Value=$CF_STACK_NAME
-aws cloudformation delete-stack --stack-name $CF_STACK_NAME
-aws cloudformation describe-stacks --stack-name $CF_STACK_NAME
-aws cloudformation update-stack --stack-name $CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file:/$CF_STACK_TEMPLATE
-aws cloudformation wait stack-create-complete --stack-name $CF_STACK_NAME
-aws cloudformation wait stack-delete-complete --stack-name $CF_STACK_NAME
-aws cloudformation wait stack-update-complete --stack-name $CF_STACK_NAME
+aws autoscaling create-auto-scaling-group --auto-scaling-group-name ASG_NAME --launch-configuration-name LC_NAME --min-size MIN --max-size MAX --desired-capacity DESIRED --availability-zones AZ1 AZ2 --tags ResourceId=ASG_NAME,ResourceType=auto-scaling-group,Key=KEY,Value=VAL,PropagateAtLaunch=true|false
+aws autoscaling create-launch-configuration --launch-configuration-name LC_NAME --image-id AMI --key-name KEY_PAIR --security-groups SG --user-data file://PATH_TO/FILE --instance-type TYPE --iam-instance-profile PROFILE
+aws autoscaling delete-auto-scaling-group --auto-scaling-group-name ASG_NAME --force-delete
+aws autoscaling delete-launch-configuration --launch-configuration-name LC_NAME
+aws autoscaling update-auto-scaling-group --auto-scaling-group-name ASG_NAME --min-size MIN --max-size MAX --desired-capacity DESIRED
+aws cloudformation create-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE --disable-rollback --notification-arns NOTIFICATION_ARN --tags Key=Name,Value=CF_STACK_NAME
+aws cloudformation delete-stack --stack-name CF_STACK_NAME
+aws cloudformation describe-stacks --stack-name CF_STACK_NAME
+aws cloudformation update-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE
+aws cloudformation wait stack-create-complete --stack-name CF_STACK_NAME
+aws cloudformation wait stack-delete-complete --stack-name CF_STACK_NAME
+aws cloudformation wait stack-update-complete --stack-name CF_STACK_NAME
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
 aws codecommit list-repositories --region REGION
+aws deploy create-application --application-name APP_NAME
+aws deploy create-deployment --application-name APP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name DEPLOY_GRP_NAME --s3-location bucket=BUCKET,key=KEY,bundleType=zip
+aws deploy create-deployment-group --application-name APP_NAME --auto-scaling-groups ASG_NAME --deployment-group-name DEPLOY_GRP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --service-role-arn ARN
+aws deploy create-deployment-group --application-name APP_NAME --deployment-group-name DEPLOY_GRP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --ec2-tag-filters Key=Name,Value=NAME,Type=KEY_AND_VALUE --service-role-arn ARN
+aws deploy delete-application --application-name APP_NAME
+aws deploy get-deployment --deployment-id ID
+aws deploy list-deployemtns --application-name APP_NAME
+aws deploy push --application-name APP_NAME --s3-location s3://BUCKET_NAME/PATH_TO/APP.zip --ignore-hidden-files
 aws ec2 allocate-address
-aws ec2 associate-address --instance-id $INST_ID
-aws ec2 create-key-pair --key-name $KEY_PAIR_NAME | $JQ_CMD -r .KeyMaterial > $PRIVATE_KEY
-aws ec2 create-tags --region REGION --resources INST_ID --tags Key=KEY,Value=VLAUE
-aws ec2 delete-key-pair --key-name $KEY_PAIR_NAME
+aws ec2 associate-address --instance-id INST_ID
+aws ec2 authorize-security-group-ingress --group-name SG_NAME --from-port FROM_PORT --to-port TO_PORT --ip-protocol tcp --cidr-ip CIDR
+aws ec2 create-key-pair --key-name KEY_PAIR_NAME | jq -r .KeyMaterial > PRIVATE_KEY
+aws ec2 create-security-group --group-name SG_NAME --description "SG DESCRIPTION"
+aws ec2 create-tags --region REGION --resources INST_ID --tags Key=KEY,Value=VALUE Key=KEY2,Value=VALUE2
+aws ec2 delete-key-pair --key-name KEY_PAIR_NAME
 aws ec2 describe-addresses --output table
-aws ec2 describe-instance-status --region REGION --instance-id INST_ID
+aws ec2 describe-availability-zones
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID | jq .InstanceStatuses[].Events
-aws ec2 describe-instances --filters Name=tag:Name,Values=$INST_NAME Name=instance-state-name,Values=running
-aws ec2 describe-instances --filters Name=tag:Name,Values=$INST_NAME Name=instance-state-name,Values=running | jq -r .Reservations[].Instances[].PublicIpAddress
-aws ec2 describe-instances --filters Name=tag:Name,Values=\$INST_NAME Name=instance-state-name,Values=running | jq -r .Reservations[].Instances[].InstanceId
+aws ec2 describe-instances --filters Name=tag:Name,Values=INST_NAME Name=instance-state-name,Values=running
+aws ec2 describe-instances --filters Name=tag:Name,Values=INST_NAME Name=instance-state-name,Values=running | jq -r .Reservations[].Instances[].InstanceId
+aws ec2 describe-instances --filters Name=tag:Name,Values=INST_NAME Name=instance-state-name,Values=running | jq -r .Reservations[].Instances[].PublicIpAddress
 aws ec2 describe-instances --region REGION --filters "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,PublicIpAddress,State.Name]" --output table
 aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,State.Name,SecurityGroups[].GroupId|join(', ',@)]" --output table
 aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='KEY1'].Value|[0],Tags[?Key=='KEY2'].Value|[0],State.Name]" --output table
 aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" --query "Reservations[].Instances[].[Tags[?Key=='KEY0'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='KEY1'].Value|[0],Tags[?Key=='KEY2'].Value|[0],State.Name]" --output table
 aws ec2 describe-instances --region REGION --filters 'Name=tag:Project,Values=vzfl' --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name]" --output table
 aws ec2 describe-instances --region REGION --instance-ids INST_ID --query "Reservations[].Instances[].[Tags[?Key=='KEY'].Value|[0]]|[0]"
-aws ec2 describe-key-pairs --key-name $KEY_PAIR_NAME
+aws ec2 describe-key-pairs --key-name KEY_PAIR_NAME
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=*internet*,*grp-default*,*elk*,*elasticsearch*,*redis*,*mongodb*,*gunicorn*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=sec-grp*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
-aws ec2 disassociate-address --public-ip $PUBLIC_IP
-aws ec2 modify-instance-attribute --instance-id $INST_ID --no-disable-api-termination
-aws ec2 modify-instance-attribute --region REGION --instance-id INST_ID --groups sg-UID
-aws ec2 release-address --public-ip $PUBLIC_IP
-aws ec2 start-instances --region REGION --instance-ids IID1 [IID2...]
-aws ec2 stop-instances --region REGION --instance-ids IID1 [IID2...]
-aws ec2 terminate-instances --region REGION --instance-ids i-UID1 [i-UID2...]
+aws ec2 disassociate-address --public-ip PUBLIC_IP
+aws ec2 modify-instance-attribute --instance-id INST_ID --no-disable-api-termination
+aws ec2 modify-instance-attribute --region REGION --instance-id INST_ID --groups SG_UID
+aws ec2 release-address --public-ip PUBLIC_IP
+aws ec2 run-instances --image-id AMI --key-name KEY_PAIR_NAME --user-data file://PATH_TO/USER_DATA_FILE --count COUNT --instance-type TYPE --iam-instance-profile Name=IAM_PROFILE --security-groups SG1 [SG2...]
+aws ec2 start-instances --region REGION --instance-ids ID1 [ID2...]
+aws ec2 stop-instances --region REGION --instance-ids ID1 [ID2...]
+aws ec2 terminate-instances --region REGION --instance-ids ID1 [ID2...]
 aws ecr describe-images --repository-name REPO --region REGION
 aws ecr describe-repositories --region REGION
-aws elb describe-load-balancers --load-balancer-name $ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName
-aws elb describe-load-balancers --load-balancer-name $ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName # get ELB DNS
+aws elb describe-load-balancers --load-balancer-name ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName # get ELB DNS
 aws elb describe-load-balancers --region REGION [--load-balancer-names ELB_NAMES] --query "LoadBalancerDescriptions[].[LoadBalancerName,Instances[].InstanceId|join(', ',@)]" --output table
+aws iam add-role-to-instance-profile --instance-profile-name INST_PROFILE_NAME --role-name ROLE_NAME
 aws iam add-user-to-group --group-name GROUP_NAME --user-name USER_NAME
-aws iam attach-group-policy --group-name GROUP_NAME --policy-arn POLICY-ARN
+aws iam attach-group-policy --group-name GROUP_NAME --policy-arn POLICY_ARN
+aws iam attach-role-policy --role-name ROLE_NAME --policy-arn POLICY_ARN
 aws iam create-access-key --user-name USER_NAME
 aws iam create-group --group-name GROUP_NAME   # e.g. CodeCommit_repo_infostretch
-aws iam create-policy --policy-name POLICY_NAME --policy-document file://FILE_NAME.json
+aws iam create-instance-profile --instance-profile-name INST_PROFILE_NAME
+aws iam create-policy --policy-name POLICY_NAME --policy-document file://PATH_TO/FILE_NAME.json
+aws iam create-role --role-name ROLE_NAME --assume-role-policy-document file://PATH_TO/POLICY_DOC.json
 aws iam create-user --user-name USER_NAME
 aws iam get-group --group-name GROUP_NAME | grep USER_NAME	# search for specific user
 aws iam get-group --group-name GROUP_NAME | grep UserName	# get all users
+aws iam get-role --role-name ROLE_NAME --query Role.Arn --output text
 aws iam list-access-keys --user-name USER_NAME
 aws iam list-attached-group-policies --group-name GROUP_NAME
 aws iam list-group-policies --group-name GROUP_NAME
@@ -59,9 +79,10 @@ aws iam list-groups
 aws iam list-groups-for-user --user-name USER_NAME		# list all groups user is in
 aws iam list-policies
 aws iam list-users
-aws iam update-login-profile --user-name $USERNAME --password $PASSWORD
-aws s3 mb s3://$BUCKET
-aws s3 rb s3://$BUCKET --force # remove bucket and all of it's contents
+aws iam put-role-policy --role-name ROLE_NAME --policy-name POLICY_NAME --policy-document file://PATH_TO/POLICY_DOC.json
+aws iam update-login-profile --user-name USERNAME --password PASSWORD
+aws s3 mb s3://BUCKET_NAME
+aws s3 rb s3://BUCKET_NAME --force # remove bucket and all of it's contents
 aws s3 sync --profile AWS_PROFILE --exclude \* --include DIR_NAME\* s3://BUCKET_SRC/path/to/files/ s3://BUCKET_DEST/path/to/files/
 aws s3 sync --profile AWS_PROFILE s3://BUCKET_SRC/ /BUCKET_DEST/dir/
 aws ses --region REGION get-identity-verification-attributes --identities EMAIL_ADDR
@@ -69,11 +90,11 @@ aws ses --region REGION list-identities [--identity-type EmailAddress|Domain]
 aws ses --region REGION verify-email-identity --email-address EMAIL_ADDR
 aws sns --region REGION list-endpoints-by-platform-application --platform-application-arn ARN
 aws sns --region REGION list-platform-applications | grep REGEX # get the ARN
-aws sns create-topic --name "$TOPIC_NAME" | $JQ_CMD -r .TopicArn
-aws sns delete-topic --topic-arn $NOTIFICATION_ARN
+aws sns create-topic --name "TOPIC_NAME" | jq -r .TopicArn
+aws sns delete-topic --topic-arn NOTIFICATION_ARN
 aws sns list-subscriptions
-aws sns list-topics | grep "$TOPIC_NAME" | cut -d '"' -f4 # get SNS notification ARN
-aws sns subscribe --topic-arn $ARN --protocol email --notification-endpoint $END_POINT
+aws sns list-topics | grep "TOPIC_NAME" | cut -d '"' -f4 # get SNS notification ARN
+aws sns subscribe --topic-arn ARN --protocol email --notification-endpoint END_POINT
 aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --output text); echo $aws_acct  # get AWS account
 aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct  # get AWS account
 echo -e "protocol=httpsnpath=/v1/repos/testnhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get
