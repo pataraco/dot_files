@@ -89,7 +89,7 @@ function _tmux_send_keys_all_panes {
 
 function awsar {
    # list all AWS regions available to me
-   aws ec2 describe-regions | jq -r .Regions[].RegionName
+   aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName
 }
 
 function awsdr {
@@ -103,8 +103,8 @@ function awsdr {
          ue2)   export AWS_DEFAULT_REGION="us-east-2";;
          ew1)   export AWS_DEFAULT_REGION="eu-west-1";;
          ew2)   export AWS_DEFAULT_REGION="eu-west-2";;
-         unset) unset AWS_DEFAULT_REGION;;
-         *)     echo "unknown region TLA"; return;;
+         unset)  unset AWS_DEFAULT_REGION            ;;
+         *)     export AWS_DEFAULT_REGION="$_region" ;;
       esac
    else
       echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
@@ -232,7 +232,7 @@ function awsci {
 
 function awsdami {
    # some 'aws ec2 describe-images' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions | jq -r .Regions[].RegionName)
+   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSEC2DAMI_CMD="aws ec2 describe-images"
    local _USAGE="usage: \
@@ -320,7 +320,7 @@ default display:
 
 function awsdasg {
    # some 'aws autoscaling describe-auto-scaling-groups' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions | jq -r .Regions[].RegionName)
+   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSASDASG_CMD="aws autoscaling describe-auto-scaling-groups"
    local _USAGE="usage: \
@@ -336,8 +336,9 @@ awsdasg [OPTIONS]
   +ht          # show Health Check Type
   +ii          # show Instance Id(s)
   +ih          # show Instance Health Status
-  +lc          # show Launch Configuration Name
   +lb          # show Load Balancers
+  +lc          # show Launch Configuration Name
+  +ls          # show Life Cycle State
   +mr          # show Machine Role
   +ni          # show Number of Instances
   +ns          # show Min Size
@@ -368,8 +369,9 @@ default display:
          +ht) _more_qs="$_more_qs${_more_qs:+,}HealthCheckType"                              ; shift;;
          +ii) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', ',@)"          ; shift;;
          +ih) _more_qs="$_more_qs${_more_qs:+,}Instances[].HealthStatus|join(', ',@)"        ; shift;;
-         +lc) _more_qs="$_more_qs${_more_qs:+,}LaunchConfigurationName"                      ; shift;;
          +lb) _more_qs="$_more_qs${_more_qs:+,}LoadBalancerNames[]|join(', ',@)"             ; shift;;
+         +lc) _more_qs="$_more_qs${_more_qs:+,}LaunchConfigurationName"                      ; shift;;
+         +ls) _more_qs="$_more_qs${_more_qs:+,}Instances[].LifecycleState|join(', ',@)"      ; shift;;
          +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='MachineRole'].Value|[0]"          ; shift;;
          +ni) _more_qs="$_more_qs${_more_qs:+,}length(Instances)"                            ; shift;;
          +ns) _more_qs="$_more_qs${_more_qs:+,}MinSize"                                      ; shift;;
@@ -400,17 +402,17 @@ default display:
 
 function awsdi {
    # some 'aws ec2 describe-instances' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions | jq -r .Regions[].RegionName)
+   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
    local _USAGE="usage: \
 awsdi [OPTIONS]
-  -e ENVIRON   # filter results by this Environment (e.g. production, staging)
-  -n NAME      # filter results by this Instance Name
-  -p PROJECT   # filter results by this Project
-  -s STATE     # filter results by this State (e.g. running, terminated, etc.)
-  -m MAX       # maximum number of items to display
-  -r REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  -e  ENVIRON  # filter results by this Environment (e.g. production, staging)
+  -n  NAME     # filter results by this Instance Name
+  -pj PROJECT  # filter results by this Project
+  -s  STATE    # filter results by this State (e.g. running, terminated, etc.)
+  -m  MAX      # maximum number of items to display
+  -r  REGION   # Region to query (default: $_DEFAULT_REGION, 'all' for all)
   +a           # show AMI (ImageId)
   +an          # show ASG Name
   +az          # show Availability Zone
@@ -420,15 +422,18 @@ awsdi [OPTIONS]
   +e           # show Env (Environment)
   +i           # show Private IP
   +it          # show Instance Type
+  +k           # show Key Pair name
   +lt          # show Launch Time
   +mr          # show Machine Role
-  +p           # show Project
+  +p           # show Platform
+  +pj          # show Project
   +pi          # show Public IP
   +s           # show State (e.g. running, stopped...)
   +si          # show Security Group Id(s)
   +sn          # show Security Group Name(s)
   +t           # show Tenancy
-  +v           # show VPC Name
+  +v           # show VPC ID
+  +vn          # show VPC Name (tag: VPCName)
   -h           # help (show this message)
 default display:
   Inst name | Private IP | Instance ID | State"
@@ -441,7 +446,7 @@ default display:
    local _query="Reservations[].Instances[]"
    while [ $# -gt 0 ]; do
       case $1 in
-          -p) _filters="Name=tag:Project,Values=*$2* $_filters"        ; shift 2;;
+         -pj) _filters="Name=tag:Project,Values=*$2* $_filters"        ; shift 2;;
           -n) _filters="Name=tag:Name,Values=*$2* $_filters"           ; shift 2;;
           -s) _filters="Name=instance-state-name,Values=*$2* $_filters"; shift 2;;
           -e) _filters="Name=tag:Env,Values=*$2* $_filters"            ; shift 2;;
@@ -456,15 +461,18 @@ default display:
           +e) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Env'].Value|[0]"                      ; shift;;
           +i) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
          +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
+          +k) _more_qs="$_more_qs${_more_qs:+,}KeyName"                                          ; shift;;
          +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
          +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='MachineRole'].Value|[0]"              ; shift;;
-          +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"                  ; shift;;
+          +p) _more_qs="$_more_qs${_more_qs:+,}Platform"                                         ; shift;;
+         +pj) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"                  ; shift;;
          +pi) _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"                                  ; shift;;
           +s) _more_qs="$_more_qs${_more_qs:+,}State.Name"                                       ; shift;;
          +si) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupId|join(', ',@)"            ; shift;;
          +sn) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupName|join(', ',@)"          ; shift;;
           +t) _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"                                ; shift;;
-          +v) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"                  ; shift;;
+          +v) _more_qs="$_more_qs${_more_qs:+,}VpcId"                                            ; shift;;
+         +vn) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"                  ; shift;;
         -h|*) echo "$_USAGE"; return;;
       esac
    done
@@ -482,7 +490,7 @@ default display:
 
 function awsdis {
    # some 'aws ec2 describe-instance-status' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions | jq -r .Regions[].RegionName)
+   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DIS_CMD="aws ec2 describe-instance-status"
    local _USAGE="usage: \
@@ -536,7 +544,7 @@ default display:
 
 function awsdlb {
    # some 'aws elb describe-load-balancer' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions | jq -r .Regions[].RegionName)
+   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSELBDLB_CMD="aws elb describe-load-balancers"
    local _USAGE="usage: \
@@ -598,7 +606,7 @@ default display:
 
 function awsdlc {
    # some 'aws autoscaling describe-launch-configurations' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions | jq -r .Regions[].RegionName)
+   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSASDLC_CMD="aws autoscaling describe-launch-configurations"
    local _USAGE="usage: \
@@ -656,7 +664,7 @@ default display:
 
 function awsdni {
    # some 'aws ec2 describe-network-interfaces' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions | jq -r .Regions[].RegionName)
+   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSEC2DNI_CMD="aws ec2 describe-network-interfaces"
    local _USAGE="usage: \
@@ -724,7 +732,7 @@ default display:
 
 function awsdsg {
    # some 'aws ec2 describe-security-groups' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions | jq -r .Regions[].RegionName)
+   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DSG_CMD="aws ec2 describe-security-groups"
    local _USAGE="usage: \
@@ -1202,7 +1210,9 @@ function dlecr {
    # run `docker login` command returned from `aws ecr get-login`
    local _DEFAULT_REGION="us-east-1"
    local _region=$1
-   [ -z "$_region" ] && _region=$_DEFAULT_REGION
+   if [ -z "$_region" ]; then
+      [ -n "$AWS_DEFAULT_REGION" ] && _region=$AWS_DEFAULT_REGION || _region=$_DEFAULT_REGION
+   fi
    eval $(aws ecr get-login --no-include-email --region $_region)
 }
 
@@ -1508,12 +1518,12 @@ function sae { # TOOL
    local _VALID_ARGS=$(echo $_AWS_PROFILES unset | tr ' ' ':')
    local _environment
    local _arg="$1"
-   [ "$COMPANY" == "onica" ] && ssol unset
    if [ -n "$_arg" ]; then
       if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
          echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $_AWS_PROFILES
          return 2
       fi
+      [ "$COMPANY" == "onica" ] && ssol unset > /dev/null 2>&1
       if [ "$_arg" == "unset" ]; then
          unset AWS_DEFAULT_PROFILE
          unset AWS_ENVIRONMENT
@@ -1722,7 +1732,7 @@ function wtac { # MISC
    # what's that AWS command - retrieve the given command for use
    COMMAND_PATTERN="$*"
    COMMANDS_FILE=$HOME/.aws_commands.txt
-   grep "$COMMAND_PATTERN" $COMMANDS_FILE
+   grep --colour=always "$COMMAND_PATTERN" $COMMANDS_FILE
    while read _line; do
       history -s "$_line"
    done <<< "$(grep "$COMMAND_PATTERN" $COMMANDS_FILE | sed 's:\\:\\\\:g')"
@@ -1732,7 +1742,7 @@ function wtc { # MISC
    # what's that command - retrieve the given command for use
    COMMAND_PATTERN="$*"
    COMMANDS_FILE=$HOME/.commands.txt
-   grep "$COMMAND_PATTERN" $COMMANDS_FILE
+   grep --colour=always "$COMMAND_PATTERN" $COMMANDS_FILE
    while read _line; do
       history -s "$_line"
    done <<< "$(grep "$COMMAND_PATTERN" $COMMANDS_FILE | sed 's:\\:\\\\:g')"
@@ -1740,10 +1750,11 @@ function wtc { # MISC
 
 function wtf { # MISC
    # what's that file - retrieve the given file for use
+   # sets var $file to the last one found to use
    FILE_PATTERN="$*"
    FILES_FILE=$HOME/.files.txt
-   thefile=`grep $FILE_PATTERN $FILES_FILE`
-   echo "$thefile"
+   grep --colour=always $FILE_PATTERN $FILES_FILE
+   file=`grep $FILE_PATTERN $FILES_FILE | tail -1`
 }
 
 function wutch {
@@ -1847,7 +1858,8 @@ alias a="alias | grep -v ^declare | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print
 alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + \")\"' | sort | sed 's:\./hostedzone/: (:'"
 alias c="clear"
 alias cdh="cd ~; cd"
-alias cds="cd ~/repos/infrastructure-automation/exercises/auto_website"
+alias cd-ia="cd ~/repos/infrastructure-automation/exercises/auto_website"
+alias cd-t="cd ~/repos/troposphere"
 alias cols="tsend 'echo \$COLUMNS'"
 alias cp='cp -i'
 alias crt='~/scripts/chef_recipe_tree.sh'
@@ -1917,6 +1929,7 @@ alias sdl="export DISPLAY=localhost:10.0"
 alias sf=showf
 alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 alias sing="$HOME/scripts/tools/sing.sh"
+alias sts="grep '= CFNType' $HOME/repos/stacker/stacker/blueprints/variables/types.py | awk '{print \$1}'"
 alias sw=stopwatch
 #alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
@@ -1933,8 +1946,15 @@ alias u=uptime
 alias vba='echo "editing: ~/.bash_aliases"; vi ~/.bash_aliases; sba'
 alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 alias veba='[ -f $ENVIRONMENT_SHIT ] && { echo "editing: $ENVIRONMENT_SHIT"; vi $ENVIRONMENT_SHIT; sba; }'
-alias vi='`which vim`'
-alias view='`which vim` -R'
+#alias vi='`which vim`'
+#alias view='`which vim` -R'
+# upgrade to neovim
+alias vi='$(which nvim)'
+alias vid='$(which nvim) -d'
+alias vih='$(which nvim) -o'
+alias viv='$(which nvim) -O'
+alias vit='$(which nvim) -p'
+alias viw='$(which nvim) -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
 if [ "$(uname -s)" == "Darwin" ]; then
    alias which='(alias; declare -f) | /usr/bin/which'
