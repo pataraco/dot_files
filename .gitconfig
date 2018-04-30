@@ -7,6 +7,7 @@
 	cob = checkout -b
 	#cm = !git add -A && git commit -m
 	cm = commit -m
+	dc = diff --cached
 	ec = config --global -e
         up = !git pull --rebase --prune $@ && git submodule update --init --recursive
 	# temporarily save work
