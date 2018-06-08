@@ -1,35 +1,47 @@
+" vim: ft=vim:fdm=marker
+
 " my vimrc
 " --------
 
-" TODO
+" TODO {{{
 " - add "long-line" automatic fixing
 " - add automatic folding of vimrc (similar to .vim files)
 " - add automatic folding of VARIABLES section in stacker blueprints
 " - add switching of fold type marker when using <Leader>f
-"
+" - add rotating line numbering
+" TODO }}}
+
 " Settings {{{
 " --------
-let mapleader = " "          " type this char first then additional defined below
-let maplocalleader = "\\"    " used for alternate context
-let g:highlighting = 0
-set incsearch                " Find the next match as we type the search
-set hlsearch                 " Highlight searches by default
-set ignorecase               " Ignore case when searching...
-set smartcase                " ...unless we type a capital
-set showmatch                " flashes matching {}[]()
-set showmode                 " show command/edit mode in status line
-set showcmd                  " show commands in status line
-set formatoptions-=c         " stop auto commenting in general
-set formatoptions-=r         " stop auto commenting with [Enter]
-set formatoptions-=o         " stop auto commenting with 'o' or 'O'
-set ffs=unix                 " show ^M from DOS files
-" strings to use in 'list' mode (:list command)
-set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<,conceal:?,nbsp:_
-set syntax=on                " turn on syntax highlighting
-set laststatus=2             " turn on the status bar (always)
-set ruler                    " show line, column numbers on the status line
-set number                   " turn on line numbering
-"set cmdheight=2             " set height of status bar
+ let g:highlighting = 0
+"set cmdheight=2                " set height of status bar
+ set ffs=unix                   " show ^M from DOS files
+ " here's a plugin to try; set fold column only if/when folds exist
+ "   https://github.com/benknoble/vim-auto-origami
+ set foldcolumn=1               " set width of foldcolumn
+ set foldlevel=0                " set foldlevel
+ set formatoptions-=c           " stop auto commenting in general
+ set formatoptions-=o           " stop auto commenting with 'o' or 'O'
+ set formatoptions-=r           " stop auto commenting with [Enter]
+ set hlsearch                   " Highlight searches by default
+ set ignorecase                 " Ignore case when searching...
+ set incsearch                  " Find the next match as we type the search
+ set laststatus=2               " turn on the status bar (always)
+                                " strings to use in 'list' mode (:set list!)
+			        " use (:digraphs) to see a list of [ctrl-k] opts
+"set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<,conceal:?,nbsp:_
+ set listchars=eol:ϟ,tab:»·,trail:‥,extends:▷,precedes:◁,conceal:□,nbsp:ι
+ set number                     " turn on line numbering
+ set path+=**                   " turn on fuzzy file finding
+ set relativenumber             " turn on relative line numbering
+ set ruler                      " show line, column numbers on the status line
+ set showcmd                    " show commands in status line
+ set showmatch                  " flashes matching {}[]()
+ set showmode                   " show command/edit mode in status line
+ set smartcase                  " ...unless we type a capital
+ set syntax=on                  " turn on syntax highlighting
+ set wildmenu                   " enables a muenu at the bottom of the vim window
+ set wildmode=list:longest,full " set up wild modes
 " Settings }}}
 
 " Key Mappings {{{
@@ -88,14 +100,16 @@ vnoremap <S-Tab> <gv
 
 " Leader Mappings {{{
 " ---------------
+let mapleader      = ' '   " type this char first then additional defined below
+let maplocalleader = '\'   " used for alternate context - certain file types
 " Display the number of matches for the last search
 nnoremap <silent> <Leader># :%s:<C-R>/::gn<cr>
 " turn cursor highlighting on/off
 nnoremap <silent> <Leader>x :silent set cursorline! \| set cursorcolumn!<CR>
 nnoremap <silent> <Leader>l :silent set cursorline!<CR>
 nnoremap <silent> <Leader>c :silent set cursorcolumn!<CR>
-" turn line numbering on/off
-nnoremap <silent> <Leader>n :silent set number!<CR>
+" turn line numbering on/off - see below (line numbering rotation function)
+"nnoremap <silent> <Leader>n :silent set number!<CR>
 " Press Space to turn off highlighting and clear any message already displayed.
 nnoremap <silent> <Space> :nohlsearch<Bar>:echo<CR>
 " highlight extra white space (trailing whitespace and tabs)
@@ -113,7 +127,7 @@ nnoremap <silent> <Leader>al guiw<CR>
 " source (re-load) .vimrc
 nnoremap <silent> <Leader>sv :source $MYVIMRC<CR>
 " fold current block
-nnoremap <silent> <Leader>f mf}kzf'f<CR>
+nnoremap <silent> <Leader>f mf}zf'f<CR>
 " sort current visually selected block
 vnoremap <silent> <Leader>sb :sort<CR>
 " Leader Mappings }}}
@@ -157,76 +171,84 @@ call plug#end()
 "colorscheme VisualStudioDark  " pretty good
 "colorscheme zellner  " ok
 colorscheme znake  " pretty good - has python
-" General language constructs
-"hi Comment      cterm=none ctermfg=35 ctermbg=0 gui=italic guibg=fg guifg=bg
-"hi Delimiter    cterm=none ctermfg=4 ctermbg=0 gui=none guibg=fg guifg=bg
-"hi Keyword      cterm=none ctermfg=4 ctermbg=0 gui=none guibg=fg guifg=bg
-"hi Special      cterm=none ctermfg=4 ctermbg=0 gui=none guibg=fg guifg=bg
-"hi Statement    cterm=none ctermfg=33 ctermbg=0 gui=none guibg=fg guifg=bg
-" - Syntax Highlighting -
-"hi String       cterm=none ctermfg=117 ctermbg=0 gui=none guibg=fg guifg=bg
- hi Todo                cterm=none ctermfg=0   ctermbg=41 gui=none guibg=fg guifg=bg
+" General Syntax highlighting
+ hi Comment      cterm=none ctermfg=24  ctermbg=0  gui=italic guibg=fg guifg=bg
+ hi Conditional  cterm=none ctermfg=69  ctermbg=0  gui=none   guibg=fg guifg=bg
+"hi Delimiter    cterm=none ctermfg=4   ctermbg=0  gui=none   guibg=fg guifg=bg
+ hi Error        cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg
+ hi Exception    cterm=none ctermfg=75  ctermbg=0  gui=none   guibg=fg guifg=bg
+ hi Function     cterm=none ctermfg=37  ctermbg=0  gui=none   guibg=fg guifg=bg
+ hi Include      cterm=none ctermfg=31  ctermbg=0  gui=none   guibg=fg guifg=bg
+"hi Keyword      cterm=none ctermfg=4   ctermbg=0  gui=none   guibg=fg guifg=bg
+ hi Number       cterm=none ctermfg=172 ctermbg=0  gui=none   guibg=fg guifg=bg
+ hi Operator     cterm=none ctermfg=30  ctermbg=0  gui=none   guibg=fg guifg=bg
+ hi Repeat       cterm=none ctermfg=31  ctermbg=0  gui=none   guibg=fg guifg=bg
+ hi Special      cterm=none ctermfg=172 ctermbg=0  gui=none   guibg=fg guifg=bg
+ hi Statement    cterm=none ctermfg=33  ctermbg=0  gui=none   guibg=fg guifg=bg
+ hi String       cterm=none ctermfg=74  ctermbg=0  gui=none   guibg=fg guifg=bg
+ hi Todo         cterm=none ctermfg=0   ctermbg=41 gui=none   guibg=fg guifg=bg
+ hi Type         cterm=none ctermfg=69  ctermbg=0  gui=none   guibg=fg guifg=bg
 " Bash Syntax highlighting
  hi shCasein            cterm=none ctermfg=69  ctermbg=0  gui=none guibg=fg guifg=bg
- hi shComment           cterm=none ctermfg=24  ctermbg=0  gui=italic guibg=fg guifg=bg
- hi shConditional       cterm=none ctermfg=69  ctermbg=0  gui=none guibg=fg guifg=bg
+"hi shComment           cterm=none ctermfg=24  ctermbg=0  gui=italic guibg=fg guifg=bg
+"hi shConditional       cterm=none ctermfg=69  ctermbg=0  gui=none guibg=fg guifg=bg
  hi shCtrlSeq           cterm=none ctermfg=172 ctermbg=0  gui=none guibg=fg guifg=bg "\n
  hi shEcho              cterm=none ctermfg=229 ctermbg=0  gui=none guibg=fg guifg=bg
  hi shFunction          cterm=none ctermfg=38  ctermbg=0  gui=none guibg=fg guifg=bg
  hi shIdentifier        cterm=none ctermfg=82  ctermbg=0  gui=none guibg=fg guifg=bg
  hi shQuote             cterm=none ctermfg=202 ctermbg=0  gui=none guibg=fg guifg=bg
- hi shSpecial           cterm=none ctermfg=172 ctermbg=0  gui=none guibg=fg guifg=bg "\n
+"hi shSpecial           cterm=none ctermfg=172 ctermbg=0  gui=none guibg=fg guifg=bg "\n
  hi shStatement         cterm=none ctermfg=69  ctermbg=0  gui=none guibg=fg guifg=bg
- hi shString            cterm=none ctermfg=74 ctermbg=0  gui=none guibg=fg guifg=bg
+ hi shString            cterm=none ctermfg=74  ctermbg=0  gui=none guibg=fg guifg=bg
 "hi shTodo              cterm=none ctermfg=0   ctermbg=41 gui=none guibg=fg guifg=bg
 " Python Syntax highlighting
 "hi pythonAsync          cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg  "async await
  hi pythonAttribute      cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg
  hi pythonBuiltin        cterm=none ctermfg=30  ctermbg=0  gui=none   guibg=fg guifg=bg
- hi pythonComment        cterm=none ctermfg=24  ctermbg=0  gui=italic guibg=fg guifg=bg
- hi pythonConditional    cterm=none ctermfg=69  ctermbg=0  gui=none   guibg=fg guifg=bg
+"hi pythonComment        cterm=none ctermfg=24  ctermbg=0  gui=italic guibg=fg guifg=bg
+"hi pythonConditional    cterm=none ctermfg=69  ctermbg=0  gui=none   guibg=fg guifg=bg
 "hi pythonDecorator      cterm=none ctermfg=82  ctermbg=0  gui=none   guibg=fg guifg=bg
 "hi pythonDecoratorName  cterm=none ctermfg=82  ctermbg=0  gui=none   guibg=fg guifg=bg
 "hi pythonDoctest        cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg ">>>
 "hi pythonDoctestValue   cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg
- hi pythonEscape         cterm=none ctermfg=172 ctermbg=0  gui=none   guibg=fg guifg=bg "\n
- hi pythonException      cterm=none ctermfg=75  ctermbg=0  gui=none   guibg=fg guifg=bg "finally raise except try
+"hi pythonEscape         cterm=none ctermfg=172 ctermbg=0  gui=none   guibg=fg guifg=bg "\n
+"hi pythonException      cterm=none ctermfg=75  ctermbg=0  gui=none   guibg=fg guifg=bg "finally raise except try
  hi pythonExceptions     cterm=none ctermfg=124 ctermbg=0  gui=none   guibg=fg guifg=bg "KeyError
- hi pythonFunction       cterm=none ctermfg=37  ctermbg=0  gui=none   guibg=fg guifg=bg
- hi pythonInclude        cterm=none ctermfg=31  ctermbg=0  gui=none   guibg=fg guifg=bg
+"hi pythonFunction       cterm=none ctermfg=37  ctermbg=0  gui=none   guibg=fg guifg=bg
+"hi pythonInclude        cterm=none ctermfg=31  ctermbg=0  gui=none   guibg=fg guifg=bg
  hi pythonMatrixMultiply cterm=none ctermfg=0   ctermbg=2  gui=none   guibg=fg guifg=bg
- hi pythonNumber         cterm=none ctermfg=172 ctermbg=0  gui=none   guibg=fg guifg=bg
- hi pythonOperator       cterm=none ctermfg=30  ctermbg=0  gui=none   guibg=fg guifg=bg
- hi pythonRawString      cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg
- hi pythonRepeat         cterm=none ctermfg=31  ctermbg=0  gui=none   guibg=fg guifg=bg
- hi pythonSpaceError     cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg
- hi pythonStatement      cterm=none ctermfg=33  ctermbg=0  gui=none   guibg=fg guifg=bg
- hi pythonString         cterm=none ctermfg=74 ctermbg=0  gui=none   guibg=fg guifg=bg
+"hi pythonNumber         cterm=none ctermfg=172 ctermbg=0  gui=none   guibg=fg guifg=bg
+"hi pythonOperator       cterm=none ctermfg=30  ctermbg=0  gui=none   guibg=fg guifg=bg
+"hi pythonRawString      cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg
+"hi pythonRepeat         cterm=none ctermfg=31  ctermbg=0  gui=none   guibg=fg guifg=bg
+"hi pythonSpaceError     cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg
+"hi pythonStatement      cterm=none ctermfg=33  ctermbg=0  gui=none   guibg=fg guifg=bg
+"hi pythonString         cterm=none ctermfg=74  ctermbg=0  gui=none   guibg=fg guifg=bg
  hi pythonSync           cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg
  hi pythonTodo           cterm=none ctermfg=0   ctermbg=41 gui=none   guibg=fg guifg=bg
 " YAML Syntax highlighting
-hi yamlComment cterm=none ctermfg=35 ctermbg=0 gui=italic guibg=fg guifg=bg
-hi yamlAnchor cterm=none ctermfg=100 ctermbg=0 gui=none guibg=fg guifg=bg
-hi yamlAlias cterm=none ctermfg=100 ctermbg=0 gui=none guibg=fg guifg=bg
-hi yamlTodo cterm=none ctermfg=0 ctermbg=43 gui=none guibg=fg guifg=bg
+hi yamlComment  cterm=none ctermfg=35  ctermbg=0   gui=none guibg=fg guifg=bg
+hi yamlAnchor   cterm=none ctermfg=100 ctermbg=0   gui=none guibg=fg guifg=bg
+hi yamlAlias    cterm=none ctermfg=100 ctermbg=0   gui=none guibg=fg guifg=bg
+hi yamlTodo     cterm=none ctermfg=0   ctermbg=43  gui=none guibg=fg guifg=bg
 " set highlight coloring for line numbering, cursor line/column and searching
-hi LineNr       cterm=none ctermfg=36 ctermbg=0   guifg=bg guibg=fg
-hi CursorLine   cterm=none ctermfg=0  ctermbg=36  guifg=bg guibg=fg
-hi CursorColumn cterm=none ctermfg=0  ctermbg=36  guifg=bg guibg=fg
-hi Search       cterm=none ctermfg=0  ctermbg=191 guifg=bg guibg=fg
-hi Visual       cterm=none ctermfg=15 ctermbg=34  guifg=bg guibg=fg
+hi LineNr       cterm=none ctermfg=36  ctermbg=0   gui=none guifg=bg guibg=fg
+hi CursorLine   cterm=none ctermfg=0   ctermbg=36  gui=none guifg=bg guibg=fg
+hi CursorColumn cterm=none ctermfg=0   ctermbg=36  gui=none guifg=bg guibg=fg
+hi Search       cterm=none ctermfg=0   ctermbg=191 gui=none guifg=bg guibg=fg
+hi Visual       cterm=none ctermfg=15  ctermbg=34  gui=none guifg=bg guibg=fg
 " Fix the difficult-to-read default setting for diff text highlighting
-hi DiffAdd      cterm=none ctermfg=48 ctermbg=29 gui=none guifg=bg guibg=fg
-hi DiffDelete   cterm=none ctermfg=196 ctermbg=88 gui=none guifg=bg guibg=fg
-hi DiffChange   cterm=none ctermfg=39 ctermbg=17 gui=none guifg=bg guibg=fg
-hi DiffText     cterm=none ctermfg=17 ctermbg=39  gui=none guifg=bg guibg=fg
+hi DiffAdd      cterm=none ctermfg=48  ctermbg=29  gui=none guifg=bg guibg=fg
+hi DiffDelete   cterm=none ctermfg=196 ctermbg=88  gui=none guifg=bg guibg=fg
+hi DiffChange   cterm=none ctermfg=39  ctermbg=17  gui=none guifg=bg guibg=fg
+hi DiffText     cterm=none ctermfg=17  ctermbg=39  gui=none guifg=bg guibg=fg
 hi Folded       cterm=none ctermfg=39  ctermbg=17  gui=none guifg=bg guibg=fg
 hi FoldColumn   cterm=none ctermfg=39  ctermbg=17  gui=none guifg=bg guibg=fg
 " Set other specific colors
-hi StatusLine   cterm=none ctermfg=15 ctermbg=22  gui=bold guifg=bg guibg=fg
-hi StatusLineNC cterm=none ctermfg=15 ctermbg=52  gui=bold guifg=bg guibg=fg
-hi VertSplit    cterm=none ctermfg=25 ctermbg=24  gui=none guifg=bg guibg=fg
-hi MatchParen   cterm=none ctermfg=0  ctermbg=190 gui=none guifg=bg guibg=fg
+hi StatusLine   cterm=none ctermfg=15  ctermbg=22  gui=bold guifg=bg guibg=fg
+hi StatusLineNC cterm=none ctermfg=15  ctermbg=52  gui=bold guifg=bg guibg=fg
+hi VertSplit    cterm=none ctermfg=25  ctermbg=24  gui=none guifg=bg guibg=fg
+hi MatchParen   cterm=none ctermfg=0   ctermbg=190 gui=none guifg=bg guibg=fg
 " setting the following messes with schemes in nvim
 """""hi Normal       cterm=none ctermfg=grey ctermbg=black   gui=none guifg=bg guibg=fg
 "hi Cursor       cterm=none ctermfg=black ctermbg=magenta gui=none guifg=bg guibg=fg
@@ -238,7 +260,7 @@ hi ExtraWhitespace cterm=none ctermfg=red ctermbg=red guifg=red guibg=red
 "autocmd Syntax * syn match ExtraWhitespace /\s\+$\|\t/ containedin=ALL
 " Highlight th 80th column
 set colorcolumn=80          " set the column width
-hi ColorColumn   cterm=none ctermfg=0 ctermbg=233  gui=none guifg=bg guibg=fg
+hi ColorColumn   cterm=none ctermfg=1 ctermbg=233  gui=none guifg=bg guibg=fg
 " Colorizations }}}
 
 " enable File type based auto indentation
@@ -246,8 +268,10 @@ filetype plugin indent on
 
 " Functions {{{
 " ---------
+
+" HighlightCurrentWord() --- {{{2
 " function to highlight the current word with [Enter]
-function! HighlightCurrentWord ()
+function! HighlightCurrentWord () "
   if g:highlighting == 1 && @/ =~ '^\\<'.expand('<cword>').'\\>$'
     let g:highlighting = 0
     return ":silent nohlsearch\<CR>"
@@ -258,7 +282,9 @@ function! HighlightCurrentWord ()
 endfunction
 " map [Enter] <CR> to call HighlightCurrentWord function to highlight current word
 nnoremap <silent> <expr> <CR> HighlightCurrentWord()
+" HighlightCurrentWord() --- }}}2
 
+" AlignAssignments()     --- {{{2
 " function to align variable assignments in the current block
 function! AlignAssignments ()
   " Patterns needed to locate assignment operators...
@@ -293,7 +319,9 @@ function! AlignAssignments ()
 endfunction
 " map [Enter] <CR> to call HighlightCurrentWord function to highlight current word
 nnoremap <silent> <Leader>aa :call AlignAssignments()<CR>
+" AlignAssignments()     --- }}}2
 
+" AddCompletion()        --- {{{2
 " Table of completion specifications (a list of lists)...
 let s:completions = []
 " Function to add user-defined completions...
@@ -316,6 +344,9 @@ call AddCompletion('"',  s:NONE, '"',                     1   )
 call AddCompletion('"',  '"',    "\\n",                   1   )
 call AddCompletion("'",  s:NONE, "'",                     1   )
 call AddCompletion("'",  "'",    s:NONE,                  0   )
+" AddCompletion()        --- }}}2
+
+" SmartComplete()        --- {{{2
 " Implement smart completion magic...
 function! SmartComplete ()
     " Remember where we parked...
@@ -352,6 +383,77 @@ function! SmartComplete ()
 endfunction
 " Remap <TAB> for smart completion on various characters...
 inoremap <silent> <TAB>   <C-R>=SmartComplete()<CR>
+" SmartComplete()        --- }}}2
+
+" MyFoldText()           --- {{{2
+" change Folded text
+set foldtext=MyFoldText()
+"set foldtext=NeatFoldText()
+"set foldtext=pymode#folding#text()
+function! MyFoldText()
+  " clear fold from fillchars to set it up the way we want later
+  let &l:fillchars = substitute(&l:fillchars,',\?fold:.','','gi')
+  let l:numwidth = (v:version < 701 ? 8 : &numberwidth)
+  if &fdm=='diff'
+    let l:linetext=''
+    let l:foldtext='---------- '.(v:foldend-v:foldstart+1).' lines the same ----------'
+    let l:align = winwidth(0)-&foldcolumn-(&nu ? Max(strlen(line('$'))+1, l:numwidth) : 0)
+    let l:align = (l:align / 2) + (strlen(l:foldtext)/2)
+    " note trailing space on next line
+    setlocal fillchars+=fold:\ 
+  elseif !exists('b:foldpat') || b:foldpat==0
+    let l:foldtext = ' '.(v:foldend-v:foldstart).' lines folded '.v:folddashes.'|'
+    let l:endofline = (&textwidth>0 ? &textwidth : 80)
+    "let l:linetext = strpart(getline(v:foldstart),0,l:endofline-strlen(l:foldtext))
+    let l:line = ' ' . substitute(getline(v:foldstart), '^\s*"\?\s*\|\s*"\?\s*{{' . '{\d*\s*', '', 'g') . ' '
+    setlocal fillchars+=fold:-
+    let l:foldchar = matchstr(&fillchars, 'fold:\zs.')
+    let l:linetext = strpart('+' . repeat(l:foldchar, v:foldlevel) . l:line, 0, (winwidth(0)*2)/3)
+    let l:align = l:endofline-strlen(l:linetext)
+  elseif b:foldpat==1
+    let l:align = winwidth(0)-&foldcolumn-(&nu ? Max(strlen(line('$'))+1, l:numwidth) : 0)
+    let l:foldtext = ' '.v:folddashes
+    let l:linetext = substitute(getline(v:foldstart),'\s\+$','','')
+    let l:linetext .= ' ---'.(v:foldend-v:foldstart-1).' lines--- '
+    let l:linetext .= substitute(getline(v:foldend),'^\s\+','','')
+    let l:linetext = strpart(l:linetext,0,l:align-strlen(l:foldtext))
+    let l:align -= strlen(l:linetext)
+    setlocal fillchars+=fold:-
+  endif
+  return printf('%s%*s', l:linetext, l:align, l:foldtext)
+endfunction
+
+function! NeatFoldText()
+ let line = ' ' . substitute(getline(v:foldstart), '^\s*"\?\s*\|\s*"\?\s*{{' . '{\d*\s*', '', 'g') . ' '
+ let lines_count = v:foldend - v:foldstart + 1
+ let lines_count_text = '| ' . printf("%10s", lines_count . ' lines') . ' |'
+ let foldchar = matchstr(&fillchars, 'fold:\zs.')
+ let foldtextstart = strpart('+' . repeat(foldchar, v:foldlevel*2) . line, 0, (winwidth(0)*2)/3)
+ let foldtextend = lines_count_text . repeat(foldchar, 8)
+ let foldtextlength = strlen(substitute(foldtextstart . foldtextend, '.', 'x', 'g')) + &foldcolumn
+ return foldtextstart . repeat(foldchar, winwidth(0)-foldtextlength) . foldtextend
+endfunction
+" MyFoldText()           --- }}}2
+
+" CycleNumbering()       --- {{{2
+" Cycle through relativenumber + number, number (only), and no numbering.
+function! CycleNumbering() abort
+  if exists('+relativenumber')
+    let l:nr = &number . &relativenumber
+    execute {
+          \ '00': 'set relativenumber   | set number',
+          \ '01': 'set norelativenumber | set number',
+          \ '10': 'set norelativenumber | set nonumber',
+          \ '11': 'set norelativenumber | set number' }[l:nr]
+  else
+    " No relative numbering, just toggle numbers on and off.
+    set number!<CR>
+  endif
+endfunction
+" map <Leader>n to call CycleNumbering function
+nnoremap <silent> <Leader>n :call CycleNumbering()<CR>
+" CycleNumbering() --- }}}2
+
 " Functions }}}
 
 " Auto Commands {{{
@@ -379,5 +481,12 @@ autocmd FileType python set tabstop=4 | set shiftwidth=4 | set expandtab
 " When reading a buffer (after 1s), and when writing (no delay).
 "call neomake#configure#automake('rw', 1000)
 " Full config: when writing or reading a buffer, and on changes in insert and
-" normal mode (after 2s; no delay when writing).
-call neomake#configure#automake('nrwi', 2000)
+"   normal mode (after 2s; no delay when writing).
+"call neomake#configure#automake('nrwi', 2000)
+" Full config: when writing or reading a buffer and
+"   normal mode (after 1/2s; no delay when writing).
+call neomake#configure#automake('nrw', 500)
+
+" set up the fold method to 'marker'
+" XXXvimXXX: set fdm=marker fmr={{{,}}} fdl=0 fdc=1 :
+" XXXvimXXX: set foldmethod=marker foldmarker={{{,}}} foldlevel=0 foldcolumn=1 :
