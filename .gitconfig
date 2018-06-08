@@ -2,6 +2,7 @@
 	ui = auto
 [alias]
 	b = branch
+	d = diff
 	cam = commit -am
 	co = checkout
 	cob = checkout -b
@@ -40,7 +41,7 @@
 	la = log --oneline --decorate --all
 	# misc stuff
 	dl = "!git ll -1"
-	dlc = diff --cached HEAD^
+	dch = diff --cached HEAD^
 	dr  = "!f() { git diff "$1"^.."$1"; }; f"
 	lc  = "!f() { git ll "$1"^.."$1"; }; f"
 	diffr  = "!f() { git diff "$1"^.."$1"; }; f"
@@ -57,7 +58,7 @@
 	excludesfile = /home/praco/.gitignore
 [user]
 	name = Patrick Raco
-	email = praco@telecomsys.com
+	email = praco@onica.com
 # [credential]
 # 	helper = !aws --profile rdrake --region us-east-1 codecommit credential-helper $@
 # 	UseHttpPath = true
