@@ -411,6 +411,7 @@ awsdi [OPTIONS]
   -n  NAME     # filter results by this Instance Name
   -pj PROJECT  # filter results by this Project
   -s  STATE    # filter results by this State (e.g. running, terminated, etc.)
+  -t  KEY=VAL  # filter results by this tag (key=val)
   -m  MAX      # maximum number of items to display
   -r  REGION   # Region to query (default: $_DEFAULT_REGION, 'all' for all)
   +a           # show AMI (ImageId)
@@ -428,10 +429,11 @@ awsdi [OPTIONS]
   +p           # show Platform
   +pj          # show Project
   +pi          # show Public IP
+  +pt          # show Placment Tenancy
   +s           # show State (e.g. running, stopped...)
   +si          # show Security Group Id(s)
   +sn          # show Security Group Name(s)
-  +t           # show Tenancy
+  +t KEY       # show tag (KEY)
   +v           # show VPC ID
   +vn          # show VPC Name (tag: VPCName)
   -h           # help (show this message)
@@ -446,10 +448,11 @@ default display:
    local _query="Reservations[].Instances[]"
    while [ $# -gt 0 ]; do
       case $1 in
-         -pj) _filters="Name=tag:Project,Values=*$2* $_filters"        ; shift 2;;
-          -n) _filters="Name=tag:Name,Values=*$2* $_filters"           ; shift 2;;
-          -s) _filters="Name=instance-state-name,Values=*$2* $_filters"; shift 2;;
           -e) _filters="Name=tag:Env,Values=*$2* $_filters"            ; shift 2;;
+          -n) _filters="Name=tag:Name,Values=*$2* $_filters"           ; shift 2;;
+         -pj) _filters="Name=tag:Project,Values=*$2* $_filters"        ; shift 2;;
+          -s) _filters="Name=instance-state-name,Values=*$2* $_filters"; shift 2;;
+          -t) _filters="Name=tag:${2%%=*},Values=*${2##*=}* $_filters" ; shift 2;;
           -m) _max_items="--max-items $2"                              ; shift 2;;
           -r) _region=$2                                               ; shift 2;;
           +a) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
@@ -463,14 +466,15 @@ default display:
          +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
           +k) _more_qs="$_more_qs${_more_qs:+,}KeyName"                                          ; shift;;
          +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
-         +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='MachineRole'].Value|[0]"              ; shift;;
+         +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Role'].Value|[0]"                     ; shift;;
           +p) _more_qs="$_more_qs${_more_qs:+,}Platform"                                         ; shift;;
          +pj) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"                  ; shift;;
          +pi) _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"                                  ; shift;;
+         +pt) _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"                                ; shift;;
           +s) _more_qs="$_more_qs${_more_qs:+,}State.Name"                                       ; shift;;
          +si) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupId|join(', ',@)"            ; shift;;
          +sn) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupName|join(', ',@)"          ; shift;;
-          +t) _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"                                ; shift;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                       ; shift 2;;
           +v) _more_qs="$_more_qs${_more_qs:+,}VpcId"                                            ; shift;;
          +vn) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"                  ; shift;;
         -h|*) echo "$_USAGE"; return;;
@@ -484,6 +488,7 @@ default display:
          $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
    else
+      #debug# echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
       $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
@@ -1312,13 +1317,13 @@ function gdate {
 
 function gh { # TOOL
    # grep bash history for a PATTERN
-   if [[ $1 =~ ^\^.* ]]; then
+   if [[ $* =~ ^\^.* ]]; then
       pattern=$(echo "$*" | tr -d '^')
       #echo "debug: looking for: ^[0-9]*  $pattern"
-      history | grep "^[ 0-9]*  $pattern" | grep $pattern
+      history | grep "^[ 0-9]*  $pattern" | grep --color=always "$pattern"
    else
       #echo "debug: looking for: $*"
-      history | grep "$*"
+      history | grep --color=always "$*"
    fi
 }
 
@@ -1533,13 +1538,13 @@ function sae { # TOOL
          echo "environment has been unset"
       else
          export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
-         local _aws_env=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG | sed 's/ *$//')
+         local _aws_env=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG | sed 's/ *$//')
          local _aws_acct=$(aws sts get-caller-identity --profile $AWS_DEFAULT_PROFILE | jq -r .Account)
          export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
-         export AWS_ACCESS_KEY_ID=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
-         export AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
-         export AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
-         _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"'/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
+         export AWS_ACCESS_KEY_ID=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
+         export AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
+         export AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
+         _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
          echo "environment has been set to --> $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
          [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
          [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
@@ -1568,8 +1573,9 @@ function sae { # TOOL
       [ -n "$AWS_DEFAULT_PROFILE" ] && echo "Settings ---" || echo "(NOT set) ---"
       echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
       echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
-      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}"
-      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}"
+      # obfuscate the KEYs with some *'s
+      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's/[F-HO-QU-V0-9]/*/g'
+      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's/[F-HO-QU-V0-9]/*/g'
       echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
    fi
 }
@@ -1873,7 +1879,7 @@ alias egrpq="egrep --color=always"
 #alias f="declare -F | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-15s\",\$3}else{printf \"  %-15s\n\",\$3}}END{print CR}'"
 alias f="grep '^function .* ' ~/.bash_aliases | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
 alias fgrep="fgrep --color=auto"
-alias fgrpq="fgrep --color=always"
+alias fgrpa="fgrep --color=always"
 alias fuck='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 # alias gh="history | grep" # now a function
 alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
@@ -1955,6 +1961,7 @@ alias vih='$(which nvim) -o'
 alias viv='$(which nvim) -O'
 alias vit='$(which nvim) -p'
 alias viw='$(which nvim) -R'
+alias view='$(which nvim) -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
 if [ "$(uname -s)" == "Darwin" ]; then
    alias which='(alias; declare -f) | /usr/bin/which'
@@ -1963,6 +1970,7 @@ elif [ "$(uname -so)" == "Linux GNU/Linux" ]; then
 else
    alias which='(alias; declare -f) | /usr/bin/which'
 fi
+alias wgft='echo "$(history -p \!\!) | grep"; $(history -p \!\!) | grep'
 alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less'
 
 # -------------------- final touches --------------------
