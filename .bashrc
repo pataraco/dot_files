@@ -17,7 +17,7 @@ export HISTCONTROL='ignoreboth:erasedups'
 export HISTFILE=$HOME/.bash_history
 
 # don't record these commands
-export HISTIGNORE='ls:cd:h:..:history: *:sae:uname *:f:a:sa:sf:cd[aphir]:c:clear'
+export HISTIGNORE=' *:..:a:c:cd:cd[aphir]:clear:f:gh:h:history:ls:sa:sae:sf:uname *'
 
 # append to the history file, don't overwrite it
 shopt -s histappend
