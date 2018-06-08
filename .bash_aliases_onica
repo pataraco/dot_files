@@ -54,12 +54,19 @@ function ssol {	# TOOL
    # wrapper for `sso-login`
    # usage: ssol ACCT_ABBRVTN|ACCT_SHORT_NAME [MFA_CODE]
    local _acct_short_name
+   local _acct_long_name
    local _accnt_abbrvtn=$1
    local _mfa_code=$2
    if [ -n "$_accnt_abbrvtn" ]; then
       case $_accnt_abbrvtn in
-         sil) _acct_short_name="sturdy-internal-lab"    ;;
-         sss) _acct_short_name="sturdy-sentientscience" ;;
+         dfd) _acct_short_name="onica-drfirst-dev "      ;;
+         ddo) _acct_short_name="onica-drfirst-old-dev "  ;;
+         dfm) _acct_short_name="onica-drfirst-master "   ;;
+         dfp) _acct_short_name="onica-drfirst-prod "     ;;
+         dpo) _acct_short_name="onica-drfirst-prod-old " ;;
+         dfs) _acct_short_name="onica-drfirst-stage "    ;;
+         sil) _acct_short_name="sturdy-internal-lab "    ;;
+         sss) _acct_short_name="sturdy-sentientscience " ;;
          unset) 
             unset ONICA_SSO_ACCOUNT_TAGS
             unset ONICA_SSO_ACCOUNT_NAME
@@ -70,13 +77,14 @@ function ssol {	# TOOL
             unset AWS_ENVIRONMENT
             unset AWS_ACCESS_KEY_ID
             unset AWS_SECRET_ACCESS_KEY
+            unset AWS_SESSION_TOKEN
             PS_PROJ="$PNRM"
             echo "environment has been unset"
             return                                      ;;
          *) _acct_short_name=$_accnt_abbrvtn            ;;
       esac
       #local _acct_long_name=$(sso-list | grep "^$_acct_short_name " | cut -d ' ' -f3-)
-      local _acct_long_name=$(sso-list | grep -i "$_acct_short_name" | cut -d ' ' -f3-)
+      _acct_long_name=$(sso-list | grep -i "$_acct_short_name" | cut -d ' ' -f3-)
       if [ -n "$_acct_long_name" ]; then
          local _number_matching=$(echo "$_acct_long_name" | wc -l | tr -d ' ')
          if [ $_number_matching -gt 1 ]; then
@@ -112,14 +120,16 @@ function ssol {	# TOOL
 # define aliases
 
 alias actss="source $HOME/envs/sentient-science/bin/activate"
+alias cd-a="cd $HOME/repos/projects/aecom"
 alias cd-bd="cd $HOME/repos/projects/baxter/dclink"
+alias cd-drf="cd $HOME/repos/projects/drfirst/drfirst/stacker"
 alias cd-h="cd $HOME/repos/projects/heuristics/onica-heuristics"
 alias cd-i="cd $HOME/repos/projects/infogix/infogix"
 alias cd-ods="cd $HOME/repos/projects/ormco/sturdy-ormco-devops/stacker/ods"
 alias cd-odsc="cd $HOME/repos/projects/ormco/ormco-ods-code"
-alias cd-ss="cd $HOME/repos/projects/sentient-science/onica-sentient-science"
-alias cd-spi="cd $HOME/repos/Onica/sturdy-platform-infrastructure"
 alias cd-sli="cd $HOME/repos/Onica/sturdy-lab-infrastructure"
+alias cd-spi="cd $HOME/repos/Onica/sturdy-platform-infrastructure"
+alias cd-ss="cd $HOME/repos/projects/sentient-science/onica-sentient-science"
 if [ -n "$COMPANY_SHIT" ]; then
    alias cf="grep '^function .* ' ~/.bash_aliases_ctcs | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
    alias scf=showcf
