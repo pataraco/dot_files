@@ -81,6 +81,7 @@ aws iam list-policies
 aws iam list-users
 aws iam put-role-policy --role-name ROLE_NAME --policy-name POLICY_NAME --policy-document file://PATH_TO/POLICY_DOC.json
 aws iam update-login-profile --user-name USERNAME --password PASSWORD
+aws lambda update-function-configuration --function-name FUNCTION_NAME --timeout N --memory-size M
 aws s3 mb s3://BUCKET_NAME
 aws s3 rb s3://BUCKET_NAME --force # remove bucket and all of it's contents
 aws s3 sync --profile AWS_PROFILE --exclude \* --include DIR_NAME\* s3://BUCKET_SRC/path/to/files/ s3://BUCKET_DEST/path/to/files/
