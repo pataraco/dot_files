@@ -11,6 +11,24 @@ eval "$(onica-sso shell-init bash)"
 
 # define functions
 
+function rde {
+   # AWS Set Default Region
+   local _env=$1
+   if [ -n "$_env" ]; then
+      case $_env in
+         c) export DEPLOY_ENVIRONMENT="common";;
+         d) export DEPLOY_ENVIRONMENT="dev";;
+         s) export DEPLOY_ENVIRONMENT="staging";;
+         p) export DEPLOY_ENVIRONMENT="prod";;
+         P) export DEPLOY_ENVIRONMENT="production";;
+         *) export DEPLOY_ENVIRONMENT="$_env" ;;
+         u) unset  DEPLOY_ENVIRONMENT            ;;
+      esac
+   else
+      echo "DEPLOY_ENVIRONMENT    = ${DEPLOY_ENVIRONMENT:-N/A}"
+   fi
+}
+
 function showcf {	# TOOL
    # show a company specific function
    if [ -n "$COMPANY_SHIT" ]; then
