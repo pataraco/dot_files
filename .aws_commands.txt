@@ -33,6 +33,7 @@ aws ec2 create-tags --region REGION --resources INST_ID --tags Key=KEY,Value=VAL
 aws ec2 delete-key-pair --key-name KEY_PAIR_NAME
 aws ec2 describe-addresses --output table
 aws ec2 describe-availability-zones
+aws ec2 describe-images --owners amazon --filters "Name=name,Values=Windows_Server-2012-R2_RTM-English-64Bit-Base*" --query 'sort_by(Images, &CreationDate)[].Name'
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID | jq .InstanceStatuses[].Events
 aws ec2 describe-instances --filters Name=tag:Name,Values=INST_NAME Name=instance-state-name,Values=running
@@ -96,6 +97,8 @@ aws sns delete-topic --topic-arn NOTIFICATION_ARN
 aws sns list-subscriptions
 aws sns list-topics | grep "TOPIC_NAME" | cut -d '"' -f4 # get SNS notification ARN
 aws sns subscribe --topic-arn ARN --protocol email --notification-endpoint END_POINT
+aws ssm get-parameter --name /aws/service/ami-windows-latest/Windows_Server-2012-R2_RTM-English-64Bit-Base
+aws ssm get-parameter --name /aws/service/ecs/optimized-ami/amazon-linux/recommended
 aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --output text); echo $aws_acct  # get AWS account
 aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct  # get AWS account
 echo -e "protocol=httpsnpath=/v1/repos/testnhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get
