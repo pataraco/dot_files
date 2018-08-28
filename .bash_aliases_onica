@@ -1,6 +1,6 @@
 #!bash - ~/.bash_aliases_onica - sourced by ~/.bashrc_aliases
 #
-# these are functions/aliases specific to Comtech TCS
+# these are functions/aliases specific to Onica
 
 # if interactive shell - display message
 #[ -n "$PS1" ] && echo "sourcing: .bash_aliases_$COMPANY"
@@ -142,14 +142,14 @@ alias cd-a="cd $HOME/repos/projects/aecom"
 alias cd-bd="cd $HOME/repos/projects/baxter/dclink"
 alias cd-drf="cd $HOME/repos/projects/drfirst/drfirst/stacker"
 alias cd-h="cd $HOME/repos/projects/heuristics/onica-heuristics"
-alias cd-i="cd $HOME/repos/projects/infogix/infogix"
+alias cd-io="cd $HOME/repos/projects/infogix/infogix-onica"
 alias cd-ods="cd $HOME/repos/projects/ormco/sturdy-ormco-devops/stacker/ods"
 alias cd-odsc="cd $HOME/repos/projects/ormco/ormco-ods-code"
 alias cd-sli="cd $HOME/repos/Onica/sturdy-lab-infrastructure"
 alias cd-spi="cd $HOME/repos/Onica/sturdy-platform-infrastructure"
 alias cd-ss="cd $HOME/repos/projects/sentient-science/onica-sentient-science"
 if [ -n "$COMPANY_SHIT" ]; then
-   alias cf="grep '^function .* ' ~/.bash_aliases_ctcs | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+   alias cf="grep '^function .* ' ~/.bash_aliases_onica | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
    alias scf=showcf
 else
    alias cf="echo 'company alias file not set (COMPANY_SHIT)'"
