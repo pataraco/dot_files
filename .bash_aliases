@@ -1404,7 +1404,8 @@ function listcrts {
                while read cert; do
                   [[ $_more ]] && echo "---"
                   echo "$cert" | \
-                     base64 -d | \
+                     base64 --decode | \
+                     #base64 -d | \
                         openssl x509 -inform DER $_openssl_opts | \
                            awk '{
                               if ($1~/subject=/)
@@ -1573,8 +1574,8 @@ function sae { # TOOL
       echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
       echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
       # obfuscate the KEYs with some *'s
-      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HJLN-QU-V0-9]:*:g'
-      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[F-HJLN-QU-V0-9/+]:*:g'
+      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HJLMO-QT-VXZ03-9]:*:g'
+      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[bd-np-zF-HJLO-QU-V03-9+]:*:g'
       echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
    fi
 }
@@ -1939,7 +1940,7 @@ alias sw=stopwatch
 #alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
 alias ta='tmux attach -t'
-alias tmx='tmux new-session -s Raco -n MYSHIT'
+alias tmx='tmux new-session -s Raco -n MYSHTUFF'
 alias tspo='tmux set-window-option synchronize-panes on'
 alias tspx='tmux set-window-option synchronize-panes off'
 alias tt='echo -ne "\033]0;$(whoami)@$(hostname)\007"'
