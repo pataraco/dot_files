@@ -183,6 +183,7 @@ sftp -i /home/praco/repos/client_certificates/package-key/369-environment/keys/3
 sleep $((RANDOM % 300))		# sleep 0 to 300 seconds
 smaint
 sqr /eci/dbatools/oob dev	# run as eci
+ssh -A -L 3389:$PRIV_IP:3389 ec2-user@$PUB_IP
 ssh mongo1.shared1.VPC.nim "mongo --quiet --ssl --sslAllowInvalidCertificates --host mongo1 --eval \"printjson(db.runCommand('ismaster'))\" | grep primary"
 ssh-add -l
 ssh-copy-id [$USER@]$HOSTNAME
