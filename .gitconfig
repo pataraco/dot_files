@@ -6,14 +6,16 @@
 	cam = commit -am
 	co = checkout
 	cob = checkout -b
+	cfb = !git checkout master && git fetch -p origin master && git merge origin/master && git checkout -b
 	#cm = !git add -A && git commit -m
 	cm = commit -m
 	dc = diff --cached
+	dt = difftool
 	ec = config --global -e
         up = !git pull --rebase --prune $@ && git submodule update --init --recursive
 	# temporarily save work
 	save = !git add -A && git commit -m 'SAVEPOINT'
-	wip = git commit -am 'WIP'
+	wip = !git commit -am 'WIP'
 	# continue work
 	undo = reset HEAD~1 --mixed
 	amend = commit -a --amend
@@ -24,6 +26,7 @@
 	bdone = "!f() { git checkout ${1-master} && git up && git bclean ${1-master}; }; f"
 	# log stuff
 	fl = log -u # file log
+	fm = !git fetch -p origin && git merge origin/master # do this instead of `git pull`
 	ld = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=relative
 	lds = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=short
 	le = log --oneline --decorate
@@ -39,6 +42,7 @@
 	lsa = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>' --all --abbrev-commit --date=relative
 	lag = log --oneline --decorate --all --graph
 	la = log --oneline --decorate --all
+	po = !git push origin $(git symbolic-ref HEAD|cut -d'/' -f3)
 	# misc stuff
 	dl = "!git ll -1"
 	dch = diff --cached HEAD^
