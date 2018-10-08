@@ -30,9 +30,6 @@ arp -a
 arp inet_addr (192.168.1.29)
 awk 'BEGIN {RS=" "} found=="true" {print $1;exit}; $1=="-r" {found="true"}'	# parse a line
 awk 'found=="true" && $1~/([0-9]{1,3}\.){3}[0-9]{1,3}/ {print $1;exit}; $1=="virtual_ipaddress" {found="true"}'
-aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,PublicIpAddress,State.Name]" --output table
-aws ec2 describe-instances --region=us-east-1 --filters "Name=tag:Project,Values=VMedix" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,Tags[?Key=='Env'].Value|[0],Tags[?Key=='Cluster'].Value|[0],State.Name]" --output table
-aws s3 sync --profile ptu s3://firefall-stabilization-build-1298-publictest/ /data/1298-download
 base64 /dev/urandom|head -c 128; echo
 base64 /dev/urandom|tr -dc A-Za-z0-9|head -c 29; echo
 build=XXX;type=NNN; for fte in `ls *.$type`; do echo $fte; openssl enc -e -in $fte -out $fte.r5e -pass file:/home/praco/repos/client_certificates/builds/$build/publictest-aes-pass.bin -aes-256-cbc; done
@@ -190,7 +187,7 @@ ssh-copy-id [$USER@]$HOSTNAME
 ssh-keygen -R $hostname		# remove host entries from known_hosts
 ssh-keygen -p -f $key_file	# add/change passphrase
 ssh-keygen -t rsa		# generate RSA key-pair
-ssh-keygen -y -f PRIVATE_KEY | pbcopy
+ssh-keygen -y -f PRIVATE_KEY | pbcopy  # generate public from private key
 stacker build -i -r REGION ENV_FILE YAML_FILE
 stacker destroy -f -r REGION ENV_FILE YAML_FILE
 stty -a < /dev/ttyaa05
