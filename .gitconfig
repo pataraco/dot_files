@@ -1,50 +1,65 @@
 [color]
 	ui = auto
 [alias]
-	b = branch
-	d = diff
+	a = "config --get-regexp '^alias\\.'"
+	as = "!git config -l | grep ^alias\\. | cut -c 7- | sort"
+	b = branch  # show branch info
+	ba = branch -a
+	bm = branch --merged
+	bn = branch --no-merged
+	bv = branch -v
+	ca = commit --amend
 	cam = commit -am
-	co = checkout
-	cob = checkout -b
-	cfb = !git checkout master && git fetch -p origin master && git merge origin/master && git checkout -b
+	caa = commit -a --amend
+	# cfb = create feature branch
+	cfb = !git checkout master && \
+		git fetch -p origin master && \
+		git merge origin/master && \
+		git checkout -b
+	# fm: fetch/merge master; do this instead of `git pull`
+	fmm = !git checkout master && git fetch -p origin && git merge origin/master
+	# git push origin the branch you're on
+	po = !git push origin $(git symbolic-ref HEAD|cut -d'/' -f3)
+
 	#cm = !git add -A && git commit -m
 	cm = commit -m
+	co = checkout
+	cob = checkout -b
+	d = diff
 	dc = diff --cached
 	dt = difftool
-	ec = config --global -e
-        up = !git pull --rebase --prune $@ && git submodule update --init --recursive
+	egc = config --global -e
+	elc = config --local -e
+	esc = config --system -e
+	mt = mergetool
 	# temporarily save work
 	save = !git add -A && git commit -m 'SAVEPOINT'
 	wip = !git commit -am 'WIP'
 	# continue work
 	undo = reset HEAD~1 --mixed
-	amend = commit -a --amend
 	# commit and blow away changes
 	wipe = !git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
 	# clean up merged branches
 	bclean = "!f() { git branch --merged ${1-master} | grep -v " ${1-master}$" | xargs -r git branch -d; }; f"
-	bdone = "!f() { git checkout ${1-master} && git up && git bclean ${1-master}; }; f"
 	# log stuff
-	fl = log -u # file log
-	fm = !git fetch -p origin && git merge origin/master # do this instead of `git pull`
+	la = log --oneline --decorate --all
+	lag = log --oneline --decorate --all --graph
 	ld = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=relative
 	lds = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=short
 	le = log --oneline --decorate
-	#lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
+	# lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
 	lg = log --graph --pretty=format:'%C(bold)%Cred%h%C(yellow)%d%Creset%C(bold) %s %Cgreen(%cr) %C(blue)<%cn>' --abbrev-commit --date=relative
 	lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative --all
-	#ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
+	# ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
 	ll = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>%C(cyan)' --numstat --abbrev-commit --date=relative
 	lla = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>%C(cyan)' --numstat --all --abbrev-commit --date=relative
 	lnc = log --pretty=format:"%h\\ %s\\ [%cn]"
-	#ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
+	lp = log -p # show patch/updates
+	# ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
 	ls = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
 	lsa = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>' --all --abbrev-commit --date=relative
-	lag = log --oneline --decorate --all --graph
-	la = log --oneline --decorate --all
-	po = !git push origin $(git symbolic-ref HEAD|cut -d'/' -f3)
+
 	# misc stuff
-	dl = "!git ll -1"
 	dch = diff --cached HEAD^
 	dr  = "!f() { git diff "$1"^.."$1"; }; f"
 	lc  = "!f() { git ll "$1"^.."$1"; }; f"
@@ -53,11 +68,13 @@
 	grep = grep -Ii
 	gr = grep -Ii
 	gra = "!f() { A=$(pwd) && TOPLEVEL=$(git rev-parse --show-toplevel) && cd $TOPLEVEL && git grep --full-name -In $1 | xargs -I{} echo $TOPLEVEL/{} && cd $A; }; f"
-	a = config --get-regexp '^alias\\.'
-	as = "!git config -l | grep ^alias\\. | cut -c 7- | sort"
 	done = "!f() { git branch | grep "$1" | cut -c 3- | grep -v done | xargs -I{} git branch -m {} done-{}; }; f"
 	s = status
+	ss = status -s
 	so = show --oneline -s
+	# not sure about "up"
+	# up = !git pull --rebase --prune $@ && git submodule update --init --recursive
+	# bdone = "!f() { git checkout ${1-master} && git up && git bclean ${1-master}; }; f"
 [core]
 	excludesfile = /home/praco/.gitignore
 [user]
@@ -80,3 +97,23 @@
 [credential]
 	helper = !aws codecommit credential-helper $@
 	UseHttpPath = true
+[diff]
+	tool = vimdiff
+	# tool = p4merge
+[difftool]
+	prompt = false
+[difftool "vimdiff"]
+[difftool "p4merge"]
+	cmd = /Applications/p4merge.app/Contents/Resources/launchp4merge $LOCAL $REMOTE
+[merge]
+	tool = vimdiff
+	# tool = p4merge
+[mergetool]
+	prompt = false
+	keepBackup = false
+	keepTemporaries = false
+	trustExitCode = false
+[mergetool "p4merge"]
+	cmd = /Applications/p4merge.app/Contents/Resources/launchp4merge $PWD/$BASE $PWD/$LOCAL $PWD/$REMOTE $PWD/$MERGED
+[mergetool "vimdiff"]
+	conflictstyle = diff3
