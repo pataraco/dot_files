@@ -71,9 +71,9 @@ map <C-k> <C-W>k
 " move to right pane
 map <C-l> <C-W>l
 " preserve line: copy line & comment it out
-map <C-c> yypkI#j
+map <C-c> yypkI# jB
 " comment out the current line and move down 1
-map <C-x> I#j
+map <C-x> I# j
 " comment out begining of current line and move down 1
 map <C-n> 0i# j
 " for vimdiff (vim -d) - set following 2 mappings to jump to prev/next diff
@@ -124,6 +124,8 @@ nnoremap <silent> <Leader>p "+p<CR>
 nnoremap <silent> <Leader>ac gUiw<CR>
 " change word to all lowercase
 nnoremap <silent> <Leader>al guiw<CR>
+" redraw the screen
+nnoremap <silent> <Leader>r :redraw!<CR>
 " source (re-load) .vimrc
 nnoremap <silent> <Leader>sv :source $MYVIMRC<CR>
 " fold current block
