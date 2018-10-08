@@ -10,10 +10,9 @@ aws autoscaling update-auto-scaling-group --auto-scaling-group-name ASG_NAME --m
 aws cloudformation create-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE --disable-rollback --notification-arns NOTIFICATION_ARN --tags Key=Name,Value=CF_STACK_NAME
 aws cloudformation delete-stack --stack-name CF_STACK_NAME
 aws cloudformation describe-stacks --stack-name CF_STACK_NAME
+aws cloudformation get-template --stack-name STACK_NAME | jq -r .TemplateBody
 aws cloudformation update-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE
 aws cloudformation wait stack-create-complete --stack-name CF_STACK_NAME
-aws cloudformation wait stack-delete-complete --stack-name CF_STACK_NAME
-aws cloudformation wait stack-update-complete --stack-name CF_STACK_NAME
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
 aws codecommit list-repositories --region REGION
 aws deploy create-application --application-name APP_NAME
@@ -33,6 +32,7 @@ aws ec2 create-tags --region REGION --resources INST_ID --tags Key=KEY,Value=VAL
 aws ec2 delete-key-pair --key-name KEY_PAIR_NAME
 aws ec2 describe-addresses --output table
 aws ec2 describe-availability-zones
+aws ec2 describe-images --owners amazon --filters "Name=name,Values=*2012*English*SQL*2012*_Standard*" --query 'sort_by(Images, &CreationDate)[].[Name, CreationDate, ImageId]' --output table
 aws ec2 describe-images --owners amazon --filters "Name=name,Values=Windows_Server-2012-R2_RTM-English-64Bit-Base*" --query 'sort_by(Images, &CreationDate)[].Name'
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID | jq .InstanceStatuses[].Events
@@ -48,6 +48,7 @@ aws ec2 describe-instances --region REGION --instance-ids INST_ID --query "Reser
 aws ec2 describe-key-pairs --key-name KEY_PAIR_NAME
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=*internet*,*grp-default*,*elk*,*elasticsearch*,*redis*,*mongodb*,*gunicorn*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=sec-grp*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
+aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[].[Tags[?Key=='Name'].Value|[0],RequesterVpcInfo.CidrBlock,AccepterVpcInfo.CidrBlock,VpcPeeringConnectionId,Status.Code]" --output table
 aws ec2 disassociate-address --public-ip PUBLIC_IP
 aws ec2 modify-instance-attribute --instance-id INST_ID --no-disable-api-termination
 aws ec2 modify-instance-attribute --region REGION --instance-id INST_ID --groups SG_UID
