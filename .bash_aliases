@@ -241,7 +241,8 @@ awsdami [OPTIONS]
   -ht HYPE_TYPE # Hypervisor Type (e.g. ovm, xen)
   -i  ID        # Image ID (RegEx)
   -it IMG_TYPE  # Image Type (e.g. machine, kernel, ramdisk)
-  -n  NAME      # Image Name (RegEx)
+  -nt NAME TAG  # Image's Name Tag (RegEx)
+  -n  NAME      # Image Name when created (RegEx)
   -o  OWNERS    # Owners (e.g. amazon, aws-marketplace, AWS ID. default: self)
   -p  PROJECT   # Project
   -r  REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
@@ -267,11 +268,12 @@ awsdami [OPTIONS]
   -h            # help (show this message)
 default display:
   Image Name | Image ID | State"
-   local _owners="self"
+   #local _owners="self"
+   local _owners=""
    local _region="$_DEFAULT_REGION"
    local _filters=""
    local _queries="Tags[?Key=='Name'].Value|[0]"
-   local _default_queries="Tags[?Key=='Name'].Value|[0],ImageId,State"
+   local _default_queries="Tags[?Key=='Name'].Value|[0],Name,ImageId,State"
    local _more_qs=""
    local _query="Images[]"
    while [ $# -gt 0 ]; do
@@ -280,8 +282,9 @@ default display:
          -ht) _filters="Name=hypervisor,Values=*$2* $_filters"                      ; shift 2;;
           -i) _filters="Name=image-id,Values=*$2* $_filters"                        ; shift 2;;
          -it) _filters="Name=image-type,Values=*$2* $_filters"                      ; shift 2;;
-          -n) _filters="Name=tag:Name,Values=*$2* $_filters"                        ; shift 2;;
-          -o) _owners="$2"                                                          ; shift 2;;
+         -nt) _filters="Name=tag:Name,Values=*$2* $_filters"                        ; shift 2;;
+          -n) _filters="Name=name,Values=*$2* $_filters"                            ; shift 2;;
+          -o) _owners="--owners $2"                                                 ; shift 2;;
           -p) _filters="Name=tag:Project,Values=*$2* $_filters"                     ; shift 2;;
           -s) _filters="Name=state,Values=*$2* $_filters"                           ; shift 2;;
           -v) _filters="Name=virtualization-type,Values=*$2* $_filters"             ; shift 2;;
@@ -311,10 +314,13 @@ default display:
    if [ "$_region" == "all" ]; then
       for _region in $_ALL_REGIONS; do
          #$_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         $_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         #$_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
    else
-      $_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      #echo "$_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query "$_query" --output table"
+      #$_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      $_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
 
