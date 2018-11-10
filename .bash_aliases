@@ -493,7 +493,7 @@ default display:
          $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
    else
-      #debug# echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+      echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
       $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
@@ -1504,6 +1504,15 @@ function mktb { # MISC
 function pag { # TOOL
    # run ps and grep for a pattern
    ps auxfw | grep $*
+}
+
+function pbc {
+   # enhance `pbcopy`
+   if [ -n $1 ]; then
+      cat $1 | pbcopy
+   else
+      eval "history -p \!\!" | pbcopy
+   fi
 }
 
 function peg { # TOOL

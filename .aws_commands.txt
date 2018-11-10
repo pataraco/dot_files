@@ -33,7 +33,6 @@ aws ec2 delete-key-pair --key-name KEY_PAIR_NAME
 aws ec2 describe-addresses --output table
 aws ec2 describe-availability-zones
 aws ec2 describe-images --owners amazon --filters "Name=name,Values=*2012*English*SQL*2012*_Standard*" --query 'sort_by(Images, &CreationDate)[].[Name, CreationDate, ImageId]' --output table
-aws ec2 describe-images --owners amazon --filters "Name=name,Values=Windows_Server-2012-R2_RTM-English-64Bit-Base*" --query 'sort_by(Images, &CreationDate)[].Name'
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID | jq .InstanceStatuses[].Events
 aws ec2 describe-instances --filters Name=tag:Name,Values=INST_NAME Name=instance-state-name,Values=running
