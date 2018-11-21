@@ -413,9 +413,7 @@ function awsdi {
    local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
    local _USAGE="usage: \
 awsdi [OPTIONS]
-  -e  ENVIRON  # filter results by this Environment (e.g. production, staging)
   -n  NAME     # filter results by this Instance Name
-  -pj PROJECT  # filter results by this Project
   -s  STATE    # filter results by this State (e.g. running, terminated, etc.)
   -t  KEY=VAL  # filter results by this tag (key=val)
   -m  MAX      # maximum number of items to display
@@ -426,16 +424,15 @@ awsdi [OPTIONS]
   +bt          # show Branch Tag
   +c           # show Cluster
   +cc          # show Charge Code
-  +e           # show Env (Environment)
   +i           # show Private IP
   +it          # show Instance Type
   +k           # show Key Pair name
   +lt          # show Launch Time
   +mr          # show Machine Role
   +p           # show Platform
-  +pj          # show Project
   +pi          # show Public IP
   +pt          # show Placment Tenancy
+  +pw PEM_FILE # show [Windows] Admin Passwords [PEM_FILE to decrypt]
   +s           # show State (e.g. running, stopped...)
   +si          # show Security Group Id(s)
   +sn          # show Security Group Name(s)
@@ -445,38 +442,37 @@ awsdi [OPTIONS]
   -h           # help (show this message)
 default display:
   Inst name | Private IP | Instance ID | State"
-   local _max_items=""
-   local _region="$_DEFAULT_REGION"
-   local _filters=""
-   local _queries="Tags[?Key=='Name'].Value|[0],InstanceId"
    local _default_queries="Tags[?Key=='Name'].Value|[0],InstanceId,PrivateIpAddress,State.Name"
+   local _filters=""
+   local _max_items=""
+   local _show_pws="false"   # show passwords
+   local _pem_file=""        # PEM file used to decrypt the passwords
    local _more_qs=""
+   local _queries="Tags[?Key=='Name'].Value|[0],InstanceId"
    local _query="Reservations[].Instances[]"
+   local _region="$_DEFAULT_REGION"
    while [ $# -gt 0 ]; do
       case $1 in
-          -e) _filters="Name=tag:Env,Values=*$2* $_filters"            ; shift 2;;
-          -n) _filters="Name=tag:Name,Values=*$2* $_filters"           ; shift 2;;
-         -pj) _filters="Name=tag:Project,Values=*$2* $_filters"        ; shift 2;;
-          -s) _filters="Name=instance-state-name,Values=*$2* $_filters"; shift 2;;
-          -t) _filters="Name=tag:${2%%=*},Values=*${2##*=}* $_filters" ; shift 2;;
-          -m) _max_items="--max-items $2"                              ; shift 2;;
-          -r) _region=$2                                               ; shift 2;;
+          -n) _filters="Name=tag:Name,Values=*$2* $_filters"               ; shift 2;;
+          -s) _filters="Name=instance-state-name,Values=*$2* $_filters"    ; shift 2;;
+          -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters" ; shift 2;;
+          -m) _max_items="--max-items $2"                                  ; shift 2;;
+          -r) _region=$2                                                   ; shift 2;;
           +a) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
          +an) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='aws:autoscaling:groupName'].Value|[0]"; shift;;
          +az) _more_qs="$_more_qs${_more_qs:+,}Placement.AvailabilityZone"                       ; shift;;
          +bt) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='BranchTag'].Value|[0]"                ; shift;;
           +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"                  ; shift;;
          +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"               ; shift;;
-          +e) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Env'].Value|[0]"                      ; shift;;
           +i) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
          +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
           +k) _more_qs="$_more_qs${_more_qs:+,}KeyName"                                          ; shift;;
          +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
          +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Role'].Value|[0]"                     ; shift;;
           +p) _more_qs="$_more_qs${_more_qs:+,}Platform"                                         ; shift;;
-         +pj) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"                  ; shift;;
          +pi) _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"                                  ; shift;;
          +pt) _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"                                ; shift;;
+         +pw) _show_pws="true"; _pem_file=$2                                                     ; shift 2;;
           +s) _more_qs="$_more_qs${_more_qs:+,}State.Name"                                       ; shift;;
          +si) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupId|join(', ',@)"            ; shift;;
          +sn) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupName|join(', ',@)"          ; shift;;
@@ -489,12 +485,50 @@ default display:
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
-      for _region in $_ALL_REGIONS; do
-         $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-      done
+      if [ "$_show_pws" == "true" ]; then
+         local _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
+         for _region in $_ALL_REGIONS; do
+            eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
+         done
+         local _instance_id
+         local _awsdi_line
+         local _pw
+         for _instance_id in $(awk '{print $3}' $_tmp_file); do
+            _awsdi_line=$(grep $_instance_id $_tmp_file)
+            _pw=$(aws ec2 get-password-data --instance-id $_instance_id --priv-launch-key $_pem_file | jq -r .PasswordData)
+            if [ -n "$_pw" ]; then
+               echo "$_awsdi_line | $_pw"
+            else
+               echo "$_awsdi_line | none"
+            fi
+         done
+         rm -f $_tmp_file
+      else
+         for _region in $_ALL_REGIONS; do
+            eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         done
+      fi
    else
-      echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
-      $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      if [ "$_show_pws" == "true" ]; then
+         local _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
+         eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
+         local _instance_id
+         local _awsdi_line
+         local _pw
+         for _instance_id in $(awk '{print $3}' $_tmp_file); do
+            _awsdi_line=$(grep $_instance_id $_tmp_file)
+            _pw=$(aws ec2 get-password-data --instance-id $_instance_id --priv-launch-key $_pem_file | jq -r .PasswordData)
+            if [ -n "$_pw" ]; then
+               echo "$_awsdi_line | $_pw"
+            else
+               echo "$_awsdi_line | none"
+            fi
+         done
+         rm -f $_tmp_file
+      else
+         # debug # echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+         eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      fi
    fi
 }
 
@@ -1664,9 +1698,9 @@ function sse {
       _server=$1
       shift
       if [ "$*" == "" ]; then
-         ssh $_user@${_server}
+         ssh -A $_user@${_server}
       else
-         ssh $_user@${_server} "$*"
+         ssh -A $_user@${_server} "$*"
       fi
    else
       echo "USAGE: $_this_function HOST [COMMAND(S)]"
@@ -1907,6 +1941,7 @@ alias a="alias | grep -v ^declare | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print
 #alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | \"Zone: \" + .Name + \"   ID: \" +  .Id' | sort | sed 's/\. //'"
 alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + \")\"' | sort | sed 's:\./hostedzone/: (:'"
 alias c="clear"
+alias cc="tsend clear"
 alias cdh="cd ~; cd"
 alias cd-ia="cd ~/repos/infrastructure-automation/exercises/auto_website"
 alias cd-t="cd ~/repos/troposphere"
