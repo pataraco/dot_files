@@ -1,4 +1,5 @@
 aws acm describe-certificate --region REGION --certificate-arn ARN
+aws acm import-certificate --certificate file://WWW.pem.crt --private-key file://WWW.pem.key --certificate-chain file://WWW.chain.pem.crt
 aws acm list-certificates --region REGION
 aws acm request-certificate --region REGION --domain-name HOST.DOMAIN --domain-validation-options DomainName=HOST.DOMAIN,ValidationDomain=DOMAIN
 aws acm resend-validation-email --region REGION --certificate-arn ARN --domain HOST.DOMAIN --validation-domain DOMAIN
