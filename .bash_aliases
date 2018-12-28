@@ -230,9 +230,60 @@ function awsci {
    fi
 }
 
+function awsda {
+   # some 'aws ec2 describe-addresses' hacks
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+   local _AWS_EC2_DA_CMD="aws ec2 describe-addresses"
+   local _USAGE="usage: \
+awsda [OPTIONS]
+  -n  NAME     # filter results by this Address Name
+  -t  KEY=VAL  # filter results by this tag (key=val)
+  -m  MAX      # maximum number of items to display
+  -r  REGION   # Region to query (default: $_DEFAULT_REGION, 'all' for all)
+          +i) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
+  +alid        # show Allocation ID
+  +asid        # show Association ID
+  +niid        # show Network Interface ID
+  +t KEY       # show tag (KEY)
+  -h           # help (show this message)
+default display:
+  Addy name | EIP | Instance | Priv IP"
+   local _default_queries="Tags[?Key=='Name'].Value|[0],PublicIp,InstanceId,PrivateIpAddress"
+   local _filters=""
+   local _max_items=""
+   local _pem_file=""        # PEM file used to decrypt the passwords
+   local _more_qs=""
+   local _queries="Tags[?Key=='Name'].Value|[0],PublicIp,InstanceId,PrivateIpAddress"
+   local _query="Addresses[]"
+   local _region="$_DEFAULT_REGION"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -n) _filters="Name=tag:Name,Values=*$2* $_filters"               ; shift 2;;
+          -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters" ; shift 2;;
+          -m) _max_items="--max-items $2"                                  ; shift 2;;
+          -r) _region=$2                                                   ; shift 2;;
+          +alid) _more_qs="$_more_qs${_more_qs:+,}AllocationId"                                 ; shift;;
+          +asid) _more_qs="$_more_qs${_more_qs:+,}AssociationId"                                 ; shift;;
+          +niid) _more_qs="$_more_qs${_more_qs:+,}NetworkInterfaceId"                                 ; shift;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                       ; shift 2;;
+        -h|*) echo "$_USAGE"; return;;
+      esac
+   done
+   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+      for _region in $_ALL_REGIONS; do
+         eval $_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeAddresses' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      done
+   else
+      # debug # echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+      eval $_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeAddresses' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+   fi
+}
+
 function awsdami {
    # some 'aws ec2 describe-images' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSEC2DAMI_CMD="aws ec2 describe-images"
    local _USAGE="usage: \
@@ -312,6 +363,7 @@ default display:
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          #$_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          #$_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
@@ -326,7 +378,6 @@ default display:
 
 function awsdasg {
    # some 'aws autoscaling describe-auto-scaling-groups' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSASDASG_CMD="aws autoscaling describe-auto-scaling-groups"
    local _USAGE="usage: \
@@ -390,6 +441,7 @@ default display:
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
             $_AWSASDASG_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
@@ -408,7 +460,6 @@ default display:
 
 function awsdi {
    # some 'aws ec2 describe-instances' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
    local _USAGE="usage: \
@@ -472,7 +523,7 @@ default display:
           +p) _more_qs="$_more_qs${_more_qs:+,}Platform"                                         ; shift;;
          +pi) _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"                                  ; shift;;
          +pt) _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"                                ; shift;;
-         +pw) _show_pws="true"; _pem_file=$2                                                     ; shift 2;;
+         +pw) _show_pws="true"; [ $# -lt 2 ]&&{ echo "missing PEM_FILE";return; }||_pem_file=$2  ; shift 2;;
           +s) _more_qs="$_more_qs${_more_qs:+,}State.Name"                                       ; shift;;
          +si) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupId|join(', ',@)"            ; shift;;
          +sn) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupName|join(', ',@)"          ; shift;;
@@ -485,7 +536,9 @@ default display:
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       if [ "$_show_pws" == "true" ]; then
+         [ ! -f "$_pem_file" ] && { echo "private key file not found: '$_pem_file'"; return; }
          local _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
          for _region in $_ALL_REGIONS; do
             eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
@@ -510,6 +563,7 @@ default display:
       fi
    else
       if [ "$_show_pws" == "true" ]; then
+         [ ! -f "$_pem_file" ] && { echo "private key file not found: '$_pem_file'"; return; }
          local _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
          eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
          local _instance_id
@@ -534,7 +588,6 @@ default display:
 
 function awsdis {
    # some 'aws ec2 describe-instance-status' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DIS_CMD="aws ec2 describe-instance-status"
    local _USAGE="usage: \
@@ -577,6 +630,7 @@ default display:
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          #$_AWS_EC2_DIS_CMD --region=$_region $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstanceStatus' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          $_AWS_EC2_DIS_CMD --region=$_region $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstanceStatus' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
@@ -588,7 +642,6 @@ default display:
 
 function awsdlb {
    # some 'aws elb describe-load-balancer' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSELBDLB_CMD="aws elb describe-load-balancers"
    local _USAGE="usage: \
@@ -632,6 +685,7 @@ default display:
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
             $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
@@ -650,7 +704,6 @@ default display:
 
 function awsdlc {
    # some 'aws autoscaling describe-launch-configurations' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSASDLC_CMD="aws autoscaling describe-launch-configurations"
    local _USAGE="usage: \
@@ -690,6 +743,7 @@ default display:
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
             $_AWSASDLC_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
@@ -708,7 +762,6 @@ default display:
 
 function awsdni {
    # some 'aws ec2 describe-network-interfaces' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWSEC2DNI_CMD="aws ec2 describe-network-interfaces"
    local _USAGE="usage: \
@@ -766,6 +819,7 @@ default display:
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          $_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$/|'"$_region"'/' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
@@ -776,7 +830,6 @@ default display:
 
 function awsdsg {
    # some 'aws ec2 describe-security-groups' hacks
-   local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DSG_CMD="aws ec2 describe-security-groups"
    local _USAGE="usage: \
@@ -832,6 +885,7 @@ default display:
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          #$_AWS_EC2_DSG_CMD --region=$_region $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          $_AWS_EC2_DSG_CMD --region=$_region $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
@@ -2050,7 +2104,7 @@ else
    alias which='(alias; declare -f) | /usr/bin/which'
 fi
 alias wgft='echo "$(history -p \!\!) | grep"; $(history -p \!\!) | grep'
-alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less'
+alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less -FrX'
 
 # -------------------- final touches --------------------
 
