@@ -116,6 +116,8 @@ nnoremap <silent> <Space> :nohlsearch<Bar>:echo<CR>
 nnoremap <silent> <Leader>w :match ExtraWhitespace /\s\+$\<Bar>\t/<CR>
 nnoremap <silent> <Leader>W /\s\+$\<Bar>\t/<CR>
 nnoremap <silent> <Leader>m :match<CR>
+" highlight/search git merge conflicts
+nnoremap <silent> <Leader>mc /<<<<<<<\<Bar>>>>>>>>\<Bar>=======<CR>
 " highlight lines longer than 79 chars
 nnoremap <silent> <Leader>L /\%>79v.\+<CR>
 " paste from system clipbaard
