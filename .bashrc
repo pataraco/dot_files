@@ -153,4 +153,7 @@ fi
 ## export PYENV_ROOT=$HOME/repos/pyenv
 ## [[ ! $PATH =~ $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
 
+# this was generated from fuzzy find ($brew install fzf && /usr/local/opt/fzf/install)
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
 [ -n "$PS1" ] && echo -n ".bashrc (end). "
