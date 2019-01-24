@@ -51,6 +51,8 @@ aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values
 aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[].[Tags[?Key=='Name'].Value|[0],RequesterVpcInfo.CidrBlock,AccepterVpcInfo.CidrBlock,VpcPeeringConnectionId,Status.Code]" --output table
 aws ec2 disassociate-address --public-ip PUBLIC_IP
 aws ec2 get-password-data --instance-id INST_ID --priv-launch-key PEM_FILE
+aws ec2 import-key-pair [--region REGION] --key-name KEY_PAIR_NAME --public-key-material file://path/to/FILE.pub
+aws ec2 delete-key-pair [--region REGION] --key-name KEY_PAIR_NAME
 aws ec2 modify-instance-attribute --instance-id INST_ID --no-disable-api-termination
 aws ec2 modify-instance-attribute --region REGION --instance-id INST_ID --groups SG_UID
 aws ec2 release-address --public-ip PUBLIC_IP

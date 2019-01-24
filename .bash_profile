@@ -17,6 +17,7 @@
 if [ -d "$HOME/bin" ] ; then
     [[ ! $PATH =~ $HOME/bin ]] && export PATH="$HOME/bin:$PATH"
 fi
+
 # add arcanist to PATH
 arcanist_repo=$HOME/repos/phacility/arcanist
 if [ -d $arcanist_repo ]; then
@@ -24,6 +25,7 @@ if [ -d $arcanist_repo ]; then
    arcanist_bin=$ARC_ROOT/bin
    [[ -d $arcanist_bin && ! $PATH =~ ^$arcanist_bin:|:$arcanist_bin:|:$arcanist_bin$ ]] && export PATH="$PATH:$arcanist_bin"
 fi
+
 # add pyenv to PATH
 pyenv_repo=$HOME/repos/pyenv
 if [ -d $pyenv_repo ]; then
@@ -31,6 +33,7 @@ if [ -d $pyenv_repo ]; then
    pyenv_bin=$PYENV_ROOT/bin
    [[ -d $pyenv_bin && ! $PATH =~ ^$pyenv_bin:|:$pyenv_bin:|:$pyenv_bin$ ]] && export PATH="$pyenv_bin:$PATH"
 fi
+
 # add Python 2.7 to PATH (for `stacker`)
 KERNEL=$(uname)
 if [[ ${KERNEL} == "Darwin" ]]; then
@@ -119,5 +122,7 @@ fi
 
 # add `pyenv init` to shell to enable shims and autcompletion
 [ $(command -v pyenv) ] && eval "$(pyenv init -)"
+# add `pyenv virtualenv-init` to shell to enable shims and autcompletion
+[ $(command -v pyenv) ] && eval "$(pyenv virtualenv-init -)"
 
 [ -n "$PS1" ] && echo -n ".bash_profile (end). "

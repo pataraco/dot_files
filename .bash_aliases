@@ -3,7 +3,6 @@
 # -------------------- initial directives --------------------
 
 # if interactive shell - display message
-#[ -n "$PS1" ] && echo "sourcing: .bash_aliases"
 [ -n "$PS1" ] && echo -n ".bash_aliases (begin)... "
 
 # update change the title bar of the terminal
@@ -318,12 +317,12 @@ awsdami [OPTIONS]
   +vt           # show Volume Type
   -h            # help (show this message)
 default display:
-  Image Name | Image ID | State"
+  Name Tag | Image Name | Image ID | State | Region"
    #local _owners="self"
    local _owners=""
    local _region="$_DEFAULT_REGION"
    local _filters=""
-   local _queries="Tags[?Key=='Name'].Value|[0]"
+   local _queries="Tags[?Key=='Name'].Value|[0],Name"
    local _default_queries="Tags[?Key=='Name'].Value|[0],Name,ImageId,State"
    local _more_qs=""
    local _query="Images[]"
@@ -475,7 +474,7 @@ awsdi [OPTIONS]
   +bt          # show Branch Tag
   +c           # show Cluster
   +cc          # show Charge Code
-  +i           # show Private IP
+  +ip          # show Private IP
   +it          # show Instance Type
   +k           # show Key Pair name
   +lt          # show Launch Time
@@ -515,7 +514,7 @@ default display:
          +bt) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='BranchTag'].Value|[0]"                ; shift;;
           +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"                  ; shift;;
          +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"               ; shift;;
-          +i) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
+         +ip) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
          +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
           +k) _more_qs="$_more_qs${_more_qs:+,}KeyName"                                          ; shift;;
          +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
@@ -948,24 +947,22 @@ function bash_prompt {
       if [ -z "$CHEF_VERSION" ]; then
          export CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
       fi
-      PS_CHF="${PYLW}C$CHEF_VERSION$PNRM"
-      (( _versions_len += ${#CHEF_VERSION} + 1 ))
+      PS_CHF="${PYLW}C$CHEF_VERSION$PNRM|"
+      (( _versions_len += ${#CHEF_VERSION} + 2 ))
    fi
    if [ $PS_SHOW_AV -eq 1 ]; then
    # get Ansible version
       if [ -z "$ANSIBLE_VERSION" ]; then
          export ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
       fi
-      PS_ANS="${PCYN}A$ANSIBLE_VERSION$PNRM"
-      (( _versions_len += ${#ANSIBLE_VERSION} + 1 ))
+      PS_ANS="${PCYN}A$ANSIBLE_VERSION$PNRM|"
+      (( _versions_len += ${#ANSIBLE_VERSION} + 2 ))
    fi
    if [ $PS_SHOW_PV -eq 1 ]; then
       # get Python version
-      if [ -z "$PYTHON_VERSION" ]; then
-         export PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
-      fi
-      PS_PY="${PMAG}P$PYTHON_VERSION$PNRM"
-      (( _versions_len += ${#PYTHON_VERSION} + 1 ))
+      export PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
+      PS_PY="${PMAG}P$PYTHON_VERSION$PNRM|"
+      (( _versions_len += ${#PYTHON_VERSION} + 2 ))
    fi
    # get git info
    git branch &> /dev/null
@@ -1031,39 +1028,36 @@ function bash_prompt {
       PS_PATH="$PGRN${_ps_path_chopped}$PNRM"
    fi
    PS_WHO="$PBLU\u@\h$PNRM"
-   # different themes
-   ##PS1="$PS_PROJ $PS_GIT $PS_ANS $PS_PY $PGRN\w$PBLU\n\u@\h$PNRM|$PS_COL$ $PNRM"
-   ##PS1="$PS_GIT $PS_ANS $PS_PY $PGRN\w$PBLU\n$PS_PROJ\u@\h$PNRM|$PS_COL$ $PNRM"
-   ##PS1="$PGRN\w$PNRM [$PS_GIT]  $PS_ANS  $PS_PY\n$PS_PROJ$PBLU\u@\h$PNRM|$PS_COL$ $PNRM"
-   ##PS1="\n$PS_PATH $PS_ANS $PS_PY\n$PS_PROJ$PS_WHO|$PS_COL$ $PNRM"
-   ##PS1="\n$PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO|$PS_COL$ $PNRM"
-   #PS1="\n$PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO[\j]$PS_COL$ $PNRM"
    if [ "$COMPANY" == "onica" -a -n "$ONICA_SSO_ACCOUNT_KEY" -a -n "$ONICA_SSO_EXPIRES_TS" ]; then
       local _now_ts=$(date +%s)
       if [ $ONICA_SSO_EXPIRES_TS -gt $_now_ts ]; then
+         # set the window title
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007"
          if [ $(($ONICA_SSO_EXPIRES_TS - $_now_ts)) -lt 300 ]; then
-            PS_PROJ="[$PYLW$ONICA_SSO_ACCOUNT_KEY$PNRM]"
+            PS_AWS="[$PYLW$ONICA_SSO_ACCOUNT_KEY$PNRM]"
             PS_COL=$PYLW
          else
-            PS_PROJ="[$PRED$ONICA_SSO_ACCOUNT_KEY$PNRM]"
+            PS_AWS="[$PRED$ONICA_SSO_ACCOUNT_KEY$PNRM]"
             PS_COL=$PRED
          fi
       else
+         # set the window title
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY](EXPIRED)\007"
-         PS_PROJ="[$PGRY$ONICA_SSO_ACCOUNT_KEY$PNRM]"
+         PS_AWS="[$PGRY$ONICA_SSO_ACCOUNT_KEY$PNRM]"
          PS_COL=$PGRY
       fi
    else
+      # set the window title
       echo -ne "\033]0;$(whoami)@$(hostname)\007"
    fi
-   #PS1="\n$PS_CHF $PS_ANS $PS_PY $PS_PATH\n$PS_PROJ$PS_WHO[\j]$PS_COL$ $PNRM"
-   #PS1="\n$PS_CHF$PS_ANS$PS_PY $PS_PATH\n$PS_PROJ$PS_WHO[\j]$PS_COL$ $PNRM"
+   # check for pyenv virtual environment
+   [ -n "$VIRTUAL_ENV" ] && PS_PROJ="($PCYN$(basename $VIRTUAL_ENV)$PNRM)" || PS_PROJ=""
+   # check for jobs running in the background
    if [ $(jobs | wc -l | tr -d ' ') -gt 1 ]; then
       # using "1" because the `git branch` above runs in the background
-      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_WHO(\j)$PS_COL$ $PNRM"
+      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO(\j)$PS_COL$ $PNRM"
    else
-      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_WHO$PS_COL$ $PNRM"
+      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO$PS_COL$ $PNRM"
    fi
 }
 
@@ -1687,22 +1681,22 @@ function sae { # TOOL
       if [ "$COLOR_PROMPT" == "yes" ]; then
          case $_environment in
             dev)	# cyan prompt
-               PS_COL="$PCYN"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+               PS_COL="$PCYN"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
             test)	# magenta prompt
-               PS_COL="$PMAG"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+               PS_COL="$PMAG"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
             mixed)	# yellow prompt
-               PS_COL="$PYLW"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+               PS_COL="$PYLW"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
             prod)	# red prompt
-               PS_COL="$PRED"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+               PS_COL="$PRED"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
             mine)	# green prompt
-               PS_COL="$PGRN"; PS_PROJ="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+               PS_COL="$PGRN"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
             *)		# cyan prompt
-               PS_COL="$PCYN"; PS_PROJ="$PNRM" ;;
+               PS_COL="$PCYN"; PS_AWS="$PNRM" ;;
          esac
       fi
    else
       echo -n "--- AWS Environment "
-      [ -n "$AWS_DEFAULT_PROFILE" ] && echo "Settings ---" || echo "(NOT set) ---"
+      [ -n "$AWS_DEFAULT_PROFILE" -o \( -n "$AWS_ACCESS_KEY_ID" -a -n "$AWS_SECRET_ACCESS_KEY" \) ] && echo "Settings ---" || echo "(NOT set) ---"
       echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
       echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
       # obfuscate the KEYs with some *'s
@@ -1855,9 +1849,11 @@ function vin {
             ldap) actual_note_file=LDAP_Notes.txt           ;;
            linux) actual_note_file=Linux_Notes.txt          ;;
         logstash) actual_note_file=Logstash_Notes.txt       ;;
+              ps) actual_note_file=PowerShell_Notes.txt     ;;
           python) actual_note_file=Python_Notes.txt         ;;
            redis) actual_note_file=Redis_Notes.txt          ;;
              sql) actual_note_file=SQL_Notes.txt            ;;
+              tf) actual_note_file=Terraform_Notes.txt      ;;
                *) echo "unknown alias - try again"; return 2;;
       esac
       eval vim $REPO_DIR/$NOTES_DIR/$actual_note_file

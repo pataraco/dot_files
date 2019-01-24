@@ -84,6 +84,7 @@ echo passwd | sha512sum > mikey.bin
 egrep -q '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
 find -exec md5sum {} \; > .md5sum.checklist
 find . -mtime +3 -exec rm {} \;		# find stuff older than 3 days
+find . -name *.ext1 -exec bash -c 'mv ${1%.ext1}{.ext1,.ext2}' - {} \;
 find / -name *.crt -ls -exec openssl x509 -noout -dates -in {} \;
 for file in `grep filename *.yaml|awk '{print $NF}'`; do ls $file; done
 for file in `grep filename *|awk '{print $NF}'`; do echo -n "$file: "; aws s3 cp s3://web-builds-devtest/$file .; done
