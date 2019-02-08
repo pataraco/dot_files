@@ -967,8 +967,10 @@ function bash_prompt {
    # get git info
    git branch &> /dev/null
    if [ $? -eq 0 ]; then   # in a git repo
-      #local _git_branch=$(git branch 2>/dev/null|grep '^*'|colrm 1 2)
-      local _git_branch=$(git branch 2>/dev/null|grep '^*'|awk '{print $NF}')
+      # local _git_branch=$(git branch 2>/dev/null|grep '^*'|awk '{print $NF}')
+      # local _git_branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)
+      # local _git_branch=$(git name-rev --name-only HEAD 2>/dev/null)
+      local _git_branch=$(git rev-parse --quiet --abbrev-ref HEAD 2>/dev/null)
       local _git_branch_len=$(( ${#_git_branch} + 1 ))
       local _git_status=$(git status --porcelain 2> /dev/null)
       [[ $_git_status =~ ($'\n'|^).M ]] && local _git_has_mods=true
