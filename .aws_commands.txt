@@ -54,6 +54,7 @@ aws ec2 get-password-data --instance-id INST_ID --priv-launch-key PEM_FILE
 aws ec2 import-key-pair [--region REGION] --key-name KEY_PAIR_NAME --public-key-material file://path/to/FILE.pub
 aws ec2 delete-key-pair [--region REGION] --key-name KEY_PAIR_NAME
 aws ec2 modify-instance-attribute --instance-id INST_ID --no-disable-api-termination
+aws ec2 modify-instance-attribute --instance-id INST_ID --disable-api-termination
 aws ec2 modify-instance-attribute --region REGION --instance-id INST_ID --groups SG_UID
 aws ec2 release-address --public-ip PUBLIC_IP
 aws ec2 run-instances --image-id AMI --key-name KEY_PAIR_NAME --user-data file://PATH_TO/USER_DATA_FILE --count COUNT --instance-type TYPE --iam-instance-profile Name=IAM_PROFILE --security-groups SG1 [SG2...]
