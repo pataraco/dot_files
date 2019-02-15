@@ -2,6 +2,16 @@
 
 " my vimrc
 " --------
+"  Steps to use neovim (nvim)
+"  1. brew install neovim
+"  3. mkdir ~/.vim
+"  3. ln -l ~/.vimrc ~/.vim/init.vim
+"  4. curl -fLo ~/.local/share/nvim/site/autoload/plug.vim --create-dirs \
+"       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+"  5. vim: PlugInstall
+"  6. Color scheme downloads
+"       ~/.config/nvim/colors
+"       https://github.com/znake/znake-vim/blob/master/colors/znake.vim
 
 " TODO {{{
 " - add "long-line" automatic fixing
