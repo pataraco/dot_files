@@ -1360,7 +1360,7 @@ function elbinsts {
 function fdgr {
    # find dirty git repos
    local _orig_wd=$(pwd)
-   local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -exec dirname {} \;)"
+   local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -and ! -name Library -exec dirname {} \;)"
    local _repo
    local _git_status
    for _repo in $_REPOS_TO_CHECK; do
