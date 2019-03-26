@@ -480,6 +480,7 @@ awsdi [OPTIONS]
   +k           # show Key Pair name
   +lt          # show Launch Time
   +mr          # show Machine Role
+  +np          # show Network Interface(s) Private IPs
   +p           # show Platform
   +pi          # show Public IP
   +pt          # show Placment Tenancy
@@ -521,6 +522,7 @@ default display:
           +k) _more_qs="$_more_qs${_more_qs:+,}KeyName"                                          ; shift;;
          +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
          +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Role'].Value|[0]"                     ; shift;;
+         +np) _more_qs="$_more_qs${_more_qs:+,}NetworkInterfaces[].PrivateIpAddresses[].PrivateIpAddress|join(', ',@)" ; shift;;
           +p) _more_qs="$_more_qs${_more_qs:+,}Platform"                                         ; shift;;
          +pi) _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"                                  ; shift;;
          +pt) _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"                                ; shift;;
