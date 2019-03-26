@@ -1,4 +1,3 @@
-aws route53 get-hosted-zone --id $HOSTED_ZONE_ID
 aws acm describe-certificate --region REGION --certificate-arn ARN
 aws acm import-certificate --certificate file://WWW.pem.crt --private-key file://WWW.pem.key --certificate-chain file://WWW.chain.pem.crt
 aws acm list-certificates --region REGION
@@ -25,6 +24,8 @@ aws deploy delete-application --application-name APP_NAME
 aws deploy get-deployment --deployment-id ID
 aws deploy list-deployemtns --application-name APP_NAME
 aws deploy push --application-name APP_NAME --s3-location s3://BUCKET_NAME/PATH_TO/APP.zip --ignore-hidden-files
+aws ds describe-domain-controllers --directory-id $DIR_ID
+aws dynamodb list-tables
 aws ec2 allocate-address
 aws ec2 associate-address --instance-id INST_ID
 aws ec2 authorize-security-group-ingress --group-name SG_NAME --from-port FROM_PORT --to-port TO_PORT --ip-protocol tcp --cidr-ip CIDR
@@ -90,7 +91,10 @@ aws iam put-role-policy --role-name ROLE_NAME --policy-name POLICY_NAME --policy
 aws iam update-login-profile --user-name USERNAME --password PASSWORD
 aws lambda update-function-configuration --function-name FUNCTION_NAME --timeout N --memory-size M
 aws route53 create-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_ID --vpc VPCRegion=$REGION,VPCId=$VPC_ID
+aws route53 delete-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_ID --vpc VPCRegion=$REGION,VPCId=$VPC_ID
+aws route53 get-hosted-zone --id $HOSTED_ZONE_ID
 aws route53 list-vpc-association-authorizations --hosted-zone-id $HOSTED_ZONE_ID
+aws s3 cp $FILE s3://$BUCKET/$KEY --sse aws:kms --sse-kms-key-id $KMS_ARN
 aws s3 mb s3://BUCKET_NAME
 aws s3 rb s3://BUCKET_NAME --force # remove bucket and all of it's contents
 aws s3 sync --profile AWS_PROFILE --exclude \* --include DIR_NAME\* s3://BUCKET_SRC/path/to/files/ s3://BUCKET_DEST/path/to/files/
@@ -105,6 +109,8 @@ aws sns delete-topic --topic-arn NOTIFICATION_ARN
 aws sns list-subscriptions
 aws sns list-topics | grep "TOPIC_NAME" | cut -d '"' -f4 # get SNS notification ARN
 aws sns subscribe --topic-arn ARN --protocol email --notification-endpoint END_POINT
+aws ssm delete-association --association-id $ASSOC_ID
+aws ssm delete-association --instance-id $INST_ID
 aws ssm get-parameter --name /aws/service/ami-windows-latest/Windows_Server-2012-R2_RTM-English-64Bit-Base
 aws ssm get-parameter --name /aws/service/ecs/optimized-ami/amazon-linux/recommended
 aws ssm put-parameter --name KEY_NAME --value PASSWD --type SecureString --overwrite
