@@ -468,6 +468,7 @@ awsdi [OPTIONS]
   -t  KEY=VAL  # filter results by this tag (key=val)
   -m  MAX      # maximum number of items to display
   -r  REGION   # Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  -p  PROFILE  # AWS profile (--profile option) to use
   +a           # show AMI (ImageId)
   +an          # show ASG Name
   +az          # show Availability Zone
@@ -507,6 +508,7 @@ default display:
           -s) _filters="Name=instance-state-name,Values=*$2* $_filters"    ; shift 2;;
           -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters" ; shift 2;;
           -m) _max_items="--max-items $2"                                  ; shift 2;;
+          -p) local _profile="--profile=$2"                                ; shift 2;;
           -r) _region=$2                                                   ; shift 2;;
           +a) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
          +an) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='aws:autoscaling:groupName'].Value|[0]"; shift;;
@@ -540,7 +542,7 @@ default display:
          [ ! -f "$_pem_file" ] && { echo "private key file not found: '$_pem_file'"; return; }
          local _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
          for _region in $_ALL_REGIONS; do
-            eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
+            eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
          done
          local _instance_id
          local _awsdi_line
@@ -557,14 +559,14 @@ default display:
          rm -f $_tmp_file
       else
          for _region in $_ALL_REGIONS; do
-            eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          done
       fi
    else
       if [ "$_show_pws" == "true" ]; then
          [ ! -f "$_pem_file" ] && { echo "private key file not found: '$_pem_file'"; return; }
          local _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
-         eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
+         eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
          local _instance_id
          local _awsdi_line
          local _pw
@@ -580,7 +582,7 @@ default display:
          rm -f $_tmp_file
       else
          # debug # echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
-         eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
    fi
 }
@@ -891,6 +893,79 @@ default display:
       done
    else
       $_AWS_EC2_DSG_CMD --region=$_region $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+   fi
+}
+
+function awsdv {
+   # some 'aws ec2 describe-volumes' hacks
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+   local _AWS_EC2_DV_CMD="aws ec2 describe-volumes"
+   local _USAGE="usage: \
+awsdi [OPTIONS]
+  -n  NAME     # filter results by this Volume Name
+  -s  STATE    # filter by State (e.g. creating, avail, in-use, del, error etc.)
+  -t  KEY=VAL  # filter results by this tag (key=val)
+  -m  MAX      # maximum number of items to display
+  -p  PROFILE  # AWS profile (--profile option) to use
+  -r  REGION   # Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +a           # show (mostly all) Attachment Information
+  +ad          # show Attachment Device Name
+  +ai          # show Attachment Instance ID
+  +at          # show Attachment Delete on Termination setting
+  +ct          # show Creation Time
+  +e           # show if Encrypted (true|false)
+  +i           # show IOPs
+  +k           # show KMS Key ID (ARN)
+  +s           # show State
+  +vs          # show Size
+  +vt          # show Volume Type
+  +ss          # show Snapshot ID
+  +t KEY       # show tag (KEY)
+  -h           # help (show this message)
+default display:
+  Vol name | Volume ID | Instance ID | Device | Size"
+   local _default_queries="Tags[?Key=='Name'].Value|[0],VolumeId,Attachments[].InstanceId|[0],Attachments[].Device|[0],Size"
+   local _filters=""
+   local _max_items=""
+   local _pem_file=""        # PEM file used to decrypt the passwords
+   local _more_qs=""
+   local _queries="Tags[?Key=='Name'].Value|[0],VolumeId"
+   local _query="Volumes[]"
+   local _region="$_DEFAULT_REGION"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -m) _max_items="--max-items $2"                                             ; shift 2;;
+          -n) _filters="Name=tag:Name,Values=*$2* $_filters"                          ; shift 2;;
+          -p) local _profile="--profile=$2"                                           ; shift 2;;
+          -r) _region=$2                                                              ; shift 2;;
+          -s) _filters="Name=status,Values=*$2* $_filters"               ; shift 2;;
+          -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters"            ; shift 2;;
+          +a) _more_qs="$_more_qs${_more_qs:+,}Attachments[].InstanceId|[0],Attachments[].Device|[0],Attachments[].DeleteOnTermination|[0]"                                                       ; shift;;
+         +ad) _more_qs="$_more_qs${_more_qs:+,}Attachments[].Device|[0]"              ; shift;;
+         +ai) _more_qs="$_more_qs${_more_qs:+,}Attachments[].InstanceId|[0]"          ; shift;;
+         +at) _more_qs="$_more_qs${_more_qs:+,}Attachments[].DeleteOnTermination|[0]" ; shift;;
+         +ct) _more_qs="$_more_qs${_more_qs:+,}CreateTime"                            ; shift;;
+          +e) _more_qs="$_more_qs${_more_qs:+,}Encrypted"                             ; shift;;
+          +i) _more_qs="$_more_qs${_more_qs:+,}Iops"                                  ; shift;;
+          +k) _more_qs="$_more_qs${_more_qs:+,}KmsKeyId"                              ; shift;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}State"                                 ; shift;;
+         +ss) _more_qs="$_more_qs${_more_qs:+,}SnapshotId"                            ; shift;;
+         +vs) _more_qs="$_more_qs${_more_qs:+,}Size"                                  ; shift;;
+         +vt) _more_qs="$_more_qs${_more_qs:+,}VolumeType"                            ; shift;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                       ; shift 2;;
+        -h|*) echo "$_USAGE"; return;;
+      esac
+   done
+   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+      for _region in $_ALL_REGIONS; do
+         eval $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeVolumes' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
+      done
+   else
+      # DEBUG # echo "$_AWS_EC2_DV_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+      eval $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeVolumes' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
    fi
 }
 
@@ -1648,7 +1723,7 @@ function sae { # TOOL
    # set AWS environment variables from ~/.aws/config file and profiles in it
    local _AWS_CFG=$HOME/.aws/config
    local _AWS_PROFILES=$(grep '^\[profile' $_AWS_CFG | awk '{print $2}' | tr ']\n' ' ')
-   local _VALID_ARGS=$(echo $_AWS_PROFILES unset | tr ' ' ':')
+   local _VALID_ARGS=$(echo "$_AWS_PROFILES unset" | tr ' ' ':')
    local _environment
    local _arg="$1"
    if [ -n "$_arg" ]; then
