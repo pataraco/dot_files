@@ -384,24 +384,18 @@ awsdasg [OPTIONS]
   -n NAME      # filter results by this Auto Scaling Group Name
   -m MAX       # maximum number of items to display
   -r REGION    # region to query (default: $_DEFAULT_REGION, 'all' for all)
-  +bt          # show Branch Tag
-  +c           # show Cluster
-  +cc          # show Charge Code
   +dc          # show Desired Capacity
-  +e           # show Env (Environment)
   +ht          # show Health Check Type
   +ii          # show Instance Id(s)
   +ih          # show Instance Health Status
   +lb          # show Load Balancers
   +lc          # show Launch Configuration Name
   +ls          # show Life Cycle State
-  +mr          # show Machine Role
   +ni          # show Number of Instances
   +ns          # show Min Size
   +xs          # show Max Size
-  +p           # show Project
   +sp          # show Suspended Processes
-  +v           # show VPC Name
+  +t KEY       # show tag (KEY)
   -h           # help (show this message)
 default display:
   ASG name | Launch Config Name | Instances | Desired | Min | Max | Region"
@@ -417,24 +411,18 @@ default display:
           -n) _reg_exp="$2"              ; shift 2;;
           -m) _max_items="--max-items $2"; shift 2;;
           -r) _region=$2                 ; shift 2;;
-         +bt) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='BranchTag'].Value|[0]"            ; shift;;
-          +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"              ; shift;;
-         +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"           ; shift;;
          +dc) _more_qs="$_more_qs${_more_qs:+,}DesiredCapacity"                              ; shift;;
-          +e) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Env'].Value|[0]"                  ; shift;;
          +ht) _more_qs="$_more_qs${_more_qs:+,}HealthCheckType"                              ; shift;;
          +ii) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', ',@)"          ; shift;;
          +ih) _more_qs="$_more_qs${_more_qs:+,}Instances[].HealthStatus|join(', ',@)"        ; shift;;
          +lb) _more_qs="$_more_qs${_more_qs:+,}LoadBalancerNames[]|join(', ',@)"             ; shift;;
          +lc) _more_qs="$_more_qs${_more_qs:+,}LaunchConfigurationName"                      ; shift;;
          +ls) _more_qs="$_more_qs${_more_qs:+,}Instances[].LifecycleState|join(', ',@)"      ; shift;;
-         +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='MachineRole'].Value|[0]"          ; shift;;
          +ni) _more_qs="$_more_qs${_more_qs:+,}length(Instances)"                            ; shift;;
          +ns) _more_qs="$_more_qs${_more_qs:+,}MinSize"                                      ; shift;;
          +xs) _more_qs="$_more_qs${_more_qs:+,}MaxSize"                                      ; shift;;
-          +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"              ; shift;;
          +sp) _more_qs="$_more_qs${_more_qs:+,}SuspendedProcesses[].ProcessName|join(', ',@)"; shift;;
-          +v) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"              ; shift;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                   ; shift 2;;
         -h|*) echo "$_USAGE"; return;;
       esac
    done
@@ -472,14 +460,10 @@ awsdi [OPTIONS]
   +a           # show AMI (ImageId)
   +an          # show ASG Name
   +az          # show Availability Zone
-  +bt          # show Branch Tag
-  +c           # show Cluster
-  +cc          # show Charge Code
   +ip          # show Private IP
   +it          # show Instance Type
   +k           # show Key Pair name
   +lt          # show Launch Time
-  +mr          # show Machine Role
   +np          # show Network Interface(s) Private IPs
   +p           # show Platform
   +pi          # show Public IP
@@ -490,7 +474,6 @@ awsdi [OPTIONS]
   +sn          # show Security Group Name(s)
   +t KEY       # show tag (KEY)
   +v           # show VPC ID
-  +vn          # show VPC Name (tag: VPCName)
   -h           # help (show this message)
 default display:
   Inst name | Private IP | Instance ID | State"
@@ -514,14 +497,10 @@ default display:
           +a) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
          +an) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='aws:autoscaling:groupName'].Value|[0]"; shift;;
          +az) _more_qs="$_more_qs${_more_qs:+,}Placement.AvailabilityZone"                       ; shift;;
-         +bt) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='BranchTag'].Value|[0]"                ; shift;;
-          +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"                  ; shift;;
-         +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"               ; shift;;
          +ip) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
          +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
           +k) _more_qs="$_more_qs${_more_qs:+,}KeyName"                                          ; shift;;
          +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
-         +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Role'].Value|[0]"                     ; shift;;
          +np) _more_qs="$_more_qs${_more_qs:+,}NetworkInterfaces[].PrivateIpAddresses[].PrivateIpAddress|join(', ',@)" ; shift;;
           +p) _more_qs="$_more_qs${_more_qs:+,}Platform"                                         ; shift;;
          +pi) _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"                                  ; shift;;
@@ -532,7 +511,6 @@ default display:
          +sn) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupName|join(', ',@)"          ; shift;;
           +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                       ; shift 2;;
           +v) _more_qs="$_more_qs${_more_qs:+,}VpcId"                                            ; shift;;
-         +vn) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"                  ; shift;;
         -h|*) echo "$_USAGE"; return;;
       esac
    done
