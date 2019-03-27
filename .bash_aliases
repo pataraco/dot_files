@@ -380,6 +380,7 @@ awsdasg [OPTIONS]
   -m  MAX      - maximum number of items to display
   -p  PROFILE  - AWS profile (--profile option) to use
   -r  REGION   - region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +at          - show All Tags (keys only)
   +dc          - show Desired Capacity
   +ht          - show Health Check Type
   +ii          - show Instance Id(s)
@@ -408,6 +409,7 @@ default display:
           -m) _max_items="--max-items $2"   ; shift 2;;
           -p) local _profile="--profile=$2" ; shift 2;;
           -r) _region=$2                    ; shift 2;;
+         +at) _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"; shift;;
          +dc) _more_qs="$_more_qs${_more_qs:+,}DesiredCapacity"                              ; shift;;
          +ht) _more_qs="$_more_qs${_more_qs:+,}HealthCheckType"                              ; shift;;
          +ii) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', ',@)"          ; shift;;
@@ -456,6 +458,7 @@ awsdi [OPTIONS]
   -p  PROFILE  - AWS profile (--profile option) to use
   +a           - show AMI (ImageId)
   +an          - show ASG Name
+  +at          - show All Tags (keys only)
   +az          - show Availability Zone
   +ip          - show Private IP
   +it          - show Instance Type
@@ -493,6 +496,7 @@ default display:
           -r) _region=$2                                                   ; shift 2;;
           +a) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
          +an) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='aws:autoscaling:groupName'].Value|[0]"; shift;;
+         +at) _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"; shift;;
          +az) _more_qs="$_more_qs${_more_qs:+,}Placement.AvailabilityZone"                       ; shift;;
          +ip) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
          +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
