@@ -96,6 +96,9 @@ aws route53 get-hosted-zone --id $HOSTED_ZONE_ID
 aws route53 list-vpc-association-authorizations --hosted-zone-id $HOSTED_ZONE_ID
 aws s3 cp $FILE s3://$BUCKET/$KEY --sse aws:kms --sse-kms-key-id $KMS_ARN
 aws s3 mb s3://BUCKET_NAME
+aws s3 mv s3://S3_BUCKET/KEY/FILE s3://S3_BUCKET/KEY/FILE --sse aws:kms --sse-kms-key-id KMS_KEY_ID --profile PROFILE
+aws s3 ls s3://S3_BUCKET/KEY --recursive --profile PROFILE
+aws s3 rm s3://S3_BUCKET/KEY --recursive --profile PROFILE  # CAUTION!!!!
 aws s3 rb s3://BUCKET_NAME --force # remove bucket and all of it's contents
 aws s3 sync --profile AWS_PROFILE --exclude \* --include DIR_NAME\* s3://BUCKET_SRC/path/to/files/ s3://BUCKET_DEST/path/to/files/
 aws s3 sync --profile AWS_PROFILE s3://BUCKET_SRC/ /BUCKET_DEST/dir/
