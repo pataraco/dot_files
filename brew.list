@@ -9,6 +9,7 @@ gawk
 gd
 gdbm
 gettext
+git
 glib
 gmp
 graphviz
@@ -18,6 +19,7 @@ jasper
 jemalloc
 jpeg
 jq
+jsonnet
 kubernetes-cli
 libevent
 libffi
@@ -41,7 +43,9 @@ oniguruma
 openssl
 packer
 pcre
+pcre2
 perl
+pipenv
 pkg-config
 pyenv
 pyenv-virtualenv
