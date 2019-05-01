@@ -2,6 +2,7 @@ ansible
 autoconf
 awscli
 colordiff
+docker
 fontconfig
 freetype
 fzf
@@ -14,12 +15,15 @@ glib
 gmp
 graphviz
 gts
+hidapi
 ipcalc
 jasper
 jemalloc
 jpeg
 jq
+json-c
 jsonnet
+kops
 kubernetes-cli
 libevent
 libffi
@@ -28,10 +32,13 @@ libpng
 libtermkey
 libtiff
 libtool
+libu2f-host
 libunistring
+libusb
 libuv
 libvterm
 libyaml
+libyubikey
 luajit
 mas
 mpfr
@@ -57,6 +64,7 @@ readline
 reattach-to-user-namespace
 ruby
 sqlite
+swig
 telnet
 terraform
 terraform-docs
@@ -69,5 +77,6 @@ watch
 webp
 wget
 xz
+ykpers
 yq
 zlib

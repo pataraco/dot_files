@@ -1,4 +1,5 @@
 amazon-music
+atom
 authy
 font-consolas-for-powerline
 font-dejavu-sans-mono-for-powerline
@@ -8,3 +9,6 @@ font-inconsolata
 font-m-plus
 font-menlo-for-powerline
 font-source-code-pro
+minikube
+slack
+virtualbox
