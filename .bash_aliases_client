@@ -1,0 +1,24 @@
+#!bash - ~/.bash_aliases_client - sourced by ~/.bashrc_aliases
+#
+# these are functions/aliases specific to CLIENT
+
+# if interactive shell - display message
+[ -n "$PS1" ] && echo -n ".bash_aliases_client (begin)... "
+
+# set up for Helix Perforce
+export P4PORT=perforce:5050
+export P4CLIENT=client
+export P4DIFF="$(which colordiff) -u"
+export P4EDITOR=$(which nvim)
+export P4IGNORE=$HOME/workspaces/client/.p4ignore
+export P4PAGER="less -FrX"
+
+p4o () {
+   p4o=$(p4 opened | grep "${1:-}" | cut -d '#' -f1 | cut -d '/' -f8-9)
+   echo "$p4o"
+}
+
+alias adfsaml="~/scripts/python/saml_auth_adfs.py"
+alias cd-qa="cd $HOME/workspaces/client/terraform/projects/qa"
+
+[ -n "$PS1" ] && echo -n ".bash_aliases_client (end). "
