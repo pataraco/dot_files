@@ -2141,14 +2141,20 @@ alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY
 alias veba='[ -f $ENVIRONMENT_SHIT ] && { echo "editing: $ENVIRONMENT_SHIT"; vi $ENVIRONMENT_SHIT; sba; }'
 #alias vi='`which vim`'
 #alias view='`which vim` -R'
-# upgrade to neovim
-alias vi='$(which nvim)'
-alias vid='$(which nvim) -d'
-alias vih='$(which nvim) -o'
-alias viv='$(which nvim) -O'
-alias vit='$(which nvim) -p'
-alias viw='$(which nvim) -R'
-alias view='$(which nvim) -R'
+# upgrade to neovim if available
+[ $(command -v nvim) ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
+alias vi='$VIM_CMD'
+alias vid='$VIM_CMD -d'
+alias vidh='$VIM_CMD -do'
+alias vidv='$VIM_CMD -dO'
+alias view='$VIM_CMD -R'
+alias vih='$VIM_CMD -o'
+alias vihd='$VIM_CMD -do'
+alias vim='$VIM_CMD'
+alias vit='$VIM_CMD -p'
+alias viv='$VIM_CMD -O'
+alias vivd='$VIM_CMD -dO'
+alias viw='$VIM_CMD -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
 if [ "$(uname -s)" == "Darwin" ]; then
    alias which='(alias; declare -f) | /usr/bin/which'
