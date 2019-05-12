@@ -83,7 +83,7 @@
 	excludesfile = /home/praco/.gitignore
 [user]
 	name = Patrick Raco
-	email = praco@onica.com
+	email = pataraco@gmail.com
 # [credential]
 # 	helper = !aws --profile rdrake --region us-east-1 codecommit credential-helper $@
 # 	UseHttpPath = true
