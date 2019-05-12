@@ -235,16 +235,15 @@ function awsda {
    local _AWS_EC2_DA_CMD="aws ec2 describe-addresses"
    local _USAGE="usage: \
 awsda [OPTIONS]
-  -n  NAME     # filter results by this Address Name
-  -t  KEY=VAL  # filter results by this tag (key=val)
-  -m  MAX      # maximum number of items to display
-  -r  REGION   # Region to query (default: $_DEFAULT_REGION, 'all' for all)
-          +i) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
-  +alid        # show Allocation ID
-  +asid        # show Association ID
-  +niid        # show Network Interface ID
-  +t KEY       # show tag (KEY)
-  -h           # help (show this message)
+  -n  NAME     - filter results by this Address Name
+  -t  KEY=VAL  - filter results by this tag (key=val)
+  -m  MAX      - maximum number of items to display
+  -r  REGION   - Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +alid        - show Allocation ID
+  +asid        - show Association ID
+  +niid        - show Network Interface ID
+  +t KEY       - show tag (KEY)
+  -h           - help (show this message)
 default display:
   Addy name | EIP | Instance | Priv IP"
    local _default_queries="Tags[?Key=='Name'].Value|[0],PublicIp,InstanceId,PrivateIpAddress"
@@ -287,35 +286,33 @@ function awsdami {
    local _AWSEC2DAMI_CMD="aws ec2 describe-images"
    local _USAGE="usage: \
 awsdami [OPTIONS]
-  -a  ARCH      # Architecture (e.g. i386, x86_64)
-  -ht HYPE_TYPE # Hypervisor Type (e.g. ovm, xen)
-  -i  ID        # Image ID (RegEx)
-  -it IMG_TYPE  # Image Type (e.g. machine, kernel, ramdisk)
-  -nt NAME TAG  # Image's Name Tag (RegEx)
-  -n  NAME      # Image Name when created (RegEx)
-  -o  OWNERS    # Owners (e.g. amazon, aws-marketplace, AWS ID. default: self)
-  -p  PROJECT   # Project
-  -r  REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
-  -s  STATE     # State
-  -v  VIRT_TYPE # Virtualization Type (e.g. paravirtual, hvm)
-  -vs VOL_SIZE  # Volume Size (in GiB)
-  -vt VOL_TYPE  # Volume Type (e.g. gp2, io1, st1, sc1, standard)
-  +a            # show Architecture
-  +cc           # show Charge Code
-  +cd           # show Creation Date
-  +ht           # show Hypervisor Type
-  +i            # show Image ID
-  +it           # show Image Type
-  +o            # show Owner ID
-  +p            # show Project
-  +ps           # show Public Status
-  +rn           # show Root Device Name
-  +rt           # show Root Device Type
-  +s            # show State
-  +v            # show Virtualization Type
-  +vs           # show Volume Size
-  +vt           # show Volume Type
-  -h            # help (show this message)
+  -a  ARCH      - Architecture (e.g. i386, x86_64)
+  -ht HYPE_TYPE - Hypervisor Type (e.g. ovm, xen)
+  -i  ID        - Image ID (RegEx)
+  -it IMG_TYPE  - Image Type (e.g. machine, kernel, ramdisk)
+  -nt NAME TAG  - Image's Name Tag (RegEx)
+  -n  NAME      - Image Name when created (RegEx)
+  -o  OWNERS    - Owners (e.g. amazon, aws-marketplace, AWS ID. default: self)
+  -p  PROJECT   - Project
+  -r  REGION    - Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  -s  STATE     - State
+  -v  VIRT_TYPE - Virtualization Type (e.g. paravirtual, hvm)
+  -vs VOL_SIZE  - Volume Size (in GiB)
+  -vt VOL_TYPE  - Volume Type (e.g. gp2, io1, st1, sc1, standard)
+  +a            - show Architecture
+  +cd           - show Creation Date
+  +ht           - show Hypervisor Type
+  +i            - show Image ID
+  +it           - show Image Type
+  +o            - show Owner ID
+  +ps           - show Public Status
+  +rn           - show Root Device Name
+  +rt           - show Root Device Type
+  +s            - show State
+  +v            - show Virtualization Type
+  +vs           - show Volume Size
+  +vt           - show Volume Type
+  -h            - help (show this message)
 default display:
   Name Tag | Image Name | Image ID | State | Region"
    #local _owners="self"
@@ -342,13 +339,11 @@ default display:
          -vt) _filters="Name=block-device-mapping.volume-type,Values=*$2* $_filters"; shift 2;;
           -r) _region=$2                                                            ; shift 2;;
           +a) _more_qs="$_more_qs${_more_qs:+,}Architecture"                                     ; shift;;
-         +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"               ; shift;;
          +cd) _more_qs="$_more_qs${_more_qs:+,}CreationDate"                                     ; shift;;
          +ht) _more_qs="$_more_qs${_more_qs:+,}Hypervisor"                                       ; shift;;
           +i) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
          +it) _more_qs="$_more_qs${_more_qs:+,}ImageType"                                        ; shift;;
           +o) _more_qs="$_more_qs${_more_qs:+,}OwnerId"                                          ; shift;;
-          +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"                  ; shift;;
          +ps) _more_qs="$_more_qs${_more_qs:+,}Public"                                           ; shift;;
          +rn) _more_qs="$_more_qs${_more_qs:+,}RootDeviceName"                                   ; shift;;
          +rt) _more_qs="$_more_qs${_more_qs:+,}RootDeviceType"                                   ; shift;;
@@ -381,28 +376,24 @@ function awsdasg {
    local _AWSASDASG_CMD="aws autoscaling describe-auto-scaling-groups"
    local _USAGE="usage: \
 awsdasg [OPTIONS]
-  -n NAME      # filter results by this Auto Scaling Group Name
-  -m MAX       # maximum number of items to display
-  -r REGION    # region to query (default: $_DEFAULT_REGION, 'all' for all)
-  +bt          # show Branch Tag
-  +c           # show Cluster
-  +cc          # show Charge Code
-  +dc          # show Desired Capacity
-  +e           # show Env (Environment)
-  +ht          # show Health Check Type
-  +ii          # show Instance Id(s)
-  +ih          # show Instance Health Status
-  +lb          # show Load Balancers
-  +lc          # show Launch Configuration Name
-  +ls          # show Life Cycle State
-  +mr          # show Machine Role
-  +ni          # show Number of Instances
-  +ns          # show Min Size
-  +xs          # show Max Size
-  +p           # show Project
-  +sp          # show Suspended Processes
-  +v           # show VPC Name
-  -h           # help (show this message)
+  -n  NAME     - filter results by this Auto Scaling Group Name
+  -m  MAX      - maximum number of items to display
+  -p  PROFILE  - AWS profile (--profile option) to use
+  -r  REGION   - region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +at          - show All Tags (keys only)
+  +dc          - show Desired Capacity
+  +ht          - show Health Check Type
+  +ii          - show Instance Id(s)
+  +ih          - show Instance Health Status
+  +lb          - show Load Balancers
+  +lc          - show Launch Configuration Name
+  +ls          - show Life Cycle State
+  +ni          - show Number of Instances
+  +ns          - show Min Size
+  +xs          - show Max Size
+  +sp          - show Suspended Processes
+  +t KEY       - show tag (KEY)
+  -h           - help (show this message)
 default display:
   ASG name | Launch Config Name | Instances | Desired | Min | Max | Region"
    local _max_items=""
@@ -414,27 +405,23 @@ default display:
    local _query="AutoScalingGroups[]"
    while [ $# -gt 0 ]; do
       case $1 in
-          -n) _reg_exp="$2"              ; shift 2;;
-          -m) _max_items="--max-items $2"; shift 2;;
-          -r) _region=$2                 ; shift 2;;
-         +bt) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='BranchTag'].Value|[0]"            ; shift;;
-          +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"              ; shift;;
-         +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"           ; shift;;
+          -n) _reg_exp="$2"                 ; shift 2;;
+          -m) _max_items="--max-items $2"   ; shift 2;;
+          -p) local _profile="--profile=$2" ; shift 2;;
+          -r) _region=$2                    ; shift 2;;
+         +at) _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"; shift;;
          +dc) _more_qs="$_more_qs${_more_qs:+,}DesiredCapacity"                              ; shift;;
-          +e) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Env'].Value|[0]"                  ; shift;;
          +ht) _more_qs="$_more_qs${_more_qs:+,}HealthCheckType"                              ; shift;;
          +ii) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', ',@)"          ; shift;;
          +ih) _more_qs="$_more_qs${_more_qs:+,}Instances[].HealthStatus|join(', ',@)"        ; shift;;
          +lb) _more_qs="$_more_qs${_more_qs:+,}LoadBalancerNames[]|join(', ',@)"             ; shift;;
          +lc) _more_qs="$_more_qs${_more_qs:+,}LaunchConfigurationName"                      ; shift;;
          +ls) _more_qs="$_more_qs${_more_qs:+,}Instances[].LifecycleState|join(', ',@)"      ; shift;;
-         +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='MachineRole'].Value|[0]"          ; shift;;
          +ni) _more_qs="$_more_qs${_more_qs:+,}length(Instances)"                            ; shift;;
          +ns) _more_qs="$_more_qs${_more_qs:+,}MinSize"                                      ; shift;;
          +xs) _more_qs="$_more_qs${_more_qs:+,}MaxSize"                                      ; shift;;
-          +p) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Project'].Value|[0]"              ; shift;;
          +sp) _more_qs="$_more_qs${_more_qs:+,}SuspendedProcesses[].ProcessName|join(', ',@)"; shift;;
-          +v) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"              ; shift;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                   ; shift 2;;
         -h|*) echo "$_USAGE"; return;;
       esac
    done
@@ -443,16 +430,16 @@ default display:
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
-            $_AWSASDASG_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            $_AWSASDASG_CMD $_profile --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          else
-            $_AWSASDASG_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            $_AWSASDASG_CMD $_profile --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          fi
       done
    else
       if [ -z "$_reg_exp" ]; then
-         $_AWSASDASG_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSASDASG_CMD $_profile --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       else
-         $_AWSASDASG_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSASDASG_CMD $_profile --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
    fi
 }
@@ -463,33 +450,31 @@ function awsdi {
    local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
    local _USAGE="usage: \
 awsdi [OPTIONS]
-  -n  NAME     # filter results by this Instance Name
-  -s  STATE    # filter results by this State (e.g. running, terminated, etc.)
-  -t  KEY=VAL  # filter results by this tag (key=val)
-  -m  MAX      # maximum number of items to display
-  -r  REGION   # Region to query (default: $_DEFAULT_REGION, 'all' for all)
-  +a           # show AMI (ImageId)
-  +an          # show ASG Name
-  +az          # show Availability Zone
-  +bt          # show Branch Tag
-  +c           # show Cluster
-  +cc          # show Charge Code
-  +ip          # show Private IP
-  +it          # show Instance Type
-  +k           # show Key Pair name
-  +lt          # show Launch Time
-  +mr          # show Machine Role
-  +p           # show Platform
-  +pi          # show Public IP
-  +pt          # show Placment Tenancy
-  +pw PEM_FILE # show [Windows] Admin Passwords [PEM_FILE to decrypt]
-  +s           # show State (e.g. running, stopped...)
-  +si          # show Security Group Id(s)
-  +sn          # show Security Group Name(s)
-  +t KEY       # show tag (KEY)
-  +v           # show VPC ID
-  +vn          # show VPC Name (tag: VPCName)
-  -h           # help (show this message)
+  -n  NAME     - filter results by this Instance Name
+  -s  STATE    - filter results by this State (e.g. running, terminated, etc.)
+  -t  KEY=VAL  - filter results by this tag (key=val)
+  -m  MAX      - maximum number of items to display
+  -r  REGION   - Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  -p  PROFILE  - AWS profile (--profile option) to use
+  +a           - show AMI (ImageId)
+  +an          - show ASG Name
+  +at          - show All Tags (keys only)
+  +az          - show Availability Zone
+  +ip          - show Private IP
+  +it          - show Instance Type
+  +k           - show Key Pair name
+  +lt          - show Launch Time
+  +np          - show Network Interface(s) Private IPs
+  +p           - show Platform
+  +pi          - show Public IP
+  +pt          - show Placment Tenancy
+  +pw PEM_FILE - show [Windows] Admin Passwords [PEM_FILE to decrypt]
+  +s           - show State (e.g. running, stopped...)
+  +si          - show Security Group Id(s)
+  +sn          - show Security Group Name(s)
+  +t KEY       - show tag (KEY)
+  +v           - show VPC ID
+  -h           - help (show this message)
 default display:
   Inst name | Private IP | Instance ID | State"
    local _default_queries="Tags[?Key=='Name'].Value|[0],InstanceId,PrivateIpAddress,State.Name"
@@ -507,18 +492,17 @@ default display:
           -s) _filters="Name=instance-state-name,Values=*$2* $_filters"    ; shift 2;;
           -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters" ; shift 2;;
           -m) _max_items="--max-items $2"                                  ; shift 2;;
+          -p) local _profile="--profile=$2"                                ; shift 2;;
           -r) _region=$2                                                   ; shift 2;;
           +a) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
          +an) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='aws:autoscaling:groupName'].Value|[0]"; shift;;
+         +at) _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"; shift;;
          +az) _more_qs="$_more_qs${_more_qs:+,}Placement.AvailabilityZone"                       ; shift;;
-         +bt) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='BranchTag'].Value|[0]"                ; shift;;
-          +c) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Cluster'].Value|[0]"                  ; shift;;
-         +cc) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='ChargeCode'].Value|[0]"               ; shift;;
          +ip) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
          +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
           +k) _more_qs="$_more_qs${_more_qs:+,}KeyName"                                          ; shift;;
          +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
-         +mr) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='Role'].Value|[0]"                     ; shift;;
+         +np) _more_qs="$_more_qs${_more_qs:+,}NetworkInterfaces[].PrivateIpAddresses[].PrivateIpAddress|join(', ',@)" ; shift;;
           +p) _more_qs="$_more_qs${_more_qs:+,}Platform"                                         ; shift;;
          +pi) _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"                                  ; shift;;
          +pt) _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"                                ; shift;;
@@ -528,7 +512,6 @@ default display:
          +sn) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupName|join(', ',@)"          ; shift;;
           +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                       ; shift 2;;
           +v) _more_qs="$_more_qs${_more_qs:+,}VpcId"                                            ; shift;;
-         +vn) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='VPCName'].Value|[0]"                  ; shift;;
         -h|*) echo "$_USAGE"; return;;
       esac
    done
@@ -540,7 +523,7 @@ default display:
          [ ! -f "$_pem_file" ] && { echo "private key file not found: '$_pem_file'"; return; }
          local _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
          for _region in $_ALL_REGIONS; do
-            eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
+            eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
          done
          local _instance_id
          local _awsdi_line
@@ -557,14 +540,14 @@ default display:
          rm -f $_tmp_file
       else
          for _region in $_ALL_REGIONS; do
-            eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          done
       fi
    else
       if [ "$_show_pws" == "true" ]; then
          [ ! -f "$_pem_file" ] && { echo "private key file not found: '$_pem_file'"; return; }
          local _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
-         eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
+         eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
          local _instance_id
          local _awsdi_line
          local _pw
@@ -580,7 +563,7 @@ default display:
          rm -f $_tmp_file
       else
          # debug # echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
-         eval $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
    fi
 }
@@ -591,15 +574,15 @@ function awsdis {
    local _AWS_EC2_DIS_CMD="aws ec2 describe-instance-status"
    local _USAGE="usage: \
 awsdis [OPTIONS]
-  -c  CODE       # filter by Event Code ({instance,system}-{reboot,retirement,stop,maintenance})
-  -s  STATE      # filter by Instance State (pending, running, shutting-down, terminated, stopped)
-  -r  REGION     # Region to query (default: $_DEFAULT_REGION, 'all' for all)
-  +az            # show Availability Zone
-  +c             # show Events Codes
-  +d             # show Events Descriptions
-  +s             # show Instance State
-  +t             # show Events Dates and Times
-  -h             # help (show this message)
+  -c  CODE       - filter by Event Code ({instance,system}-{reboot,retirement,stop,maintenance})
+  -s  STATE      - filter by Instance State (pending, running, shutting-down, terminated, stopped)
+  -r  REGION     - Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +az            - show Availability Zone
+  +c             - show Events Codes
+  +d             - show Events Descriptions
+  +s             - show Instance State
+  +t             - show Events Dates and Times
+  -h             - help (show this message)
 default display:
   Instance ID | State | Event Code | Event Description"
    local _region="$_DEFAULT_REGION"
@@ -645,18 +628,18 @@ function awsdlb {
    local _AWSELBDLB_CMD="aws elb describe-load-balancers"
    local _USAGE="usage: \
 awsdlb [OPTIONS]
-  -n NAME      # filter results by this Launch Config Name
-  -m MAX       # the maximum number of items to display
-  -r REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
-  +az          # show Availability Zones
-  +d           # show DNS Name
-  +hc          # show Health Check info (HTH, Int, T, TO, UTH)
-  +i           # show Instances
-  +li          # show Listeners (LB Port/Proto, Inst Port/Proto)
-  +s           # show Scheme
-  +sg          # show Security Groups
-  +sn          # show Subnets
-  -h           # help (show this message)
+  -n NAME      - filter results by this Launch Config Name
+  -m MAX       - the maximum number of items to display
+  -r REGION    - Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +az          - show Availability Zones
+  +d           - show DNS Name
+  +hc          - show Health Check info (HTH, Int, T, TO, UTH)
+  +i           - show Instances
+  +li          - show Listeners (LB Port/Proto, Inst Port/Proto)
+  +s           - show Scheme
+  +sg          - show Security Groups
+  +sn          - show Subnets
+  -h           - help (show this message)
 default display:
   Load Balancer name"
    local _max_items=""
@@ -707,16 +690,16 @@ function awsdlc {
    local _AWSASDLC_CMD="aws autoscaling describe-launch-configurations"
    local _USAGE="usage: \
 awsdlc [OPTIONS]
-  -n NAME      # filter results by this Launch Config Name
-  -m MAX       # the maximum number of items to display
-  -r REGION    # Region to query (default: $_DEFAULT_REGION, 'all' for all)
-  +i           # show Image ID
-  +ip          # show IAM Instance Profile
-  +it          # show Instance Type
-  +kn          # show Key Name
-  +pt          # show Placement Tenancy
-  +sg          # show Security Groups
-  -h           # help (show this message)
+  -n NAME      - filter results by this Launch Config Name
+  -m MAX       - the maximum number of items to display
+  -r REGION    - Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +i           - show Image ID
+  +ip          - show IAM Instance Profile
+  +it          - show Instance Type
+  +kn          - show Key Name
+  +pt          - show Placement Tenancy
+  +sg          - show Security Groups
+  -h           - help (show this message)
 default display:
   Launch Config name | AMI ID | Instance Type | Region"
    local _max_items=""
@@ -765,24 +748,24 @@ function awsdni {
    local _AWSEC2DNI_CMD="aws ec2 describe-network-interfaces"
    local _USAGE="usage: \
 awsdni [OPTIONS]
-  -a  AZ       # filter by Availability Zone (RegEx)
-  -d  DESC     # filter by Description
-  -i  IP_PRIV  # filter by Private IP
-  -id ID       # filter by Interface ID
-  -p  IP_PUB   # filter by Public IP
-  -r  REGION   # region to query (default: $_DEFAULT_REGION, 'all' for all)
-  -s  STATUS   # filter by Status (e.g. in-use, etc.)
-  +az          # show Availability Zone
-  +d           # show Description
-  +m           # show MAC Address
-  +p           # show Public IP
-  +pi          # show Private IP
-  +s           # show Status
-  +sd          # show Subnet ID
-  +si          # show Security Group Id(s)
-  +sn          # show Security Group Name(s)
-  +v           # show VPC ID
-  -h           # help (show this message)
+  -a  AZ       - filter by Availability Zone (RegEx)
+  -d  DESC     - filter by Description
+  -i  IP_PRIV  - filter by Private IP
+  -id ID       - filter by Interface ID
+  -p  IP_PUB   - filter by Public IP
+  -r  REGION   - region to query (default: $_DEFAULT_REGION, 'all' for all)
+  -s  STATUS   - filter by Status (e.g. in-use, etc.)
+  +az          - show Availability Zone
+  +d           - show Description
+  +m           - show MAC Address
+  +p           - show Public IP
+  +pi          - show Private IP
+  +s           - show Status
+  +sd          - show Subnet ID
+  +si          - show Security Group Id(s)
+  +sn          - show Security Group Name(s)
+  +v           - show VPC ID
+  -h           - help (show this message)
 default display:
   ID | Description | Private IP | Status"
    local _max_items=""
@@ -833,24 +816,24 @@ function awsdsg {
    local _AWS_EC2_DSG_CMD="aws ec2 describe-security-groups"
    local _USAGE="usage: \
 awsdsg [OPTIONS]
-  -p  PROJECT    # filter results by this Project
-  -e  ENVIRONMNT # filter results by this Environment (e.g. production, staging)
-  -i  GROUP_ID   # filter results by this SG ID
-  -n  SG_NAME    # filter results by this SG Name
-  -c  CIDR       # filter results by this CIDR (Ingress)
-  -v  VPC_ID     # filter results by this VPC ID
-  -gi SG_ID      # filter results by this SG ID that has been granted permission
-  -gn SG_NAME    # filter results by this SG Name that has been granted permission
-  -fp FROM_PORT  # filter results by this starting port number
-  -tp TO_PORT    # filter results by this ending port number
-  -pp PROTOCOL   # filter results by this Protocol
-  -r  REGION     # Region to query (default: $_DEFAULT_REGION, 'all' for all)
-  +e             # show Egress
-  +i             # show Igress
-  +fp            # show From Ports
-  +tp            # show To Ports
-  +pp            # show Protocols
-  -h             # help (show this message)
+  -p  PROJECT    - filter results by this Project
+  -e  ENVIRONMNT - filter results by this Environment (e.g. production, staging)
+  -i  GROUP_ID   - filter results by this SG ID
+  -n  SG_NAME    - filter results by this SG Name
+  -c  CIDR       - filter results by this CIDR (Ingress)
+  -v  VPC_ID     - filter results by this VPC ID
+  -gi SG_ID      - filter results by this SG ID that has been granted permission
+  -gn SG_NAME    - filter results by this SG Name that has been granted permission
+  -fp FROM_PORT  - filter results by this starting port number
+  -tp TO_PORT    - filter results by this ending port number
+  -pp PROTOCOL   - filter results by this Protocol
+  -r  REGION     - Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +e             - show Egress
+  +i             - show Igress
+  +fp            - show From Ports
+  +tp            - show To Ports
+  +pp            - show Protocols
+  -h             - help (show this message)
 default display:
   SG ID | SG Name | VPC ID | Description"
    local _region="$_DEFAULT_REGION"
@@ -894,19 +877,92 @@ default display:
    fi
 }
 
+function awsdv {
+   # some 'aws ec2 describe-volumes' hacks
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+   local _AWS_EC2_DV_CMD="aws ec2 describe-volumes"
+   local _USAGE="usage: \
+awsdi [OPTIONS]
+  -n  NAME     - filter results by this Volume Name
+  -s  STATE    - filter by State (e.g. creating, avail, in-use, del, error etc.)
+  -t  KEY=VAL  - filter results by this tag (key=val)
+  -m  MAX      - maximum number of items to display
+  -p  PROFILE  - AWS profile (--profile option) to use
+  -r  REGION   - Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +a           - show (mostly all) Attachment Information
+  +ad          - show Attachment Device Name
+  +ai          - show Attachment Instance ID
+  +at          - show Attachment Delete on Termination setting
+  +ct          - show Creation Time
+  +e           - show if Encrypted (true|false)
+  +i           - show IOPs
+  +k           - show KMS Key ID (ARN)
+  +s           - show State
+  +vs          - show Size
+  +vt          - show Volume Type
+  +ss          - show Snapshot ID
+  +t KEY       - show tag (KEY)
+  -h           - help (show this message)
+default display:
+  Vol name | Volume ID | Instance ID | Device | Size"
+   local _default_queries="Tags[?Key=='Name'].Value|[0],VolumeId,Attachments[].InstanceId|[0],Attachments[].Device|[0],Size"
+   local _filters=""
+   local _max_items=""
+   local _pem_file=""        # PEM file used to decrypt the passwords
+   local _more_qs=""
+   local _queries="Tags[?Key=='Name'].Value|[0],VolumeId"
+   local _query="Volumes[]"
+   local _region="$_DEFAULT_REGION"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -m) _max_items="--max-items $2"                                             ; shift 2;;
+          -n) _filters="Name=tag:Name,Values=*$2* $_filters"                          ; shift 2;;
+          -p) local _profile="--profile=$2"                                           ; shift 2;;
+          -r) _region=$2                                                              ; shift 2;;
+          -s) _filters="Name=status,Values=*$2* $_filters"               ; shift 2;;
+          -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters"            ; shift 2;;
+          +a) _more_qs="$_more_qs${_more_qs:+,}Attachments[].InstanceId|[0],Attachments[].Device|[0],Attachments[].DeleteOnTermination|[0]"                                                       ; shift;;
+         +ad) _more_qs="$_more_qs${_more_qs:+,}Attachments[].Device|[0]"              ; shift;;
+         +ai) _more_qs="$_more_qs${_more_qs:+,}Attachments[].InstanceId|[0]"          ; shift;;
+         +at) _more_qs="$_more_qs${_more_qs:+,}Attachments[].DeleteOnTermination|[0]" ; shift;;
+         +ct) _more_qs="$_more_qs${_more_qs:+,}CreateTime"                            ; shift;;
+          +e) _more_qs="$_more_qs${_more_qs:+,}Encrypted"                             ; shift;;
+          +i) _more_qs="$_more_qs${_more_qs:+,}Iops"                                  ; shift;;
+          +k) _more_qs="$_more_qs${_more_qs:+,}KmsKeyId"                              ; shift;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}State"                                 ; shift;;
+         +ss) _more_qs="$_more_qs${_more_qs:+,}SnapshotId"                            ; shift;;
+         +vs) _more_qs="$_more_qs${_more_qs:+,}Size"                                  ; shift;;
+         +vt) _more_qs="$_more_qs${_more_qs:+,}VolumeType"                            ; shift;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                       ; shift 2;;
+        -h|*) echo "$_USAGE"; return;;
+      esac
+   done
+   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+      for _region in $_ALL_REGIONS; do
+         eval $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeVolumes' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
+      done
+   else
+      # DEBUG # echo "$_AWS_EC2_DV_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+      eval $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeVolumes' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
+   fi
+}
+
 function awsrlrrs {
    # some 'aws route53 list-resource-record-sets' hacks
    local _AWSRLRRS_CMD="aws route53 list-resource-record-sets"
    local _USAGE="usage: \
 awsrlrrs DNS_NAME [OPTIONS]
-  -d DNS_NAME # the DNS Name or Hosted Zone to query
-  -m MAX      # the maximum number of items to display
-  -n NAME     # filter results by this Record Name
-  -t TYPE     # record TYPE to display
-  +s          # show Set Identifier
-  +t          # show TTL
-  +w          # show Weight
-  -h          # help (show this message)
+  -d DNS_NAME - the DNS Name or Hosted Zone to query
+  -m MAX      - the maximum number of items to display
+  -n NAME     - filter results by this Record Name
+  -t TYPE     - record TYPE to display
+  +s          - show Set Identifier
+  +t          - show TTL
+  +w          - show Weight
+  -h          - help (show this message)
 default display:
   Record Name | Type | Record Value"
    local _max_items=""
@@ -1360,7 +1416,7 @@ function elbinsts {
 function fdgr {
    # find dirty git repos
    local _orig_wd=$(pwd)
-   local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -exec dirname {} \;)"
+   local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -and ! -name Library -exec dirname {} \;)"
    local _repo
    local _git_status
    for _repo in $_REPOS_TO_CHECK; do
@@ -1648,7 +1704,7 @@ function sae { # TOOL
    # set AWS environment variables from ~/.aws/config file and profiles in it
    local _AWS_CFG=$HOME/.aws/config
    local _AWS_PROFILES=$(grep '^\[profile' $_AWS_CFG | awk '{print $2}' | tr ']\n' ' ')
-   local _VALID_ARGS=$(echo $_AWS_PROFILES unset | tr ' ' ':')
+   local _VALID_ARGS=$(echo "$_AWS_PROFILES unset" | tr ' ' ':')
    local _environment
    local _arg="$1"
    if [ -n "$_arg" ]; then
@@ -2085,14 +2141,20 @@ alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY
 alias veba='[ -f $ENVIRONMENT_SHIT ] && { echo "editing: $ENVIRONMENT_SHIT"; vi $ENVIRONMENT_SHIT; sba; }'
 #alias vi='`which vim`'
 #alias view='`which vim` -R'
-# upgrade to neovim
-alias vi='$(which nvim)'
-alias vid='$(which nvim) -d'
-alias vih='$(which nvim) -o'
-alias viv='$(which nvim) -O'
-alias vit='$(which nvim) -p'
-alias viw='$(which nvim) -R'
-alias view='$(which nvim) -R'
+# upgrade to neovim if available
+[ $(command -v nvim) ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
+alias vi='$VIM_CMD'
+alias vid='$VIM_CMD -d'
+alias vidh='$VIM_CMD -do'
+alias vidv='$VIM_CMD -dO'
+alias view='$VIM_CMD -R'
+alias vih='$VIM_CMD -o'
+alias vihd='$VIM_CMD -do'
+alias vim='$VIM_CMD'
+alias vit='$VIM_CMD -p'
+alias viv='$VIM_CMD -O'
+alias vivd='$VIM_CMD -dO'
+alias viw='$VIM_CMD -R'
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
 if [ "$(uname -s)" == "Darwin" ]; then
    alias which='(alias; declare -f) | /usr/bin/which'

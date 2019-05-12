@@ -7,7 +7,7 @@
 [ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (begin)... "
 
 # set up shell for Onica Single Sign-on (onica-sso)
-eval "$(onica-sso shell-init bash)"
+[ $(command -v onica-sso) ] && eval "$(onica-sso shell-init bash)"
 
 # define functions
 

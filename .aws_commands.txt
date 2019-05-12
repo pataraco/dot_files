@@ -24,6 +24,8 @@ aws deploy delete-application --application-name APP_NAME
 aws deploy get-deployment --deployment-id ID
 aws deploy list-deployemtns --application-name APP_NAME
 aws deploy push --application-name APP_NAME --s3-location s3://BUCKET_NAME/PATH_TO/APP.zip --ignore-hidden-files
+aws ds describe-domain-controllers --directory-id $DIR_ID
+aws dynamodb list-tables
 aws ec2 allocate-address
 aws ec2 associate-address --instance-id INST_ID
 aws ec2 authorize-security-group-ingress --group-name SG_NAME --from-port FROM_PORT --to-port TO_PORT --ip-protocol tcp --cidr-ip CIDR
@@ -31,6 +33,7 @@ aws ec2 create-key-pair --key-name KEY_PAIR_NAME | jq -r .KeyMaterial > PRIVATE_
 aws ec2 create-security-group --group-name SG_NAME --description "SG DESCRIPTION"
 aws ec2 create-tags --region REGION --resources INST_ID --tags Key=KEY,Value=VALUE Key=KEY2,Value=VALUE2
 aws ec2 delete-key-pair --key-name KEY_PAIR_NAME
+aws ec2 delete-key-pair [--region REGION] --key-name KEY_PAIR_NAME
 aws ec2 describe-addresses --output table
 aws ec2 describe-availability-zones
 aws ec2 describe-images --owners amazon --filters "Name=name,Values=*2012*English*SQL*2012*_Standard*" --query 'sort_by(Images, &CreationDate)[].[Name, CreationDate, ImageId]' --output table
@@ -52,9 +55,8 @@ aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[].[Tags[
 aws ec2 disassociate-address --public-ip PUBLIC_IP
 aws ec2 get-password-data --instance-id INST_ID --priv-launch-key PEM_FILE
 aws ec2 import-key-pair [--region REGION] --key-name KEY_PAIR_NAME --public-key-material file://path/to/FILE.pub
-aws ec2 delete-key-pair [--region REGION] --key-name KEY_PAIR_NAME
-aws ec2 modify-instance-attribute --instance-id INST_ID --no-disable-api-termination
 aws ec2 modify-instance-attribute --instance-id INST_ID --disable-api-termination
+aws ec2 modify-instance-attribute --instance-id INST_ID --no-disable-api-termination
 aws ec2 modify-instance-attribute --region REGION --instance-id INST_ID --groups SG_UID
 aws ec2 release-address --public-ip PUBLIC_IP
 aws ec2 run-instances --image-id AMI --key-name KEY_PAIR_NAME --user-data file://PATH_TO/USER_DATA_FILE --count COUNT --instance-type TYPE --iam-instance-profile Name=IAM_PROFILE --security-groups SG1 [SG2...]
@@ -88,7 +90,15 @@ aws iam list-users
 aws iam put-role-policy --role-name ROLE_NAME --policy-name POLICY_NAME --policy-document file://PATH_TO/POLICY_DOC.json
 aws iam update-login-profile --user-name USERNAME --password PASSWORD
 aws lambda update-function-configuration --function-name FUNCTION_NAME --timeout N --memory-size M
+aws route53 create-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_ID --vpc VPCRegion=$REGION,VPCId=$VPC_ID
+aws route53 delete-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_ID --vpc VPCRegion=$REGION,VPCId=$VPC_ID
+aws route53 get-hosted-zone --id $HOSTED_ZONE_ID
+aws route53 list-vpc-association-authorizations --hosted-zone-id $HOSTED_ZONE_ID
+aws s3 cp $FILE s3://$BUCKET/$KEY --sse aws:kms --sse-kms-key-id $KMS_ARN
 aws s3 mb s3://BUCKET_NAME
+aws s3 mv s3://S3_BUCKET/KEY/FILE s3://S3_BUCKET/KEY/FILE --sse aws:kms --sse-kms-key-id KMS_KEY_ID --profile PROFILE
+aws s3 ls s3://S3_BUCKET/KEY --recursive --profile PROFILE
+aws s3 rm s3://S3_BUCKET/KEY --recursive --profile PROFILE  # CAUTION!!!!
 aws s3 rb s3://BUCKET_NAME --force # remove bucket and all of it's contents
 aws s3 sync --profile AWS_PROFILE --exclude \* --include DIR_NAME\* s3://BUCKET_SRC/path/to/files/ s3://BUCKET_DEST/path/to/files/
 aws s3 sync --profile AWS_PROFILE s3://BUCKET_SRC/ /BUCKET_DEST/dir/
@@ -102,9 +112,12 @@ aws sns delete-topic --topic-arn NOTIFICATION_ARN
 aws sns list-subscriptions
 aws sns list-topics | grep "TOPIC_NAME" | cut -d '"' -f4 # get SNS notification ARN
 aws sns subscribe --topic-arn ARN --protocol email --notification-endpoint END_POINT
+aws ssm delete-association --association-id $ASSOC_ID
+aws ssm delete-association --instance-id $INST_ID
 aws ssm get-parameter --name /aws/service/ami-windows-latest/Windows_Server-2012-R2_RTM-English-64Bit-Base
 aws ssm get-parameter --name /aws/service/ecs/optimized-ami/amazon-linux/recommended
 aws ssm put-parameter --name KEY_NAME --value PASSWD --type SecureString --overwrite
+aws sts get-caller-identity
 aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --output text); echo $aws_acct  # get AWS account
 aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct  # get AWS account
 echo -e "protocol=httpsnpath=/v1/repos/testnhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get

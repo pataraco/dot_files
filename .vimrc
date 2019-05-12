@@ -133,9 +133,9 @@ nnoremap <silent> <Leader>L /\%>79v.\+<CR>
 " paste from system clipbaard
 nnoremap <silent> <Leader>p "+p<CR>
 " change word to ALL CAPS
-nnoremap <silent> <Leader>ac gUiw<CR>
+nnoremap <silent> <Leader>ac gUiw
 " change word to all lowercase
-nnoremap <silent> <Leader>al guiw<CR>
+nnoremap <silent> <Leader>al guiw
 " redraw the screen
 nnoremap <silent> <Leader>r :redraw!<CR>
 " source (re-load) .vimrc
