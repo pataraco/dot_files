@@ -5,7 +5,7 @@
 "  Steps to use neovim (nvim)
 "  1. brew install neovim
 "  3. mkdir ~/.vim
-"  3. ln -l ~/.vimrc ~/.vim/init.vim
+"  3. ln -s ~/.vimrc ~/.vim/init.vim
 "  4. curl -fLo ~/.local/share/nvim/site/autoload/plug.vim --create-dirs \
 "       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 "  5. vim: PlugInstall
@@ -38,7 +38,7 @@
  set incsearch                  " Find the next match as we type the search
  set laststatus=2               " turn on the status bar (always)
                                 " strings to use in 'list' mode (:set list!)
-			        " use (:digraphs) to see a list of [ctrl-k] opts
+                                " use (:digraphs) to see a list of [ctrl-k] opts
 "set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<,conceal:?,nbsp:_
  set listchars=eol:ϟ,tab:»·,trail:‥,extends:▷,precedes:◁,conceal:□,nbsp:ι
  set number                     " turn on line numbering
@@ -155,7 +155,7 @@ vnoremap <silent> <Leader>sb :sort<CR>
 "    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 "  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 "endif
-" use vim-plug 
+" use vim-plug
 " 1. Begin the section with call plug#begin()
 call plug#begin('~/.local/share/nvim/plugged')
 " 2. List the plugins with Plug commands
@@ -380,7 +380,7 @@ function! SmartComplete ()
         let pattern = left . curr_pos_pat . right
         if curr_line =~ pattern
             " Code around bug in setpos() when used at EOL...
-            if cursorcol == strlen(curr_line)+1 && strlen(completion)==1 
+            if cursorcol == strlen(curr_line)+1 && strlen(completion)==1
                 let cursor_back = "\<LEFT>"
             endif
             " Return the completion...
@@ -414,7 +414,7 @@ function! MyFoldText()
     let l:align = winwidth(0)-&foldcolumn-(&nu ? Max(strlen(line('$'))+1, l:numwidth) : 0)
     let l:align = (l:align / 2) + (strlen(l:foldtext)/2)
     " note trailing space on next line
-    setlocal fillchars+=fold:\ 
+    setlocal fillchars+=fold:\
   elseif !exists('b:foldpat') || b:foldpat==0
     let l:foldtext = ' '.(v:foldend-v:foldstart).' lines folded '.v:folddashes.'|'
     let l:endofline = (&textwidth>0 ? &textwidth : 80)
