@@ -1110,7 +1110,8 @@ function bash_prompt {
       local _exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
       if [ $_exp_ts -gt $_now_ts ]; then
          # set the window title
-         echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]\007"
+         local _tminus=$(date -jf "%s" $(($_exp_ts - $_now_ts)) +"(T-%H:%M:%S)")
+         echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007"
          if [ $(($_exp_ts - $_now_ts)) -lt 300 ]; then
             PS_AWS="[$PYLW$AWS_DEFAULT_PROFILE$PNRM]"
             PS_COL=$PYLW
@@ -1883,18 +1884,19 @@ function start_ssh_agent {
 
 function stopwatch { # TOOL
    # display a "stopwatch"
-   # TODO: for OSX, add something like this: date -jf "%Y-%m-%dT%H:%M:%SZ" $time +"%s"
    trap "return" SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT
    trap 'echo; stty echoctl; trap - SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT RETURN' RETURN
    stty -echoctl # don't echo "^C" when [Ctrl-C] is entered
-   local _started _start_secs _current _current_secs
+   local _started _start_secs _current _current_secs _delta
    _started=$(date +'%d-%b-%Y %T')
-   _start_secs=$(date +%s -d "$_started")
+   [ "$(uname)" != "Darwin" ] && _start_secs=$(date +%s -d "$_started") || _start_secs=$(date -jf '%d-%b-%Y %T' "$_started" +'%s')
    echo
    while true; do
       _current=$(date +'%d-%b-%Y %T')
-      _current_secs=$(date +%s -d "$_current")
-      echo -ne "  Start: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs")${NRM}\r"
+      [ "$(uname)" != "Darwin" ] && _current_secs=$(date +%s -d "$_current") || _current_secs=$(date -jf '%d-%b-%Y %T' "$_current" +'%s')
+      # TODO: almost works for Darwin, need to figure out proper delta
+      [ "$(uname)" != "Darwin" ] && _delta=$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs") || _delta=$(date -jf '%s' "0 $(($_current_secs - $_start_secs))" +'%T')
+      echo -ne "  Start: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$_delta${NRM}\r"
    done
 }
 
