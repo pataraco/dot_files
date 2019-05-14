@@ -16,7 +16,7 @@ PS_SHOW_PV=0
 # -------------------- global variables --------------------
 
 # set company specific variable
-export COMPANY="onica"
+export COMPANY="ag"
 export COMPANY_SHIT=$HOME/.bash_aliases_$COMPANY
 
 # set environment specific variable
@@ -1104,6 +1104,26 @@ function bash_prompt {
          PS_AWS="[$PGRY$ONICA_SSO_ACCOUNT_KEY$PNRM]"
          PS_COL=$PGRY
       fi
+   elif [ "$COMPANY" == "ag" -a -n "$AWS_SESSION_TOKEN" -a -n "$AWS_DEFAULT_PROFILE" ]; then
+      local _now_ts=$(date +%s)
+      local _exp_time=$(jq -r .Credentials.Expiration ~/.aws/${AWS_DEFAULT_PROFILE}_mfa_credentials)
+      local _exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
+      if [ $_exp_ts -gt $_now_ts ]; then
+         # set the window title
+         echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]\007"
+         if [ $(($_exp_ts - $_now_ts)) -lt 300 ]; then
+            PS_AWS="[$PYLW$AWS_DEFAULT_PROFILE$PNRM]"
+            PS_COL=$PYLW
+         else
+            PS_AWS="[$PRED$AWS_DEFAULT_PROFILE$PNRM]"
+            PS_COL=$PRED
+         fi
+      else
+         # set the window title
+         echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007"
+         PS_AWS="[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
+         PS_COL=$PGRY
+      fi
    else
       # set the window title
       echo -ne "\033]0;$(whoami)@$(hostname)\007"
@@ -1714,11 +1734,13 @@ function sae { # TOOL
       fi
       [ "$COMPANY" == "onica" ] && ssol unset > /dev/null 2>&1
       if [ "$_arg" == "unset" ]; then
-         unset AWS_DEFAULT_PROFILE
-         unset AWS_ENVIRONMENT
          unset AWS_ACCESS_KEY_ID
-         unset AWS_SECRET_ACCESS_KEY
+         unset AWS_DEFAULT_PROFILE
          unset AWS_DEFAULT_REGION
+         unset AWS_ENVIRONMENT
+         unset AWS_SECRET_ACCESS_KEY
+         unset AWS_SECURITY_TOKEN
+         unset AWS_SESSION_TOKEN
          echo "environment has been unset"
       else
          export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
@@ -1861,6 +1883,7 @@ function start_ssh_agent {
 
 function stopwatch { # TOOL
    # display a "stopwatch"
+   # TODO: for OSX, add something like this: date -jf "%Y-%m-%dT%H:%M:%SZ" $time +"%s"
    trap "return" SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT
    trap 'echo; stty echoctl; trap - SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT RETURN' RETURN
    stty -echoctl # don't echo "^C" when [Ctrl-C] is entered
