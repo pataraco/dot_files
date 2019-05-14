@@ -1,0 +1,20 @@
+#!bash - ~/.bash_aliases_ag - sourced by ~/.bashrc_aliases
+#
+# these are functions/aliases specific to AG
+
+# if interactive shell - display message
+[ -n "$PS1" ] && echo -n ".bash_aliases_ag (begin)... "
+
+function saem {
+# set AWS environment variables with MFA (aws-mfa)
+# (https://github.com/lonelyplanet/aws-mfa)
+
+   local _arg=$1
+   sae $_arg
+   if [ -n "$_arg" -a "$_arg" != "unset" ]; then
+      eval $(aws-mfa --profile $_arg)
+      echo "MFA has been enabled for environment"
+   fi
+}
+
+[ -n "$PS1" ] && echo -n ".bash_aliases_ag (end). "
