@@ -1,5 +1,6 @@
 " znake - Full Colour and 256 Colour
 " http://www.artathack.com
+" https://github.com/znake/znake-vim/blob/master/colors/znake.vim
 "
 " Hex colour conversion functions borrowed from the theme "Desert256""
 " Pretty much stolen from the Tomorrow theme https://github.com/chriskempson/tomorrow-theme
