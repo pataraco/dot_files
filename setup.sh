@@ -4,6 +4,11 @@
 #   1. move existing dot files in $HOME to $HOME/.orig
 #   2. set up symlinks from $HOME to the files in the $SRC_REPO
 #      (excluding this script, the .git directory and the README file)
+#
+# some other manual steps
+# - MAC:
+#        install homebrew
+#        $ brew install git
 
 SRC_REPO="$HOME/repos/dot_files"
 ORIG_DIR="$HOME/.orig"
