@@ -177,15 +177,15 @@ call plug#end()
 " -------------
 " - Color Schemes -
 "colorscheme Tomorrow-Night-Bright  " pretty good - has python
-"colorscheme clearance  " not good - not working - doesn't look correct
-"colorscheme dracula  " not bad
-"colorscheme highwayman  " no thanks - has python - doesn't work
-"colorscheme iceberg  " nice
-"colorscheme jellybeans  " nope - has python
-"colorscheme newproggie  " meh
-"colorscheme VisualStudioDark  " pretty good
-"colorscheme zellner  " ok
-colorscheme znake  " pretty good - has python
+"colorscheme clearance              " not good/working - doesn't look correct
+"colorscheme dracula                " not bad
+"colorscheme highwayman             " no thanks - has python - doesn't work
+"colorscheme iceberg                " nice
+"colorscheme jellybeans             " nope - has python
+"colorscheme newproggie             " meh
+"colorscheme VisualStudioDark       " pretty good
+"colorscheme zellner                " ok
+colorscheme znake                   " pretty good - has python
 " General Syntax highlighting
  hi Comment      cterm=none ctermfg=24  ctermbg=0  gui=italic guibg=fg guifg=bg
  hi Conditional  cterm=none ctermfg=69  ctermbg=0  gui=none   guibg=fg guifg=bg
@@ -207,12 +207,13 @@ colorscheme znake  " pretty good - has python
  hi shCasein            cterm=none ctermfg=69  ctermbg=0  gui=none guibg=fg guifg=bg
 "hi shComment           cterm=none ctermfg=24  ctermbg=0  gui=italic guibg=fg guifg=bg
 "hi shConditional       cterm=none ctermfg=69  ctermbg=0  gui=none guibg=fg guifg=bg
- hi shCtrlSeq           cterm=none ctermfg=172 ctermbg=0  gui=none guibg=fg guifg=bg "\n
+ hi shCtrlSeq           cterm=none ctermfg=172 ctermbg=0  gui=none guibg=fg guifg=bg  " \n
+ hi shEcho              cterm=none ctermfg=229 ctermbg=0  gui=none guibg=fg guifg=bg
  hi shEcho              cterm=none ctermfg=229 ctermbg=0  gui=none guibg=fg guifg=bg
  hi shFunction          cterm=none ctermfg=38  ctermbg=0  gui=none guibg=fg guifg=bg
  hi shIdentifier        cterm=none ctermfg=82  ctermbg=0  gui=none guibg=fg guifg=bg
  hi shQuote             cterm=none ctermfg=202 ctermbg=0  gui=none guibg=fg guifg=bg
-"hi shSpecial           cterm=none ctermfg=172 ctermbg=0  gui=none guibg=fg guifg=bg "\n
+"hi shSpecial           cterm=none ctermfg=172 ctermbg=0  gui=none guibg=fg guifg=bg  " \n
  hi shStatement         cterm=none ctermfg=69  ctermbg=0  gui=none guibg=fg guifg=bg
  hi shString            cterm=none ctermfg=74  ctermbg=0  gui=none guibg=fg guifg=bg
 "hi shTodo              cterm=none ctermfg=0   ctermbg=41 gui=none guibg=fg guifg=bg
@@ -224,11 +225,11 @@ colorscheme znake  " pretty good - has python
 "hi pythonConditional    cterm=none ctermfg=69  ctermbg=0  gui=none   guibg=fg guifg=bg
 "hi pythonDecorator      cterm=none ctermfg=82  ctermbg=0  gui=none   guibg=fg guifg=bg
 "hi pythonDecoratorName  cterm=none ctermfg=82  ctermbg=0  gui=none   guibg=fg guifg=bg
-"hi pythonDoctest        cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg ">>>
+"hi pythonDoctest        cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg  " >>>
 "hi pythonDoctestValue   cterm=none ctermfg=0   ctermbg=1  gui=none   guibg=fg guifg=bg
-"hi pythonEscape         cterm=none ctermfg=172 ctermbg=0  gui=none   guibg=fg guifg=bg "\n
-"hi pythonException      cterm=none ctermfg=75  ctermbg=0  gui=none   guibg=fg guifg=bg "finally raise except try
- hi pythonExceptions     cterm=none ctermfg=124 ctermbg=0  gui=none   guibg=fg guifg=bg "KeyError
+"hi pythonEscape         cterm=none ctermfg=172 ctermbg=0  gui=none   guibg=fg guifg=bg  " \n
+"hi pythonException      cterm=none ctermfg=75  ctermbg=0  gui=none   guibg=fg guifg=bg  " finally raise except try
+ hi pythonExceptions     cterm=none ctermfg=124 ctermbg=0  gui=none   guibg=fg guifg=bg  " KeyError
 "hi pythonFunction       cterm=none ctermfg=37  ctermbg=0  gui=none   guibg=fg guifg=bg
 "hi pythonInclude        cterm=none ctermfg=31  ctermbg=0  gui=none   guibg=fg guifg=bg
  hi pythonMatrixMultiply cterm=none ctermfg=0   ctermbg=2  gui=none   guibg=fg guifg=bg
