@@ -113,38 +113,41 @@ vnoremap <S-Tab> <gv
 " ---------------
 let mapleader      = ' '   " type this char first then additional defined below
 let maplocalleader = '\'   " used for alternate context - certain file types
-" Display the number of matches for the last search
-nnoremap <silent> <Leader># :%s:<C-R>/::gn<cr>
-" turn cursor highlighting on/off
-nnoremap <silent> <Leader>x :silent set cursorline! \| set cursorcolumn!<CR>
-nnoremap <silent> <Leader>l :silent set cursorline!<CR>
-nnoremap <silent> <Leader>c :silent set cursorcolumn!<CR>
-" turn line numbering on/off - see below (line numbering rotation function)
-"nnoremap <silent> <Leader>n :silent set number!<CR>
 " Press Space to turn off highlighting and clear any message already displayed.
 nnoremap <silent> <Space> :nohlsearch<Bar>:echo<CR>
-" highlight extra white space (trailing whitespace and tabs)
-nnoremap <silent> <Leader>w :match ExtraWhitespace /\s\+$\<Bar>\t/<CR>
-nnoremap <silent> <Leader>W /\s\+$\<Bar>\t/<CR>
-nnoremap <silent> <Leader>m :match<CR>
-" highlight/search git merge conflicts
-nnoremap <silent> <Leader>mc /<<<<<<<\<Bar>>>>>>>>\<Bar>=======<CR>
-" highlight lines longer than 79 chars
-nnoremap <silent> <Leader>L /\%>79v.\+<CR>
-" paste from system clipbaard
-nnoremap <silent> <Leader>p "+p<CR>
+" Display the number of matches for the last search
+nnoremap <silent> <Leader># :%s:<C-R>/::gn<cr>
 " change word to ALL CAPS
 nnoremap <silent> <Leader>ac gUiw
 " change word to all lowercase
 nnoremap <silent> <Leader>al guiw
-" redraw the screen
-nnoremap <silent> <Leader>r :redraw!<CR>
-" source (re-load) .vimrc
-nnoremap <silent> <Leader>sv :source $MYVIMRC<CR>
 " fold current block
 nnoremap <silent> <Leader>f mf}zf'f<CR>
+" turn cursor highlighting on/off
+nnoremap <silent> <Leader>c :silent set cursorcolumn!<CR>
+nnoremap <silent> <Leader>l :silent set cursorline!<CR>
+nnoremap <silent> <Leader>x :silent set cursorline! \| set cursorcolumn!<CR>
+" turn line numbering on/off - see below (line numbering rotation function)
+"nnoremap <silent> <Leader>n :silent set number!<CR>
+" highlight/search git merge conflicts
+nnoremap <silent> <Leader>mc /<<<<<<<\<Bar>>>>>>>>\<Bar>=======<CR>
+" highlight lines longer than 79 chars
+nnoremap <silent> <Leader>L /\%>79v.\+<CR>
+" open filename under cursor in split views
+nnoremap <silent> <Leader>hf <C-W>f<CR>
+nnoremap <silent> <Leader>vf <C-W>vgf<CR>
+" paste from system clipbaard
+nnoremap <silent> <Leader>p "+p<CR>
+" redraw the screen
+nnoremap <silent> <Leader>r :redraw!<CR>
 " sort current visually selected block
 vnoremap <silent> <Leader>sb :sort<CR>
+" source (re-load) .vimrc
+nnoremap <silent> <Leader>sv :source $MYVIMRC<CR>
+" highlight extra white space (trailing whitespace and tabs)
+nnoremap <silent> <Leader>w :match ExtraWhitespace /\s\+$\<Bar>\t/<CR>
+nnoremap <silent> <Leader>W /\s\+$\<Bar>\t/<CR>
+nnoremap <silent> <Leader>m :match<CR>
 " Leader Mappings }}}
 
 " Plug Ins {{{
