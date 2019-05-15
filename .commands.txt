@@ -189,7 +189,7 @@ ssh-add -l
 ssh-copy-id [$USER@]$HOSTNAME
 ssh-keygen -R $hostname		# remove host entries from known_hosts
 ssh-keygen -p -f $key_file	# add/change passphrase
-ssh-keygen -t rsa		# generate RSA key-pair
+ssh-keygen -t rsa [-b 4096] [-C "email"]  # generate RSA key-pair (default: 2048)
 ssh-keygen -y -f PRIVATE_KEY | pbcopy  # generate public from private key
 stacker build -i -r REGION ENV_FILE YAML_FILE
 stacker destroy -f -r REGION ENV_FILE YAML_FILE
