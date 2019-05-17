@@ -53,6 +53,7 @@ date --date=@1447474147
 date --date=@`printf "%d\n" 0x5646b3e3`
 dbaccess dev 
 dbaccess dev $tempsql
+defaults write com.apple.finder AppleShowAllFiles YES  # Max OS: Finder - show all/hidden files
 df -BM /eci/dev/sqr
 df -BM /maint				# need 500MB free for RHEL6 upgrade
 dig +short myip.opendns.com @resolver1.opendns.com	# get my IP - FAST
