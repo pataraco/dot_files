@@ -1,14 +1,15 @@
-#!bash - ~/.bash_aliases_ctcs - sourced by ~/.bashrc_aliases
+#!bash - sourced by ~/.bashrc_aliases via $COMPANY_SHIT
 #
 # these are functions/aliases specific to Comtech TCS
 
+THIS_FILE=".bash_aliases_$COMPANY"
+
 # if interactive shell - display message
-#[ -n "$PS1" ] && echo "sourcing: .bash_aliases_ctcs"
-[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (begin)... "
+[ -n "$PS1" ] && echo -n "$THIS_FILE (begin)... "
 
-# define functions
+# -------------------- define functions --------------------
 
-function getpubkey {	# CTCS
+function getpubkey {
    # get user's public key from cloud_automation users role
    local _USERS_ROLE_PATH=~/cloud_automation/ansible/roles/users
    local _user=$1
@@ -32,7 +33,7 @@ function searchrepos {	# TOOL
 
 function showcf {	# TOOL
    # show a company specific function
-   ALIASES_FILE="$HOME/.bash_aliases_ctcs"
+   ALIASES_FILE="$HOME/$THIS_FILE"
    if [[ $1 ]]; then
       grep -q "^function $1 " $ALIASES_FILE
       if [ $? -eq 0 ]; then
@@ -537,7 +538,7 @@ function vmrpms {	# VMedix
 function zipstuff {	# MISC
    # zip up specified files for backup
    SRCSERVER="praco.dev.local"
-   STUFFZIP="/home/praco/stuff.ctcs.zip"
+   STUFFZIP="/home/praco/stuff.$COMPANY.zip"
    FILES="
       .*rc
       .ansible.cfg
@@ -573,8 +574,14 @@ function zipstuff {	# MISC
    fi
 }
 
-# define aliases
+# -------------------- define aliases --------------------
 
+# company common
+alias cf="grep '^function .* ' ~/$THIS_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias scba='source ~/$THIS_FILE'
+alias scf=showcf
+alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
+# company specific
 alias act1='source ~/envs/Ansible_1.x/bin/activate; ansible --version'
 alias act2.1='source ~/envs/Ansible_2.x/bin/activate; ansible --version'
 alias act2.2='source ~/envs/Ansible_2.2/bin/activate; ansible --version'
@@ -585,8 +592,6 @@ alias cdi="cd ~/cloud_automation/ansible/inventory"
 alias cdp="cd ~/cloud_automation/ansible/playbooks"
 alias cdr="cd ~/cloud_automation/ansible/roles"
 alias cvhf='~/cloud_automation/ansible/playbooks/VMedix/scripts/create_vm_qa_hosts_file.sh'
-alias cvqhf='~/scripts/ctcs/vmedix/create_vm_qa_hosts_file.sh'
-alias cf="grep '^function .* ' ~/.bash_aliases_ctcs | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
-alias scf=showcf
+alias cvqhf='~/scripts/$COMPANY/vmedix/create_vm_qa_hosts_file.sh'
 
-[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (end). "
+[ -n "$PS1" ] && echo -n "$THIS_FILE (end). "

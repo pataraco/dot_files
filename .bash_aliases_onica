@@ -1,15 +1,16 @@
-#!bash - ~/.bash_aliases_onica - sourced by ~/.bashrc_aliases
+#!bash - sourced by ~/.bashrc_aliases via $COMPANY_SHIT
 #
 # these are functions/aliases specific to Onica
 
+THIS_FILE=".bash_aliases_$COMPANY"
+
 # if interactive shell - display message
-#[ -n "$PS1" ] && echo "sourcing: .bash_aliases_$COMPANY"
-[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (begin)... "
+[ -n "$PS1" ] && echo -n "$THIS_FILE (begin)... "
 
 # set up shell for Onica Single Sign-on (onica-sso)
 [ $(command -v onica-sso) ] && eval "$(onica-sso shell-init bash)"
 
-# define functions
+# -------------------- define functions --------------------
 
 function rde {
    # AWS Set Default Region
@@ -135,8 +136,14 @@ function ssol {	# TOOL
    fi
 }
 
-# define aliases
+# -------------------- define aliases --------------------
 
+# company common
+alias cf="grep '^function .* ' ~/$THIS_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias scba='source ~/$THIS_FILE'
+alias scf=showcf
+alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
+# company specific
 alias actss="source $HOME/envs/sentient-science/bin/activate"
 alias cd-a="cd $HOME/repos/projects/aecom"
 alias cd-bd="cd $HOME/repos/projects/baxter/dclink"
@@ -148,15 +155,8 @@ alias cd-odsc="cd $HOME/repos/projects/ormco/ormco-ods-code"
 alias cd-sli="cd $HOME/repos/Onica/sturdy-lab-infrastructure"
 alias cd-spi="cd $HOME/repos/Onica/sturdy-platform-infrastructure"
 alias cd-ss="cd $HOME/repos/projects/sentient-science/onica-sentient-science"
-if [ -n "$COMPANY_SHIT" ]; then
-   alias cf="grep '^function .* ' ~/.bash_aliases_onica | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
-   alias scf=showcf
-else
-   alias cf="echo 'company alias file not set (COMPANY_SHIT)'"
-   alias scf="echo 'company alias file not set (COMPANY_SHIT)'"
-fi
 alias ssoc="sso-console"
 alias ssor="sso-relogin"
 alias ssocnb="sso-console --no-browser >& /dev/null"
 
-[ -n "$PS1" ] && echo -n ".bash_aliases_$COMPANY (end). "
+[ -n "$PS1" ] && echo -n "$THIS_FILE (end). "
