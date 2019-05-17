@@ -2084,6 +2084,7 @@ alias crt='~/scripts/chef_recipe_tree.sh'
 #alias cssh='cssh -o "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"'
 alias diff="colordiff -u"
 alias disp="tsend 'echo \$DISPLAY'"
+alias dj="vi ~/notes/Daily_Journal.txt"
 alias eaf="eval \"$(declare -F | sed -e 's/-f /-fx /')\""
 alias egrep="egrep --color=auto"
 alias egrpq="egrep --color=always"
@@ -2162,7 +2163,6 @@ alias u=uptime
 #alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; echo "done"; echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
 #alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; sba'
 alias vba='echo "editing: ~/.bash_aliases"; vi ~/.bash_aliases; sba'
-alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 alias veba='[ -f $ENVIRONMENT_SHIT ] && { echo "editing: $ENVIRONMENT_SHIT"; vi $ENVIRONMENT_SHIT; sba; }'
 #alias vi='`which vim`'
 #alias view='`which vim` -R'
