@@ -134,8 +134,8 @@ nnoremap <silent> <Leader>mc /<<<<<<<\<Bar>>>>>>>>\<Bar>=======<CR>
 " highlight lines longer than 79 chars
 nnoremap <silent> <Leader>L /\%>79v.\+<CR>
 " open filename under cursor in split views
-nnoremap <silent> <Leader>hf <C-W>f<CR>
-nnoremap <silent> <Leader>vf <C-W>vgf<CR>
+nnoremap <silent> <Leader>hh <C-W>f<CR>
+nnoremap <silent> <Leader>vv <C-W>vgf<CR>
 " paste from system clipbaard
 nnoremap <silent> <Leader>p "+p<CR>
 " redraw the screen
