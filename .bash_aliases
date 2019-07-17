@@ -540,7 +540,8 @@ default display:
          rm -f $_tmp_file
       else
          for _region in $_ALL_REGIONS; do
-            eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            # debug # echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+            eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          done
       fi
    else
@@ -684,6 +685,68 @@ default display:
    fi
 }
 
+function awsdlb2 {
+   # some 'aws elbv2 describe-load-balancer' hacks
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+   local _AWSELBDLB_CMD="aws elbv2 describe-load-balancers"
+   local _USAGE="usage: \
+awsdlb [OPTIONS]
+  -n NAME      - filter results by this Launch Config Name
+  -m MAX       - the maximum number of items to display
+  -r REGION    - Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +az          - show Availability Zones
+  +d           - show DNS Name
+  +hc          - show Health Check info (HTH, Int, T, TO, UTH)
+  +i           - show Instances
+  +li          - show Listeners (LB Port/Proto, Inst Port/Proto)
+  +s           - show Scheme
+  +sg          - show Security Groups
+  +sn          - show Subnets
+  -h           - help (show this message)
+default display:
+  Load Balancer name"
+   local _max_items=""
+   local _region="$_DEFAULT_REGION"
+   local _reg_exp=""
+   local _queries="LoadBalancerName"
+   local _default_queries="LoadBalancerName"
+   local _more_qs=""
+   local _query="LoadBalancers[]"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -n) _reg_exp="$2"              ; shift 2;;
+          -m) _max_items="--max-items $2"; shift 2;;
+          -r) _region=$2                 ; shift 2;;
+         +az) _more_qs="$_more_qs${_more_qs:+,}AvailabilityZones[]|join(', '@)"   ; shift;;
+          +d) _more_qs="$_more_qs${_more_qs:+,}DNSName"                           ; shift;;
+          +i) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', '@)"; shift;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}Scheme"                            ; shift;;
+         +sg) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"       ; shift;;
+         +sn) _more_qs="$_more_qs${_more_qs:+,}Subnets[]|join(', '@)"             ; shift;;
+         +hc) _more_qs="$_more_qs${_more_qs:+,}HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold"; shift;;
+         +li) _more_qs="$_more_qs${_more_qs:+,}ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol"; shift;;
+        -h|*) echo "$_USAGE"; return;;
+      esac
+   done
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+      for _region in $_ALL_REGIONS; do
+         if [ -z "$_reg_exp" ]; then
+            $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         else
+            $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         fi
+      done
+   else
+      if [ -z "$_reg_exp" ]; then
+         $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      else
+         $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      fi
+   fi
+}
+
 function awsdlc {
    # some 'aws autoscaling describe-launch-configurations' hacks
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
@@ -758,8 +821,8 @@ awsdni [OPTIONS]
   +az          - show Availability Zone
   +d           - show Description
   +m           - show MAC Address
-  +p           - show Public IP
-  +pi          - show Private IP
+  +p           - show Private IP
+  +pi          - show Public IP
   +s           - show Status
   +sd          - show Subnet ID
   +si          - show Security Group Id(s)
@@ -1104,10 +1167,11 @@ function bash_prompt {
          PS_AWS="[$PGRY$ONICA_SSO_ACCOUNT_KEY$PNRM]"
          PS_COL=$PGRY
       fi
-   elif [ "$COMPANY" == "ag" -a -n "$AWS_SESSION_TOKEN" -a -n "$AWS_DEFAULT_PROFILE" ]; then
+   elif [ "$COMPANY" == "ag" -a -n "$AWS_SESSION_TOKEN" -a -n "$AWS_DEFAULT_PROFILE" -a -n "$AWS_STS_EXPIRES_TS" ]; then
       local _now_ts=$(date +%s)
-      local _exp_time=$(jq -r .Credentials.Expiration ~/.aws/${AWS_DEFAULT_PROFILE}_mfa_credentials)
-      local _exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
+      # local _exp_time=$(jq -r .Credentials.Expiration ~/.aws/${AWS_DEFAULT_PROFILE}_mfa_credentials)
+      # local _exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
+      local _exp_ts=$AWS_STS_EXPIRES_TS
       if [ $_exp_ts -gt $_now_ts ]; then
          # set the window title
          local _tminus=$(date -jf "%s" $(($_exp_ts - $_now_ts)) +"(T-%H:%M:%S)")
@@ -1115,9 +1179,9 @@ function bash_prompt {
          if [ $(($_exp_ts - $_now_ts)) -lt 300 ]; then
             PS_AWS="[$PYLW$AWS_DEFAULT_PROFILE$PNRM]"
             PS_COL=$PYLW
-         else
-            PS_AWS="[$PRED$AWS_DEFAULT_PROFILE$PNRM]"
-            PS_COL=$PRED
+         # else
+         #    PS_AWS="[$PRED$AWS_DEFAULT_PROFILE$PNRM]"
+         #    PS_COL=$PRED
          fi
       else
          # set the window title
@@ -1406,6 +1470,23 @@ function decimal_to_baseN {
    return 0
 }
 
+function dj {
+   # either add a daily journal entry provided on the command line or edit it
+   DAILY_JOURNAL_DIR="$HOME/notes"
+   DAILY_JOURNAL_FILE="$DAILY_JOURNAL_DIR/Daily_Journal.txt"
+   [ ! -d $DAILY_JOURNAL_DIR ] && mkdir $DAILY_JOURNAL_DIR
+   if [ $# -ne 0 ]; then
+      case $1 in
+         cat) cat $DAILY_JOURNAL_FILE ;;
+         last) tail -n 1 $DAILY_JOURNAL_FILE ;;
+         tail) tail $DAILY_JOURNAL_FILE ;;
+         *) echo "$(date +'%d-%m-%Y'): $*" >> $DAILY_JOURNAL_FILE ;;
+      esac
+   else
+      vi $DAILY_JOURNAL_FILE
+   fi
+}
+
 function dlecr {
    # run `docker login` command returned from `aws ecr get-login`
    local _DEFAULT_REGION="us-east-1"
@@ -1669,10 +1750,10 @@ function pag { # TOOL
 
 function pbc {
    # enhance `pbcopy`
-   if [ -n $1 ]; then
+   if [ -n "$1" ]; then
       cat $1 | pbcopy
    else
-      eval "history -p \!\!" | pbcopy
+      eval $(history -p \!\!) | pbcopy
    fi
 }
 
@@ -1724,8 +1805,8 @@ function rf { # MISC
 function sae { # TOOL
    # set AWS environment variables from ~/.aws/config file and profiles in it
    local _AWS_CFG=$HOME/.aws/config
-   local _AWS_PROFILES=$(grep '^\[profile' $_AWS_CFG | awk '{print $2}' | tr ']\n' ' ')
-   local _VALID_ARGS=$(echo "$_AWS_PROFILES unset" | tr ' ' ':')
+   local _AWS_PROFILES=$(grep '^\[profile' $_AWS_CFG | awk '{print $2}' | tr -s ']\n' ' ')
+   local _VALID_ARGS=$(echo "${_AWS_PROFILES}unset" | tr ' ' ':')
    local _environment
    local _arg="$1"
    if [ -n "$_arg" ]; then
@@ -1744,6 +1825,8 @@ function sae { # TOOL
          unset AWS_SESSION_TOKEN
          echo "environment has been unset"
       else
+         # unset AWS_SESSION_TOKEN
+         # unset AWS_SECURITY_TOKEN
          export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
          local _aws_env=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG | sed 's/ *$//')
          local _aws_acct=$(aws sts get-caller-identity --profile $AWS_DEFAULT_PROFILE | jq -r .Account)
@@ -1753,11 +1836,13 @@ function sae { # TOOL
          export AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
          _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
          echo "environment has been set to --> $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
-         [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
-         [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
          [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
-         [ -z "$AWS_SECRET_ACCESS_KEY" ] && unset AWS_SECRET_ACCESS_KEY
+         [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
          [ -z "$AWS_DEFAULT_REGION" ] && unset AWS_DEFAULT_REGION
+         [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
+         [ -z "$AWS_SECRET_ACCESS_KEY" ] && unset AWS_SECRET_ACCESS_KEY
+         [ -z "$AWS_SECURITY_TOKEN" ] && unset AWS_SECURITY_TOKEN
+         [ -z "$AWS_SESSION_TOKEN" ] && unset AWS_SESSION_TOKEN
       fi
       if [ "$COLOR_PROMPT" == "yes" ]; then
          case $_environment in
@@ -1772,8 +1857,83 @@ function sae { # TOOL
             mine)	# green prompt
                PS_COL="$PGRN"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
             *)		# cyan prompt
-               PS_COL="$PCYN"; PS_AWS="$PNRM" ;;
+               PS_COL="$PNRM"; PS_AWS="$PNRM" ;;
          esac
+      fi
+   else
+      echo -n "--- AWS Environment "
+      [ -n "$AWS_DEFAULT_PROFILE" -o \( -n "$AWS_ACCESS_KEY_ID" -a -n "$AWS_SECRET_ACCESS_KEY" \) ] && echo "Settings ---" || echo "(NOT set) ---"
+      echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
+      echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
+      # obfuscate the KEYs with some *'s
+      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HJLMO-QT-VXZ03-9]:*:g'
+      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[bd-np-zF-HJLO-QU-V03-9+]:*:g'
+      echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
+   fi
+}
+
+function sar { # TOOL
+   # aws sts assume-role from ~/.aws/config file
+   local _AWS_CFG=$HOME/.aws/config
+   local _STS_DURATION=3600
+   local _AWS_PROFILES=$(grep '^\[profile' $_AWS_CFG | awk '{print $2}' | tr -s ']\n' ' ')
+   local _VALID_ARGS=$(echo "${_AWS_PROFILES}unset" | tr ' ' ':')
+   local _environment
+   local _arg="$1"
+   local _AWS_STS_CREDS=$HOME/.aws/${_arg}_mfa_credentials
+   if [ -n "$_arg" ]; then
+      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $_AWS_PROFILES
+         return 2
+      fi
+      if [ "$_arg" == "unset" ]; then
+         unset AWS_ACCESS_KEY_ID
+         unset AWS_DEFAULT_PROFILE
+         unset AWS_DEFAULT_REGION
+         unset AWS_ENVIRONMENT
+         unset AWS_SECRET_ACCESS_KEY
+         unset AWS_SECURITY_TOKEN
+         unset AWS_SESSION_TOKEN
+         echo "environment has been unset"
+      else
+         unset AWS_SECURITY_TOKEN
+         export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
+         local _role_arn=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/role_arn/) {print $3; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG | sed 's/ *$//')
+         aws sts assume-role --role-arn $_role_arn --role-session-name $_arg --duration-seconds $_STS_DURATION > $_AWS_STS_CREDS
+         if [ $? -eq 0 ]; then
+            export AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId $_AWS_STS_CREDS)
+            export AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey $_AWS_STS_CREDS)
+            export AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken $_AWS_STS_CREDS)
+            export AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
+            _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG)
+            local _aws_acct=$(aws sts get-caller-identity | jq -r .Account)
+            local _aws_env=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG | sed 's/ *$//')
+            export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
+            local _exp_time=$(jq -r .Credentials.Expiration $_AWS_STS_CREDS)
+            export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
+            echo "role has been assumed --> $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
+            [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
+            [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
+            [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
+            [ -z "$AWS_SECRET_ACCESS_KEY" ] && unset AWS_SECRET_ACCESS_KEY
+            [ -z "$AWS_DEFAULT_REGION" ] && unset AWS_DEFAULT_REGION
+            if [ "$COLOR_PROMPT" == "yes" ]; then
+               case $_environment in
+                  dev)	# cyan prompt
+                     PS_COL="$PCYN"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+                  test)	# magenta prompt
+                     PS_COL="$PMAG"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+                  mixed)	# yellow prompt
+                     PS_COL="$PYLW"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+                  prod)	# red prompt
+                     PS_COL="$PRED"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+                  mine)	# green prompt
+                     PS_COL="$PGRN"; PS_AWS="$PS_COL[$AWS_DEFAULT_PROFILE]$PNRM" ;;
+                  *)		# cyan prompt
+                     PS_COL="$PCYN"; PS_AWS="$PNRM" ;;
+               esac
+            fi
+         fi
       fi
    else
       echo -n "--- AWS Environment "
@@ -2084,7 +2244,6 @@ alias crt='~/scripts/chef_recipe_tree.sh'
 #alias cssh='cssh -o "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"'
 alias diff="colordiff -u"
 alias disp="tsend 'echo \$DISPLAY'"
-alias dj="vi ~/notes/Daily_Journal.txt"
 alias eaf="eval \"$(declare -F | sed -e 's/-f /-fx /')\""
 alias egrep="egrep --color=auto"
 alias egrpq="egrep --color=always"
@@ -2094,6 +2253,7 @@ alias f="grep '^function .* ' ~/.bash_aliases | awk '{print $2}' | cut -d'(' -f1
 alias fgrep="fgrep --color=auto"
 alias fgrpa="fgrep --color=always"
 alias fuck='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
+alias gci='aws sts get-caller-identity | jq -r .Arn | cut -d: -f5-6'
 # alias gh="history | grep" # now a function
 alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
 alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
@@ -2123,6 +2283,7 @@ alias mv='mv -i'
 #alias psa='ps auxfw' # converted to a function
 alias myip='curl http://ipecho.net/plain; echo'
 alias pa='ps auxfw'
+alias pbp='pbpaste'
 #alias pse='ps -ef' # converted to a function
 alias pe='ps -ef'
 alias pssav='PS_SHOW_AV=1'
@@ -2145,21 +2306,22 @@ alias sa=alias
 #alias sba='source ~/.bash_aliases | sed "s/$/.../g" | tr "\n" " "; echo "done"'
 alias sba='source ~/.bash_aliases'
 alias sdl="export DISPLAY=localhost:10.0"
-alias sf=showf
+alias sf='showf'
 alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 alias sing="$HOME/scripts/tools/sing.sh"
 alias sts="grep '= CFNType' $HOME/repos/stacker/stacker/blueprints/variables/types.py | awk '{print \$1}'"
-alias sw=stopwatch
+alias sw='stopwatch'
 #alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
 alias ta='tmux attach -t'
+alias tf11='/usr/local/bin/terraform.0.11.14'
 alias tmx='tmux new-session -s Raco -n MYSHTUFF'
 alias tspo='tmux set-window-option synchronize-panes on'
 alias tspx='tmux set-window-option synchronize-panes off'
 alias tt='echo -ne "\033]0;$(whoami)@$(hostname)\007"'
 alias tskap="_tmux_send_keys_all_panes"
-alias xterm='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
-alias u=uptime
+alias u='uptime'
+alias ua='unalias'
 #alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; echo "done"; echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
 #alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; sba'
 alias vba='echo "editing: ~/.bash_aliases"; vi ~/.bash_aliases; sba'
@@ -2190,6 +2352,7 @@ else
 fi
 alias wgft='echo "$(history -p \!\!) | grep"; $(history -p \!\!) | grep'
 alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less -FrX'
+alias xterm='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
 
 # -------------------- final touches --------------------
 
