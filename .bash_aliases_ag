@@ -12,12 +12,82 @@ THIS_FILE=".bash_aliases_$COMPANY"
 function saem {
 # set AWS environment variables with MFA (aws-mfa)
 # (https://github.com/lonelyplanet/aws-mfa)
+# here's a Python version: https://github.com/broamski/aws-mfa
 
+   local _mfa_exp_time
+   local _mfa_exp_ts
+   local _exit_code
    local _arg=$1
-   sae $_arg
-   if [ -n "$_arg" -a "$_arg" != "unset" ]; then
-      eval $(aws-mfa --profile $_arg)
-      echo "MFA has been enabled for environment"
+   local _AWS_STS_CREDS=$HOME/.aws/${_arg}_mfa_credentials
+   aws sts get-caller-identity > /dev/null 2>&1
+   _exit_code=$?
+   [ $_exit_code -ne 0 ] && sae unset > /dev/null
+   sae $_arg > /dev/null
+   if [ -n "$_arg" ]; then
+      if [ "$_arg" == "unset" ]; then
+         echo "environment has been unset"
+      else
+         if [ -n "$AWS_STS_EXPIRES_TS" -o -e $_AWS_STS_CREDS ]; then
+            local _now_ts=$(date +%s)
+            _mfa_exp_time=$(jq -r .Credentials.Expiration $_AWS_STS_CREDS)
+            _mfa_exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_mfa_exp_time +"%s")
+            # if [ $_mfa_exp_ts -lt $_now_ts ]; then
+            # echo "debug: AWS_STS_EXPIRES_TS: $AWS_STS_EXPIRES_TS"
+            [ -z "$AWS_STS_EXPIRES_TS" ] && AWS_STS_EXPIRES_TS=0
+            # echo "debug: AWS_STS_EXPIRES_TS: $AWS_STS_EXPIRES_TS, _now_ts: $_now_ts, _mfa_exp_ts: $_mfa_exp_ts, AWS_SESSION_TOKEN: $AWS_SESSION_TOKEN"
+            if [ $AWS_STS_EXPIRES_TS -lt $_now_ts -a $_mfa_exp_ts -lt $_now_ts ]; then
+               echo -en "Enter the 6-digit code from your MFA device: "
+            ## elif [ $AWS_STS_EXPIRES_TS -gt $_now_ts -a -z "$AWS_SESSION_TOKEN" ]; then
+            ##    echo -en "Enter the 6-digit code from your MFA device: "
+            ## elif [ $_mfa_exp_ts -gt $_now_ts -a -z "$AWS_SESSION_TOKEN" ]; then
+            ##    echo -en "Enter the 6-digit code from your MFA device: "
+            fi
+         else
+            echo -en "Enter the 6-digit code from your MFA device: "
+         fi
+         [ -z "$AWS_SESSION_TOKEN" ] && echo -en "Enter the 6-digit code from your MFA device: "
+         local _aws_mfa_results
+         _aws_mfa_results=$(aws-mfa --profile $_arg 2>&1)
+         _exit_code=$?
+         # echo "debug: got this results ($_exit_code):"
+         # echo "debug: $_aws_mfa_results"
+         local _aws_mfa_results_cleaned=$(echo $_aws_mfa_results | sed 's/Fetching.*\.\.\. *//;s/Using MFA device .*mfa_device\. *//;s/Enter .* MFA device: *//;s/An error .* code\. *//')
+         # echo "debug: really want to 'eval' this:"
+         # echo "debug: $_aws_mfa_results_cleaned"
+         if [ $_exit_code -eq 0 ]; then
+            eval "$_aws_mfa_results_cleaned"
+            _mfa_exp_time=$(jq -r .Credentials.Expiration $_AWS_STS_CREDS)
+            # _mfa_exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_mfa_exp_time +"%s")
+            # export AWS_STS_EXPIRES_TS=$_mfa_exp_ts
+            export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_mfa_exp_time +"%s")
+            export AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN
+            echo "environment has been set to --> $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
+            echo "MFA has been enabled for environment"
+         else
+            echo "$_aws_mfa_results_cleaned"
+            echo "environment could NOT set to --> $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
+            echo "MFA could NOT be enabled for environment"
+            unset AWS_ACCESS_KEY_ID
+            unset AWS_DEFAULT_PROFILE
+            unset AWS_DEFAULT_REGION
+            unset AWS_ENVIRONMENT
+            unset AWS_SECRET_ACCESS_KEY
+            unset AWS_SECURITY_TOKEN
+            unset AWS_SESSION_TOKEN
+            unset AWS_STS_EXPIRES_TS
+            PS_COL="$PNRM"; PS_AWS="$PNRM"
+         fi
+      fi
+   else
+      echo -n "--- AWS Environment "
+      [ -n "$AWS_DEFAULT_PROFILE" -o \( -n "$AWS_ACCESS_KEY_ID" -a -n "$AWS_SECRET_ACCESS_KEY" \) ] && echo "Settings ---" || echo "(NOT set) ---"
+      echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
+      echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
+      # obfuscate the KEYs with some *'s
+      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HJLMO-QT-VXZ03-9]:*:g'
+      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[bd-np-zF-HJLO-QU-V03-9+]:*:g'
+      echo "AWS_SESSION_TOKEN     = ${AWS_SESSION_TOKEN:-N/A}" | sed 's:[bd-np-zF-HJLP-QU-V03-9+]:*:g' | cut -c1-79
+      echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
    fi
 }
 
@@ -48,6 +118,7 @@ function showcf {	# TOOL
 alias cf="grep '^function .* ' ~/$THIS_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
 alias scba='source ~/$THIS_FILE'
 alias scf=showcf
+alias vl='export VAULT_ADDR=$(cat ~/.ssh/ag_vault_address); vault login -method=github token=$(cat ~/.ssh/github_ag_access_token)'
 alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 # company specific
 alias vi-wpn="vi ~/Documents/projects/wordpress/wordpress-project-notes.txt"
