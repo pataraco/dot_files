@@ -12,16 +12,16 @@
 ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling resume-processes --auto-scaling-group-name $asgn; done
 ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling suspend-processes --auto-scaling-group-name $asgn; done
 RACK_ENV=ENVIRONMENT bundle exec rake db:migrate # run from "/var/apps/APP/current"
-ansible -i inventory/VMedix/VPC/hosts_CLUSTER "REGEX.*" -a "bash -x /root/scripts/ansible_pull.sh force" --vault-password-file ~/.vault --become
-ansible -i inventory/VMedix/VPC/hosts_CLUSTER "all:\!aws" -m service -a "name=crond state=stopped" --vault-password-file=~/.vault --become
+ansible -i inventory/project/VPC/hosts_CLUSTER "REGEX.*" -a "bash -x /root/scripts/ansible_pull.sh force" --vault-password-file ~/.vault --become
+ansible -i inventory/project/VPC/hosts_CLUSTER "all:\!aws" -m service -a "name=crond state=stopped" --vault-password-file=~/.vault --become
 ansible -i inventory/vagrant all -a "touch /tmp/test" --private-key ~/.ssh/vagrant
 ansible -i inventory/vagrant all -m file -a "src=/tmp/test dest=/tmp/testdir/test state=link" --private-key ~/.ssh/vagrant
 ansible-playbook -i IP_ADDR, [--tags "qa"|--skip-tags "cmc,dev,qa,nb,scm"] playbooks/util/manage_users.yml
-ansible-playbook -i inventory/VMedix/VPC/HOSTS_CLUSTER --skip-tags "cmc,qa,nb,scm" --limit '!aws' --vault-password-file=~/.vault.vm playbooks/util/manage_users.yml
-ansible-playbook -i inventory/VMedix/VPC/hosts_CLUSTER --skip-tags "dev,cmc,qa,nb,scm" --limit '!aws' -e '{"disable_users": ["vshainiak","btrinh","lzhao","bdre","dtaylor","rpatel","jpark","nganapathy"]}' --vault-password-file=~/.vault playbooks/util/manage_users.yml
-ansible-playbook -i inventory/VMedix/VPC/hosts_local -e "bn=BRANCH_NEW cn=CLUST_NEW us=UPDATE_SCRIPT dt=no" --vault-password-file=~/.vault.vm playbooks/VMedix/create_vm_pcr.yml
+ansible-playbook -i inventory/project/VPC/HOSTS_CLUSTER --skip-tags "cmc,qa,nb,scm" --limit '!aws' --vault-password-file=~/.vault playbooks/util/manage_users.yml
+ansible-playbook -i inventory/project/VPC/hosts_CLUSTER --skip-tags "dev,cmc,qa,nb,scm" --limit '!aws' -e '{"disable_users": ["jdoe","fsmith","mjane"]}' --vault-password-file=~/.vault playbooks/util/manage_users.yml
+ansible-playbook -i inventory/project/VPC/hosts_local -e "bn=BRANCH_NEW cn=CLUST_NEW us=UPDATE_SCRIPT dt=no" --vault-password-file=~/.vault playbooks/project/PLAY_BOOK_NAME.yml
 ansible-playbook -i inventory/vagrant --private-key=~/.ssh/vagrant playbooks/util/manage_users.yml
-ansible-playbook -i ~/cloud_automation/ansible/inventory/VMedix/VPC/hosts_HOSTS [--limit 'PATTERN*'] -e 'c=add|rem u=USER' --vault-password-file=~/.vault ~/ansible/playbooks/vm_prod_access.yml
+ansible-playbook -i inventory/project/VPC/hosts_HOSTS [--limit 'PATTERN*'] -e 'c=add|rem u=USER' --vault-password-file=~/.vault ~/ansible/playbooks/PLAY_BOOK_NAME.yml
 ansible-vault decrypt encrypted --output=decrypted --vault-password-file=~/.vault
 ansible-vault encrypt decrypted --output=encrypted --vault-password-file=~/.vault
 arc diff --reviewers sbenjamin,tholcomb,akulkarni,pfreeman main
@@ -57,7 +57,7 @@ defaults write com.apple.finder AppleShowAllFiles YES  # Max OS: Finder - show a
 df -BM /eci/dev/sqr
 df -BM /maint				# need 500MB free for RHEL6 upgrade
 dig +short myip.opendns.com @resolver1.opendns.com	# get my IP - FAST
-dig MX virtumedix.com
+dig MX example.com
 dig NS us-east-1.amazonaws.com
 dmidecode | egrep -i 'date|bios'
 dmidecode | grep Product
@@ -92,7 +92,7 @@ for file in `grep filename *|awk '{print $NF}'`; do echo -n "$file: "; aws s3 cp
 for host in `kns -a ifqdn PATTERN|\grep \.net$|awk '{print $NF}'`; do host $host; done
 for i in {0..255}; do printf "\x1b[38;5;${i}mcolour${i} "; done
 for node in `knl`; do host=`kns -a ifqdn $node|\grep \.net$|awk '{print $NF}'`; host $host; done
-for x in www.evideodoc.ie evideodoc.co.uk; do for h in app_nginx{1,2}.eu.vmedix.nim; do echo; echo; echo $x : $h; openssl s_client -connect $h:443 -servername $x </dev/null 2>/dev/null | openssl x509 -noout -subject -dates -serial; done; done
+for x in www.evideodoc.ie evideodoc.co.uk; do for h in app_nginx{1,2}.eu.example.com; do echo; echo; echo $x : $h; openssl s_client -connect $h:443 -servername $x </dev/null 2>/dev/null | openssl x509 -noout -subject -dates -serial; done; done
 for yaml in `cat ../webapp-yamls`; do echo -n "$yaml: "; aws s3 cp s3://web-builds-devtest/$yaml .;done
 get #guestnum1 $roomnum1 from guest-room-tbl(#i+1)	# Club Data (clbdata.sqr)
 git diff-tree --no-commit-id --name-only -r 170be5c
@@ -161,6 +161,8 @@ openssl x509 -in nimaws.com.crt -text
 openssl x509 -noout -subject -in star_game.firefall.com.cn.pem
 openstack ec2 credentials list --user admin
 pbcopy < FILE # copy to clipboard
+pgcli -h HOST -p PORT -u USER -d DB
+pgcli postgresql://USER@HOST:PORT/DB
 pkill -HUP dbaccess
 pkill clientp
 pkill java
@@ -170,7 +172,7 @@ prsetup					# printer setup
 prtlock					# /eci/dev/bin/prtlock
 put &res.guestnum &resrooms.roomnum into guest-room-tbl(#guest-room-index+1)	# Club Data (clbdata.sqr)
 python -c "from passlib.hash import sha512_crypt; print sha512_crypt.encrypt(raw_input('clear-text password: '))"
-rgn=us-east-1; watch -n1 -d 'awsdasg -r '"$rgn"' -n vmedix +bt; echo "--"; awsdlc -r '"$rgn"' -n vmedix; echo "--"; awsdi -r '"$rgn"' -p VMedix -n log +bt +c'
+rgn=us-east-1; watch -n1 -d 'awsdasg -r '"$rgn"' -n ASG_NAME +bt; echo "--"; awsdlc -r '"$rgn"' -n LC_NAME; echo "--"; awsdi -r '"$rgn"' -p PROJECT -n log +bt +c'
 rpm -qa | grep MQSeries | grep -v 6.0.0
 rsync -nvcrlDz
 s3cmd -c /data/.s3cfg --disable-multipart put matchmaker.lexe.r5e s3://firefall-prod-build-1931-production/bin/
@@ -184,8 +186,8 @@ sftp -i /home/praco/repos/client_certificates/package-key/369-environment/keys/3
 sleep $((RANDOM % 300))		# sleep 0 to 300 seconds
 smaint
 sqr /eci/dbatools/oob dev	# run as eci
-ssh -A -L 3389:PRIV_IP:3389 ec2-user@PUB_IP
-ssh mongo1.shared1.VPC.nim "mongo --quiet --ssl --sslAllowInvalidCertificates --host mongo1 --eval \"printjson(db.runCommand('ismaster'))\" | grep primary"
+ssh [-A] -L LOCAL_PORT:HOST:HOST_PORT USER@HOST  # SSH tunnel
+ssh mongo1.shared1.example.com "mongo --quiet --ssl --sslAllowInvalidCertificates --host mongo1 --eval \"printjson(db.runCommand('ismaster'))\" | grep primary"
 ssh-add -l
 ssh-copy-id [$USER@]$HOSTNAME
 ssh-keygen -R $hostname		# remove host entries from known_hosts
