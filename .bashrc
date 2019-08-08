@@ -144,6 +144,11 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
+# enable AWS CLI command completion
+if [ -e /usr/local/bin/aws_completer ]; then
+    complete -C '/usr/local/bin/aws_completer' aws
+fi
+
 ## # I put this stuff in .bash_profile
 ## export ANSIBLE_HOME=$HOME/repos/cloud_automation/ansible
 ## export ANSIBLE_CONFIG=$HOME/repos/cloud_automation/ansible/inventory/ansible.cfg
