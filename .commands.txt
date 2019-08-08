@@ -19,9 +19,9 @@ ansible -i inventory/vagrant all -m file -a "src=/tmp/test dest=/tmp/testdir/tes
 ansible-playbook -i IP_ADDR, [--tags "qa"|--skip-tags "cmc,dev,qa,nb,scm"] playbooks/util/manage_users.yml
 ansible-playbook -i inventory/project/VPC/HOSTS_CLUSTER --skip-tags "cmc,qa,nb,scm" --limit '!aws' --vault-password-file=~/.vault playbooks/util/manage_users.yml
 ansible-playbook -i inventory/project/VPC/hosts_CLUSTER --skip-tags "dev,cmc,qa,nb,scm" --limit '!aws' -e '{"disable_users": ["jdoe","fsmith","mjane"]}' --vault-password-file=~/.vault playbooks/util/manage_users.yml
+ansible-playbook -i inventory/project/VPC/hosts_HOSTS [--limit 'PATTERN*'] -e 'c=add|rem u=USER' --vault-password-file=~/.vault ~/ansible/playbooks/PLAY_BOOK_NAME.yml
 ansible-playbook -i inventory/project/VPC/hosts_local -e "bn=BRANCH_NEW cn=CLUST_NEW us=UPDATE_SCRIPT dt=no" --vault-password-file=~/.vault playbooks/project/PLAY_BOOK_NAME.yml
 ansible-playbook -i inventory/vagrant --private-key=~/.ssh/vagrant playbooks/util/manage_users.yml
-ansible-playbook -i inventory/project/VPC/hosts_HOSTS [--limit 'PATTERN*'] -e 'c=add|rem u=USER' --vault-password-file=~/.vault ~/ansible/playbooks/PLAY_BOOK_NAME.yml
 ansible-vault decrypt encrypted --output=decrypted --vault-password-file=~/.vault
 ansible-vault encrypt decrypted --output=encrypted --vault-password-file=~/.vault
 arc diff --reviewers sbenjamin,tholcomb,akulkarni,pfreeman main
@@ -44,7 +44,7 @@ crontab -r; service procmond stop; rm -rf /tmp/*download*; sleep 10; umount /r5/
 cssh -l ubuntu -o "-i ~/.ssh/Red5China.pem" 10.248.4.2 10.248.4.5 10.248.4.6 10.248.4.7
 curl --data "Hello from Slackbot" $'https://r5s.slack.com/services/hooks/slackbot?token=nbvhEDf2Dov4mwn&channel=%23techops'
 curl -s https://api.github.com/users/pataraco/repos|grep clone_url|awk '{print $2}'|tr -d '",'
-curl http://169.254.169.254/latest/meta-data/
+curl http://169.254.169.254/latest/meta-data/; echo    # AWS EC2 instance info
 curl http://ipecho.net/plain; echo	# myip
 curl https://webkeys.vpc02.wux01.r5external.com/firefall-china_prod-build-1913/aes-pass.bin --cacert /r5/certificates/red5-rootcert.crt --cert /r5/certificates/1913.crt --key /r5/certificates/1913_nopass.key --ssl
 curl ifconfig.co/port/22; echo	# show if my port is reachable
@@ -86,6 +86,7 @@ egrep -q '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
 find -exec md5sum {} \; > .md5sum.checklist
 find . -mtime +3 -exec rm {} \;		# find stuff older than 3 days
 find . -name *.ext1 -exec bash -c 'mv ${1%.ext1}{.ext1,.ext2}' - {} \;
+find . -type d \( -path dir1 -o -path dir2 -o -path dir3 \) -prune -o -name '*.py' -print
 find / -name *.crt -ls -exec openssl x509 -noout -dates -in {} \;
 for file in `grep filename *.yaml|awk '{print $NF}'`; do ls $file; done
 for file in `grep filename *|awk '{print $NF}'`; do echo -n "$file: "; aws s3 cp s3://web-builds-devtest/$file .; done
@@ -155,6 +156,7 @@ openssl req -in DOMAIN_NAME.csr -noout -subject
 openssl req -in consult.firecrackerhealth.com.csr.orig -noout -subject
 openssl req -new -newkey rsa:2048 -nodes -keyout DOMAIN_NAME.key -out DOMAIN_NAME.csr
 openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout www.example.com.selfsigned.key -out www.example.com.selfsigned.crt -subj /CN=www.example.com -days 3650
+openssl rsa -in PRIVATE_KEY -pubout  # SSL: generate public from private key
 openssl s_client -connect $host:443 -servername $domain </dev/null 2>/dev/null| openssl x509 -noout -subject -dates -serial
 openssl s_client -connect clientapi-v01-sna01-prod.firefall.com:443 -servername firefall.com </dev/null 2>/dev/null | openssl x509 -noout -subject -dates -serial
 openssl x509 -in nimaws.com.crt -text
@@ -193,7 +195,7 @@ ssh-copy-id [$USER@]$HOSTNAME
 ssh-keygen -R $hostname		# remove host entries from known_hosts
 ssh-keygen -p -f $key_file	# add/change passphrase
 ssh-keygen -t rsa [-b 4096] [-C "email"]  # generate RSA key-pair (default: 2048)
-ssh-keygen -y -f PRIVATE_KEY | pbcopy  # generate public from private key
+ssh-keygen -y -f PRIVATE_KEY         # SSH: generate public from private key
 stacker build -i -r REGION ENV_FILE YAML_FILE
 stacker destroy -f -r REGION ENV_FILE YAML_FILE
 stty -a < /dev/ttyaa05
@@ -213,7 +215,7 @@ telnet mapscii.me
 uname -r
 unzip scripts/scripts.zip scripts/shutdown_ints_db.sh
 vgdisplay [/dev/vg01] | grep Free
-wget http://169.254.169.254/latest/user-data
+wget http://169.254.169.254/latest/user-data    # AWS EC2 instance user data script
 wget raw.githubusercontent.com/pataraco/bash_aliases/master/.bash_aliases
 xwininfo
 zip -sf scripts.zip|grep init
