@@ -86,20 +86,22 @@ aws iam list-group-policies --group-name GROUP_NAME
 aws iam list-groups
 aws iam list-groups-for-user --user-name USER_NAME		# list all groups user is in
 aws iam list-policies
-aws iam list-users
+aws iam list-users --query Users[*].[UserName,UserId] --output table
 aws iam put-role-policy --role-name ROLE_NAME --policy-name POLICY_NAME --policy-document file://PATH_TO/POLICY_DOC.json
 aws iam update-login-profile --user-name USERNAME --password PASSWORD
 aws lambda update-function-configuration --function-name FUNCTION_NAME --timeout N --memory-size M
+aws resourcegroupstaggingapi tag-resources --resource-arn-list $ARNs --tags $TAG_KEY=$TAG_VAL
 aws route53 create-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_ID --vpc VPCRegion=$REGION,VPCId=$VPC_ID
 aws route53 delete-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_ID --vpc VPCRegion=$REGION,VPCId=$VPC_ID
 aws route53 get-hosted-zone --id $HOSTED_ZONE_ID
+aws route53 list-hosted-zones --query "HostedZones[?Name==autogravity.com.].[Name,Id,Config.PrivateZone,ResourceRecordSetCount,Config.Comment]" --output table
 aws route53 list-vpc-association-authorizations --hosted-zone-id $HOSTED_ZONE_ID
 aws s3 cp $FILE s3://$BUCKET/$KEY --sse aws:kms --sse-kms-key-id $KMS_ARN
+aws s3 ls s3://S3_BUCKET/KEY --recursive --profile PROFILE
 aws s3 mb s3://BUCKET_NAME
 aws s3 mv s3://S3_BUCKET/KEY/FILE s3://S3_BUCKET/KEY/FILE --sse aws:kms --sse-kms-key-id KMS_KEY_ID --profile PROFILE
-aws s3 ls s3://S3_BUCKET/KEY --recursive --profile PROFILE
-aws s3 rm s3://S3_BUCKET/KEY --recursive --profile PROFILE  # CAUTION!!!!
 aws s3 rb s3://BUCKET_NAME --force # remove bucket and all of it's contents
+aws s3 rm s3://S3_BUCKET/KEY --recursive --profile PROFILE  # CAUTION!!!!
 aws s3 sync --profile AWS_PROFILE --exclude \* --include DIR_NAME\* s3://BUCKET_SRC/path/to/files/ s3://BUCKET_DEST/path/to/files/
 aws s3 sync --profile AWS_PROFILE s3://BUCKET_SRC/ /BUCKET_DEST/dir/
 aws ses --region REGION get-identity-verification-attributes --identities EMAIL_ADDR
@@ -120,6 +122,9 @@ aws ssm put-parameter --name KEY_NAME --value PASSWD --type SecureString --overw
 aws sts get-caller-identity
 aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --output text); echo $aws_acct  # get AWS account
 aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct  # get AWS account
+curl http://169.254.169.254/latest/meta-data/; echo
+curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance/; echo
 echo -e "protocol=httpsnpath=/v1/repos/testnhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get
 for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling resume-processes --region REGION --auto-scaling-group-name $asgn; done"
 for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling suspend-processes --region REGION --auto-scaling-group-name $asgn; done"
+wget http://169.254.169.254/latest/user-data
