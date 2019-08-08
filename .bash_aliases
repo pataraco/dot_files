@@ -1013,6 +1013,67 @@ default display:
    fi
 }
 
+function awsrgtgr {
+   # some 'aws resourcegroupstaggingapi get-resources' hacks
+   local _AWS_RGT_GR_CMD="aws resourcegroupstaggingapi get-resources"
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+   local _OUTPUT_HEADER="GetResources"
+   local _USAGE="usage: \
+awsrgtgr [OPTIONS]
+  -m  MAX      - maximum number of items to display
+  -p  PROFILE  - AWS profile (--profile option) to use
+  -rf SERVICE[:RESOURCE]
+               - filter results by this service:resource type
+  -tf KEY[=VAL1,VAL2,...]
+               - filter results by this key and optionally it's value(s)
+  -r  REGION   - Region to query (default: $_DEFAULT_REGION, 'all' for all)
+  +k           - show all tag keys that the resources have
+  +t KEY       - show value for tag (KEY)
+  -h           - help (show this message)
+default display:
+  Resource ARN"
+   local _default_queries="ResourceARN"
+   local _filters=""
+   local _resource_filters=""
+   local _tag_filters=""
+   local _tag_key=""
+   local _tag_val=""
+   local _max_items=""
+   local _more_qs=""
+   local _queries="ResourceARN"
+   local _query="ResourceTagMappingList[*]"
+   local _region="$_DEFAULT_REGION"
+   while [ $# -gt 0 ]; do
+      case $1 in
+          -m) _max_items="--max-items $2"                                  ; shift 2;;
+          -p) local _profile="--profile=$2"                                ; shift 2;;
+         -rf) _resource_filters="$2 $_resource_filters"                    ; shift 2;;
+         #-tf) _tag_filters="Key=${2%%=*},Values=${2##*=} $_tag_filters"    ; shift 2;;
+         -tf) _tag_key=${2%%=*}; _tag_val=${2##*=}
+              [[ $2 =~ = ]] \
+                 && _tag_filters="Key=$_tag_key,Values=$_tag_val $_tag_filters" \
+                 || _tag_filters="Key=$_tag_key $_tag_filters"             ; shift 2;;
+          -r) _region=$2                                                   ; shift 2;;
+          +k) _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"     ; shift  ;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]" ; shift 2;;
+        -h|*) echo "$_USAGE"; return;;
+      esac
+   done
+   [ -n "$_resource_filters" ] && _resource_filters="--resource-type-filters ${_resource_filters% }"
+   [ -n "$_tag_filters" ] && _tag_filters="--tag-filters ${_tag_filters% }"
+   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   if [ "$_region" == "all" ]; then
+      local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+      for _region in $_ALL_REGIONS; do
+         # echo "debug: $_AWS_RGT_GR_CMD --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table"
+         eval $_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table | egrep -v '^[-+]|'"$_OUTPUT_HEADER"'' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      done
+   else
+      # echo "debug: $_AWS_RGT_GR_CMD --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table"
+      eval $_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table | egrep -v '^[-+]|'"$_OUTPUT_HEADER"'' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+   fi
+}
+
 function awsrlrrs {
    # some 'aws route53 list-resource-record-sets' hacks
    local _AWSRLRRS_CMD="aws route53 list-resource-record-sets"
@@ -1022,15 +1083,18 @@ awsrlrrs DNS_NAME [OPTIONS]
   -m MAX      - the maximum number of items to display
   -n NAME     - filter results by this Record Name
   -t TYPE     - record TYPE to display
+  +a          - show Alias Target
   +s          - show Set Identifier
   +t          - show TTL
+  +v          - show Record Value
   +w          - show Weight
   -h          - help (show this message)
 default display:
   Record Name | Type | Record Value"
    local _max_items=""
    local _rec_type="*"
-   local _queries="Name,Type,ResourceRecords[].Value|[0]"
+   # local _queries="Name,Type,ResourceRecords[].Value|[0],AliasTarget.DNSName"
+   local _queries="Name,Type"
    local _default_queries="Name,Type,ResourceRecords[].Value|[0]"
    local _reg_exp=""
    local _more_qs=""
@@ -1040,8 +1104,10 @@ default display:
           -m) _max_items="--max-items $2"; shift 2;;
           -n) _reg_exp="$2"              ; shift 2;;
           -t) _rec_type="?Type=='$2'"    ; shift 2;;
+          +a) _more_qs="$_more_qs${_more_qs:+,}AliasTarget.DNSName"       ; shift;;
           +s) _more_qs="$_more_qs${_more_qs:+,}SetIdentifier"; shift;;
           +t) _more_qs="$_more_qs${_more_qs:+,}TTL"          ; shift;;
+          +v) _more_qs="$_more_qs${_more_qs:+,}ResourceRecords[].Value|[0]"       ; shift;;
           +w) _more_qs="$_more_qs${_more_qs:+,}Weight"       ; shift;;
         -h|*) echo "$_USAGE"; return;;
       esac
@@ -2078,26 +2144,27 @@ function vin {
    note_file=$1
    if [ -n "$note_file" ]; then
       case $note_file in
-         ansible) actual_note_file=Ansible_Notes.txt        ;;
-             aws) actual_note_file=AWS_Notes.txt            ;;
-           awsas) actual_note_file=AWS_AutoScaling_Notes.txt;;
-            bash) actual_note_file=Bash_Notes.txt           ;;
-            chef) actual_note_file=Chef_Notes.txt           ;;
-          consul) actual_note_file=Consul_Notes.txt         ;;
-          docker) actual_note_file=Docker_Notes.txt         ;;
-              es) actual_note_file=ElasticSearch_Notes.txt  ;;
-             git) actual_note_file=Git_Notes.txt            ;;
-          gitlab) actual_note_file=GitLab_Notes.txt         ;;
-         jenkins) actual_note_file=Jenkins_Notes.txt        ;;
-            ldap) actual_note_file=LDAP_Notes.txt           ;;
-           linux) actual_note_file=Linux_Notes.txt          ;;
-        logstash) actual_note_file=Logstash_Notes.txt       ;;
-              ps) actual_note_file=PowerShell_Notes.txt     ;;
-          python) actual_note_file=Python_Notes.txt         ;;
-           redis) actual_note_file=Redis_Notes.txt          ;;
-             sql) actual_note_file=SQL_Notes.txt            ;;
-              tf) actual_note_file=Terraform_Notes.txt      ;;
-               *) echo "unknown alias - try again"; return 2;;
+         ansible) actual_note_file=Ansible_Notes.txt ;;
+             aws) actual_note_file=AWS_Notes.txt ;;
+           awsas) actual_note_file=AWS_AutoScaling_Notes.txt ;;
+            bash) actual_note_file=Bash_Notes.txt ;;
+            chef) actual_note_file=Chef_Notes.txt ;;
+          consul) actual_note_file=Consul_Notes.txt ;;
+          docker) actual_note_file=Docker_Notes.txt ;;
+              es) actual_note_file=ElasticSearch_Notes.txt ;;
+             git) actual_note_file=Git_Notes.txt ;;
+          gitlab) actual_note_file=GitLab_Notes.txt ;;
+         jenkins) actual_note_file=Jenkins_Notes.txt ;;
+            ldap) actual_note_file=LDAP_Notes.txt ;;
+           linux) actual_note_file=Linux_Notes.txt ;;
+        logstash) actual_note_file=Logstash_Notes.txt ;;
+              ps) actual_note_file=PowerShell_Notes.txt ;;
+          python) actual_note_file=Python_Notes.txt ;;
+           redis) actual_note_file=Redis_Notes.txt ;;
+             sql) actual_note_file=SQL_Notes.txt ;;
+              tf) actual_note_file=Terraform_Notes.txt ;;
+         virtual) actual_note_file=Virtual_Environments_Notes.txt ;;
+               *) echo "unknown alias - try again"; return 2 ;;
       esac
       eval vim $REPO_DIR/$NOTES_DIR/$actual_note_file
    else
@@ -2260,6 +2327,7 @@ alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
 alias ghwt='sudo dmidecode | grep "Product Name"'
 #alias grep="grep --color=always"
 alias grep="grep --color=auto"
+alias grepxtf="grep --color=auto --exclude-dir .terraform"
 alias grpa="grep --color=always"
 alias guid='printf "%x\n" `date +%s`'
 alias h="history | tail -20"
@@ -2315,6 +2383,7 @@ alias sw='stopwatch'
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
 alias ta='tmux attach -t'
 alias tf11='/usr/local/bin/terraform.0.11.14'
+alias tf12='/usr/local/bin/terraform'
 alias tmx='tmux new-session -s Raco -n MYSHTUFF'
 alias tspo='tmux set-window-option synchronize-panes on'
 alias tspx='tmux set-window-option synchronize-panes off'
