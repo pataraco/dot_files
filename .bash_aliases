@@ -1549,7 +1549,7 @@ function dj {
          *) echo "$(date +'%d-%m-%Y'): $*" >> $DAILY_JOURNAL_FILE ;;
       esac
    else
-      vi $DAILY_JOURNAL_FILE
+      $VIM_CMD $DAILY_JOURNAL_FILE
    fi
 }
 
