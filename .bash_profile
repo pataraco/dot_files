@@ -40,6 +40,14 @@ python27_bin="${HOME}/Library/Python/2.7/bin"
 local_bin="${HOME}/.local/bin"
 [[ -d $local_bin && ! $PATH =~ ^$local_bin:|:$local_bin:|:$local_bin$ ]] && export PATH="$local_bin:$PATH"
 
+# add AWS ElasticBeanstalk CLI (eb) to path
+eb_bin="${HOME}/.ebcli-virtual-env/executables"
+[[ -d $eb_bin && ! $PATH =~ ^$eb_bin:|:$eb_bin:|:$eb_bin$ ]] && export PATH="$PATH:$eb_bin"
+
+# add (Homebrew) MySQL client to path
+hb_mysql_clnt_bin="/usr/local/opt/mysql-client/bin"
+[[ -d $hb_mysql_clnt_bin && ! $PATH =~ ^$hb_mysql_clnt_bin:|:$hb_mysql_clnt_bin:|:$hb_mysql_clnt_bin$ ]] && export PATH="$PATH:$hb_mysql_clnt_bin"
+
 # Should not need this stuff
 ## add Ruby related info
 #export PATH=$PATH:$HOME/.gem/ruby/1.9.1/bin:$HOME/.gem/ruby/2.2.0/bin
@@ -118,7 +126,12 @@ fi
 
 # add `pyenv init` to shell to enable shims and autcompletion
 [ $(command -v pyenv) ] && eval "$(pyenv init -)"
-# add `pyenv virtualenv-init` to shell to enable shims and autcompletion
-[ $(command -v pyenv) ] && eval "$(pyenv virtualenv-init -)"
+# use `pipenv`
+# # add `pyenv virtualenv-init` to shell to enable shims and autcompletion
+# [ $(command -v pyenv) ] && eval "$(pyenv virtualenv-init -)"
+
+# remove duplicate entries in the PATH (both work - take your pick)
+# PATH=$(perl -e 'print join(":", grep { not $seen{$_}++ } split(/:/, $ENV{PATH}))')
+PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/:$//')
 
 [ -n "$PS1" ] && echo -n ".bash_profile (end). "
