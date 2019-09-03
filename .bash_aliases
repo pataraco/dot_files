@@ -1544,6 +1544,7 @@ function dj {
    if [ $# -ne 0 ]; then
       case $1 in
          cat) cat $DAILY_JOURNAL_FILE ;;
+         help) echo "usage: dj [cat|help|last|tail|LOG_ENTRY]" ;;
          last) tail -n 1 $DAILY_JOURNAL_FILE ;;
          tail) tail $DAILY_JOURNAL_FILE ;;
          *) echo "$(date +'%d-%m-%Y'): $*" >> $DAILY_JOURNAL_FILE ;;
@@ -1868,6 +1869,35 @@ function rf { # MISC
    echo "added '$FILE' to: $FILES_FILE"
 }
 
+function s3e {
+   # set s3cfg (s3tools.org) environment
+   local _S3CFG_CFG=$HOME/.s3cfg/config
+   [ ! -e $_S3CFG_CFG ] && { echo "error: s3cfg config file does not exist: $_S3CFG_CFG"; return 1; }
+   local _S3CFG_PROFILES=$(grep '^\[profile' $_S3CFG_CFG | awk '{print $2}' | tr -s ']\n' ' ')
+   local _VALID_ARGS=$(echo "${_S3CFG_PROFILES}unset" | tr ' ' ':')
+   local _environment
+   local _arg="$1"
+   if [ -n "$_arg" ]; then
+      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $_S3CFG_PROFILES
+         return 2
+      fi
+      if [ "$_arg" == "unset" ]; then
+         unset S3CFG
+         echo "s3cfg environment has been unset"
+      else
+         export S3CFG=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_S3CFG_CFG)
+         _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_S3CFG_CFG)
+         echo "s3cfg environment has been set to --> $_environment ($S3CFG)"
+         [ -z "$S3CFG" ] && unset S3CFG
+      fi
+   else
+      echo -n "--- S3CFG Environment "
+      [ -n "$S3CFG" ] && echo "Settings ---" || echo "(NOT set) ---"
+      echo "S3CFG   = ${S3CFG:-N/A}"
+   fi
+}
+
 function sae { # TOOL
    # set AWS environment variables from ~/.aws/config file and profiles in it
    local _AWS_CFG=$HOME/.aws/config
@@ -2031,6 +2061,36 @@ function showf { # TOOL
       read func
       echo
       showf $func
+   fi
+}
+
+function soe {
+   # set OpenStack (www.openstack.org) environment
+   # (sets/sources OSRC to a config e.g. "$HOME/.openstack/os_rc.prod.sh")
+   local _OS_CFG=$HOME/.openstack/config
+   [ ! -e $_OS_CFG ] && { echo "error: openwtack config file does not exist: $_OS_CFG"; return 1; }
+   local _OS_PROFILES=$(grep '^\[profile' $_OS_CFG | awk '{print $2}' | tr -s ']\n' ' ')
+   local _VALID_ARGS=$(echo "${_OS_PROFILES}unset" | tr ' ' ':')
+   local _environment
+   local _arg="$1"
+   if [ -n "$_arg" ]; then
+      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $_OS_PROFILES
+         return 2
+      fi
+      if [ "$_arg" == "unset" ]; then
+         unset OSRC
+         echo "s3cfg environment has been unset"
+      else
+         export OSRC=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_OS_CFG)
+         _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_OS_CFG)
+         echo "s3cfg environment has been set to --> $_environment ($OSRC)"
+         [ -n "$OSRC" ] && source $OSRC || unset OSRC
+      fi
+   else
+      echo -n "--- OpenStack Environment "
+      [ -n "$OSRC" ] && echo "Settings ---" || echo "(NOT set) ---"
+      echo "OSRC   = ${OSRC:-N/A}"
    fi
 }
 

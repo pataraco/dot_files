@@ -829,129 +829,52 @@ function ksshu {
    fi
 }
 
-function ske {	# TOOL
-   # set knife environment
-   local REPO=$CHEF_REPO
-   local CHEF=$REPO/.chef
-   local arg="$1"
-   local SPICEWEASELREPO=$REPO_DIR/spiceweasel
-
-   if [ -n "$arg" ]; then
-      case $arg in
-         ccd) akrb="knife_pek01_censorship.rb";     aenv="China Censorship Destra DNA"
-              s3cg="$HOME/.s3cfg.pek01-censorship"; osrc="$HOME/.ccd.openstackrc.prod-pek01.sh"
-              swyf="$SPICEWEASELREPO/production.vpc01.pek01-censorship.nodes.yml"               ;;
-         dte) akrb="knife_devtest_ew.rb";           aenv="DevTest Europe West"                  ;;
-         dts) akrb="knife_sna01_dts.rb";            aenv="OpenStack:DevTest US West SNA01"
-              s3cg="$HOME/.s3cfg.sna01.dts";        osrc="$HOME/.dts.openstackrc.devtest-sna01.sh"
-              swyf="$SPICEWEASELREPO/devtest.vpc01.sna01.nodes.yml"                             ;;
-         dtu) akrb="knife_devtest_uw.rb";           aenv="DevTest US West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/devtest.vpc01.us-west-2.nodes.yml"                         ;;
-         nun) akrb="none";                          aenv="None"                                 ;;
-         oce) akrb="knife_openstack_corp.rb";       aenv="OpenStack:Corp"                       ;;
-         pek) akrb="knife_pek01.rb";                aenv="Asia Pacific PEK01"
-              s3cg="$HOME/.s3cfg.pek01";            osrc="$HOME/.pek.openstackrc.prod-pek01.sh"
-              swyf="$SPICEWEASELREPO/production.vpc01.pek01.nodes.yml"                          ;;
-         pew) akrb="knife_prod_ew.rb";              aenv="Production Europe West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/production.vpc01.eu-west-1.nodes.yml"                      ;;
-         pms) akrb="knife_pms.rb";                  aenv="Production Migration Stack"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/production.vpc02.us-west-2.nodes.yml"                      ;;
-         pue) akrb="knife_prod_ue.rb";              aenv="Production US East"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/production.vpc01.us-east-1.nodes.yml"                      ;;
-         puw) akrb="knife_prod_uw.rb";              aenv="Production US West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/production.vpc01.us-west-2.nodes.yml"                      ;;
-         pte) akrb="knife_pubtest_ew.rb";           aenv="PubTest Europe West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/pubtest.vpc01.eu-west-1.nodes.yml"                         ;;
-         ptu) akrb="knife_pubtest_uw.rb";           aenv="PubTest US West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/pubtest.vpc01.us-west-2.nodes.yml"                         ;;
-         rou) akrb="knife_r5ops_uw.rb";             aenv="R5Ops US West"
-              s3cg="";                              osrc=""
-              swyf="$SPICEWEASELREPO/r5ops.vpc01.us-west-2.nodes.yml"                           ;;
-         sna) akrb="knife_sna01_pts.rb";            aenv="OpenStack:PubTest US West SNA01"
-              s3cg="$HOME/.s3cfg.sna01.pts";        osrc="$HOME/.sna.openstackrc.pubtest-sna01.sh"
-              swyf="$SPICEWEASELREPO/pubtest.vpc01.sna01.nodes.yml"                             ;;
-         w11) akrb="knife_wux01v01.rb";             aenv="OpenStack:Prod Asia Pacific WUX01-VPC01"
-              s3cg="$HOME/.s3cfg.wux01v01";         osrc="$HOME/.wux01v01.openstackrc.prod-wux01.sh"
-              swyf="$SPICEWEASELREPO/production.vpc01.wux01.nodes.yml"                           ;;
-         w12) akrb="knife_wux01v02.rb";             aenv="OpenStack:Prod Asia Pacific WUX01-VPC02"
-              s3cg="$HOME/.s3cfg.wux01v02";         osrc="$HOME/.wux01v02.openstackrc.prod-wux01.sh"
-              swyf="$SPICEWEASELREPO/production.vpc02.wux01.nodes.yml"                           ;;
-         w13) akrb="knife_wux01v03.rb";             aenv="OpenStack:Prod Asia Pacific WUX01-VPC03"
-              s3cg="$HOME/.s3cfg.wux01v03";         osrc="$HOME/.wux01v03.openstackrc.prod-wux01.sh"
-              swyf="$SPICEWEASELREPO/production.vpc03.wux01.nodes.yml"                           ;;
-           *) echo "unknown environment; (known: ccd dte dts dtu nun oce pek pew pms pue puw pte ptu rou sna w11 w12 w13)"; return 2 ;;
-      esac
-      if [ "$arg" != "nun" ]; then
-         export KNIFTLA=$arg
-         export KNIFERB=$CHEF/$akrb
-         export KNIFENV=$aenv
-         export S3CFG=$s3cg
-         export SW_YAML_FILE=$swyf
-         export OSRC=$osrc
-         [ -n "$OSRC" ] && source $OSRC
-         export AWS_DEFAULT_PROFILE=$arg	# for `aws` (instead of using --profile)
-         #echo "$KNIFENV (KNIFERB='$KNIFERB')"
-         echo "environment has been set to --> $KNIFENV"
-      else
-         unset KNIFTLA
-         unset KNIFERB
-         unset KNIFENV
-         unset S3CFG
-         unset SW_YAML_FILE
-         unset OSRC
-         unset AWS_DEFAULT_PROFILE
-         #echo "knife environment has been unset"
-         echo "environment has been unset"
+function ske {
+   # set [Chef] knife environment
+   local _CHEF_CREDS=$HOME/.chef/credentials
+   [ ! -e $_CHEF_CREDS ] && { echo "error: chef credentials file does not exist: $_CHEF_CREDS"; return 1; }
+   local _CHEF_PROFILES=$(grep '^\[profile' $_CHEF_CREDS | awk '{print $2}' | tr -s ']\n' ' ')
+   local _VALID_ARGS=$(echo "${$_CHEF_PROFILES}unset" | tr ' ' ':')
+   local _environment
+   local _arg="$1"
+   if [ -n "$_arg" ]; then
+      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $_CHEF_PROFILES
+         return 2
       fi
-      ## I don't want to set this link anymore to force myself to set my environment
-      ##(cd $CHEF; ln -fs $akrb $krb) 
-      if [ "$COLOR_PROMPT" = yes ]; then
-         case $arg in
-            nun)
-               PS1='${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;32m\]\w\[\033[00m\]│\[\033[01;36m\]\$\[\033[00m\] ' ;;
-            dte|dts|dtu|rou)
-               PS1='\[\033[01;36m\][$KNIFTLA]\[\033[00m\]${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;32m\]\w\[\033[00m\]│\[\033[01;36m\]\$\[\033[00m\] ' ;;
-            pte|ptu|oce|sna)
-               PS1='\[\033[01;33m\][$KNIFTLA]\[\033[00m\]${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;32m\]\w\[\033[00m\]│\[\033[01;33m\]\$\[\033[00m\] ' ;;
-            ccd|pek|pew|pms|pue|puw|w11|w12|w13)
-               PS1='\[\033[01;31m\][$KNIFTLA]\[\033[00m\]${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;32m\]\w\[\033[00m\]│\[\033[01;31m\]\$\[\033[00m\] ' ;;
+      if [ "$_arg" == "unset" ]; then
+         unset CHEF_PROFILE
+         echo "s3cfg environment has been unset"
+      else
+         export CHEF_PROFILE=$_arg
+         _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_CHEF_CREDS)
+         echo "chef environment has been set to --> $CHEF_PROFILE ($_environment)"
+         [ -z "$CHEF_PROFILE" ] && unset CHEF_PROFILE
+      fi
+      if [ "$COLOR_PROMPT" == "yes" ]; then
+         case $_environment in
+            dev)	# cyan prompt
+               PS_COL="$PCYN"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
+            test)	# magenta prompt
+               PS_COL="$PMAG"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
+            mixed)	# yellow prompt
+               PS_COL="$PYLW"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
+            prod)	# red prompt
+               PS_COL="$PRED"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
+            mine)	# green prompt
+               PS_COL="$PGRN"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
+            *)		# cyan prompt
+               PS_COL="$PNRM"; PS_AWS="$PNRM" ;;
          esac
-         # original TCS
-         # PS1='\[\033[01;32m\]\u@\h \[\033[01;34m\]\W $ \[\033[00m\]'
       fi
    else
-      if [ -n "$KNIFERB" ]; then
-         echo "--- $KNIFENV ---"
-         echo " KNIFTLA             = '$KNIFTLA'"
-         echo " KNIFERB             = '$KNIFERB'"
-         echo " KNIFENV             = '$KNIFENV'"
-         echo " S3CFG               = '$S3CFG'"
-         echo " SW_YAML_FILE        = '$SW_YAML_FILE'"
-         echo " OSRC                = '$OSRC'"
-         echo " AWS_DEFAULT_PROFILE = '$AWS_DEFAULT_PROFILE'"
-         #echo "$KNIFENV (KNIFERB='$KNIFERB')"
-      else
-         #echo "knife environment not set: KNIFENV='$KNIFENV' (KNIFERB='$KNIFERB')"
-         echo "environment not set:"
-         echo " KNIFTLA             = '$KNIFTLA'"
-         echo " KNIFERB             = '$KNIFERB'"
-         echo " KNIFENV             = '$KNIFENV'"
-         echo " S3CFG               = '$S3CFG'"
-         echo " SW_YAML_FILE        = '$SW_YAML_FILE'"
-         echo " OSRC                = '$OSRC'"
-         echo " AWS_DEFAULT_PROFILE = '$AWS_DEFAULT_PROFILE'"
-      fi
+      echo -n "--- Chef (Knife) Environment "
+      [ -n "$CHEF_PROFILE" ] && echo "Settings ---" || echo "(NOT set) ---"
+      echo "CHEF_PROFILE   = ${CHEF_PROFILE:-N/A}"
    fi
 }
 
-function son {	# TOOL
+function son {
    # ssh as ubuntu to an server via IP supplied by user
    nip=$1
    if [ -n "$nip" ]; then
@@ -1000,6 +923,35 @@ function sons {	# TOOL
       #ssh -q ubuntu@$server_ip -i ~/.ssh/Red5China.pem
       echo "ssh ubuntu@$server_ip -i ~/.ssh/Red5Community.pem"
       ssh -q ubuntu@$server_ip -i ~/.ssh/Red5Community.pem
+   fi
+}
+
+function swe {
+   # set spiceweasel (github.com/mattray/spiceweasel) environment
+   local _SW_CFG=$HOME/.spiceweasel/config
+   [ ! -e $_SW_CFG ] && { echo "error: spiceweasel config file does not exist: $_SW_CFG"; return 1; }
+   local $_SW_PROFILES=$(grep '^\[profile' $_SW_CFG | awk '{print $2}' | tr -s ']\n' ' ')
+   local _VALID_ARGS=$(echo "${$_SW_PROFILES}unset" | tr ' ' ':')
+   local _environment
+   local _arg="$1"
+   if [ -n "$_arg" ]; then
+      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $$_SW_PROFILES
+         return 2
+      fi
+      if [ "$_arg" == "unset" ]; then
+         unset SW_YAML_FILE
+         echo "s3cfg environment has been unset"
+      else
+         export SW_YAML_FILE=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_SW_CFG)
+         _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_SW_CFG)
+         echo "s3cfg environment has been set to --> $_environment ($SW_YAML_FILE)"
+         [ -z "$SW_YAML_FILE" ] && unset SW_YAML_FILE
+      fi
+   else
+      echo -n "--- Spiceweasel Environment "
+      [ -n "$SW_YAML_FILE" ] && echo "Settings ---" || echo "(NOT set) ---"
+      echo "SW_YAML_FILE   = ${SW_YAML_FILE:-N/A}"
    fi
 }
 
