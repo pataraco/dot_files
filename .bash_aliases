@@ -477,7 +477,7 @@ awsdi [OPTIONS]
   -h           - help (show this message)
 default display:
   Inst name | Private IP | Instance ID | State"
-   local _default_queries="Tags[?Key=='Name'].Value|[0],InstanceId,PrivateIpAddress,State.Name"
+   local _default_queries="Tags[?Key=='Name'].Value|[0],InstanceId,PrivateIpAddress,PublicIpAddress,State.Name"
    local _filters=""
    local _max_items=""
    local _show_pws="false"   # show passwords
@@ -523,7 +523,7 @@ default display:
          [ ! -f "$_pem_file" ] && { echo "private key file not found: '$_pem_file'"; return; }
          local _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
          for _region in $_ALL_REGIONS; do
-            eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
+            eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
          done
          local _instance_id
          local _awsdi_line
@@ -540,15 +540,15 @@ default display:
          rm -f $_tmp_file
       else
          for _region in $_ALL_REGIONS; do
-            # debug # echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
-            eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            # echo "debug: $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+            eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          done
       fi
    else
       if [ "$_show_pws" == "true" ]; then
          [ ! -f "$_pem_file" ] && { echo "private key file not found: '$_pem_file'"; return; }
          local _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
-         eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
+         eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> $_tmp_file
          local _instance_id
          local _awsdi_line
          local _pw
@@ -563,8 +563,8 @@ default display:
          done
          rm -f $_tmp_file
       else
-         # debug # echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
-         eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         # echo "debug: $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+         eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
    fi
 }
@@ -1670,9 +1670,20 @@ function gh { # TOOL
    fi
 }
 
-function gl { # TOOL
+function gl {
    # grep and pipe to less
    eval grep --color=always $@ | less
+}
+
+function gpw {
+   # generate a password and copy to the clipboard
+   DEFAULT_LENGTH=25
+   REQ_CMDS="pwgen pbcopy"
+   for _cmd in $REQ_CMDS; do
+      [ ! $(command -v $_cmd) ] && { echo "error: missing command '$_cmd'"; return 1; } 
+   done
+   local _pws=${1:-$DEFAULT_LENGTH}
+   pwgen -y $_pws 1 | tr -d '\n' | pbcopy
 }
 
 function j2y {
@@ -2215,6 +2226,7 @@ function vin {
              git) actual_note_file=Git_Notes.txt ;;
           gitlab) actual_note_file=GitLab_Notes.txt ;;
          jenkins) actual_note_file=Jenkins_Notes.txt ;;
+             k8s) actual_note_file=Kubernetes_Notes.txt ;;
             ldap) actual_note_file=LDAP_Notes.txt ;;
            linux) actual_note_file=Linux_Notes.txt ;;
         logstash) actual_note_file=Logstash_Notes.txt ;;
@@ -2433,6 +2445,7 @@ alias sa=alias
 # the following doesn't work and doesn't seem to allow changes to take affect
 #alias sba='source ~/.bash_aliases | sed "s/$/.../g" | tr "\n" " "; echo "done"'
 alias sba='source ~/.bash_aliases'
+alias sc="command -V"
 alias sdl="export DISPLAY=localhost:10.0"
 alias sf='showf'
 alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
