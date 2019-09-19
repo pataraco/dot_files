@@ -1587,7 +1587,16 @@ function fdgr {
    local _orig_wd=$(pwd)
    echo -ne "finding ALL 'git' repos (dirs)... "
    # local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -and -not -name Library -exec dirname {} \; 2> /dev/null)"
-   local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -not -regex ".*/Library/.*" -exec dirname {} \; 2> /dev/null | tr ' ' '%')"
+   local _REPOS_TO_CHECK="$(\
+      find $HOME \
+         -type d \
+         -name .git \
+         -not -regex ".*Library.*" \
+         -not -regex ".*.jenkins.*" \
+         -not -regex ".*.pyenv-repository.*" \
+         -not -regex ".*.terraform.*" \
+         -exec dirname {} \; 2> /dev/null | \
+      tr ' ' '%')"
    echo -ne "done\r"
    local _dir
    local _git_status
@@ -1599,11 +1608,13 @@ function fdgr {
       _gitstatus=$(git status --porcelain 2> /dev/null)
       if [ -n "$_gitstatus" ]; then
          # echo -e "repo: $_repo status [${RED}DIRTY${NRM}]${D2E}"
-         echo -e "${_repo/$HOME/\$HOME} [${RED}DIRTY${NRM}]${D2E}"
+         # echo -e "${_repo/$HOME/\$HOME} [${RED}DIRTY${NRM}]${D2E}"
+         echo -e "${_repo/$HOME/~} [${RED}DIRTY${NRM}]${D2E}"
          _last_status="DIRTY"
       else
          # echo -ne "repo: $_repo status [${GRN}CLEAN${NRM}]${D2E}\r"
-         echo -ne "${_repo/$HOME/\$HOME} [${GRN}CLEAN${NRM}]${D2E}\r"
+         # echo -ne "${_repo/$HOME/\$HOME} [${GRN}CLEAN${NRM}]${D2E}\r"
+         echo -ne "${_repo/$HOME/~} [${GRN}CLEAN${NRM}]${D2E}\r"
          _last_status="CLEAN"
       fi
    done
