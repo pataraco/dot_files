@@ -1585,15 +1585,30 @@ function elbinsts {
 function fdgr {
    # find dirty git repos
    local _orig_wd=$(pwd)
-   local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -and ! -name Library -exec dirname {} \;)"
-   local _repo
+   echo -ne "finding ALL 'git' repos (dirs)... "
+   # local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -and -not -name Library -exec dirname {} \; 2> /dev/null)"
+   local _REPOS_TO_CHECK="$(find $HOME -type d -not -regex .*/Library/.* -name .git -exec dirname {} \; 2> /dev/null | tr ' ' '%')"
+   echo -ne "done\r"
+   local _dir
    local _git_status
-   for _repo in $_REPOS_TO_CHECK; do
-      cd $_repo
+   local _last_status
+   local _repo
+   for _dir in $_REPOS_TO_CHECK; do
+      _repo=${_dir//\%/ }
+      cd "$_repo"
       _gitstatus=$(git status --porcelain 2> /dev/null)
-      [ -n "$_gitstatus" ] && echo -e "repo: $_repo status [${RED}DIRTY${NRM}]"
+      if [ -n "$_gitstatus" ]; then
+         # echo -e "repo: $_repo status [${RED}DIRTY${NRM}]${D2E}"
+         echo -e "${_repo/$HOME/\$HOME} [${RED}DIRTY${NRM}]${D2E}"
+         _last_status="DIRTY"
+      else
+         # echo -ne "repo: $_repo status [${GRN}CLEAN${NRM}]${D2E}\r"
+         echo -ne "${_repo/$HOME/\$HOME} [${GRN}CLEAN${NRM}]${D2E}\r"
+         _last_status="CLEAN"
+      fi
    done
    cd $_orig_wd
+   [ $_last_status == "CLEAN" ] && echo -ne "${D2E}"
 }
 
 function gdate {
