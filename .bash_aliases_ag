@@ -91,7 +91,7 @@ function saem {
    fi
 }
 
-function showcf {	# TOOL
+function showcf {
    # show a company specific function
    ALIASES_FILE="$HOME/$THIS_FILE"
    if [[ $1 ]]; then
@@ -104,7 +104,7 @@ function showcf {	# TOOL
    else
       echo
       echo "which function do you want to see?"
-      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
       echo -ne "enter function: "
       read func
       echo

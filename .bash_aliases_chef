@@ -1,67 +1,70 @@
 #!bash - ~/.bash_aliases_chef - sourced by ~/.bash_aliases (if enabled)
-# 
+#
 # these are functions/aliases specific to Chef
 
-# if interactive shell - display message
-#[ -n "$PS1" ] && echo "sourcing: .bash_aliases_chef"
-[ -n "$PS1" ] && echo -n ".bash_aliases_chef (begin)... "
+# -------------------- global variables --------------------
 
-# set up some globals
-#CHEF_REPO=/opt/repo
 CHEF_REPO=$HOME/repos
-REPO_DIR=$HOME/repos
 KNIFE_CMD=$(command -v knife)
+REPO_DIR=$HOME/repos
+THIS_FILE=".bash_aliases_chef"
 
-function bon {	# TOOL
-   # Bootstrap OpenStack Node
-   if knife_env_set; then
-      update_spiceweasel_repo
-      sgp=$1
-      nip=$2
-      nn=$3
-      if [ -n "$sgp" -a -n "$nip" ]; then
-         orig_cmd=`spiceweasel $SW_YAML_FILE | \grep -w $sgp | sort -u`
-         case $KNIFTLA in
-            dtu|pew|pms|pue|puw|pte|ptu|rou)
-               kbc=`echo "$orig_cmd" | awk '{for (i=1;i<=NF;i++) {if ($i =="-r") {role=$(i+1)}; if ($i =="-N") {iname=$(i+1)}}; {print "knife bootstrap '"$nip"' -r "role" -c $KNIFERB -x praco -N "iname"'"$nn"' --sudo"}}'`
-               ;;
-            ccd|dts|pek|w11|w12|w13)
-               if [ -n "$nn" ]; then
-                  kbc=`echo "$orig_cmd" | awk '{for (i=1;i<=NF;i++) {if ($i =="-r") {role=$(i+1)}; if ($i =="-N") {iname=$(i+1)}}; {print "knife bootstrap '"$nip"' -r "role" -c $KNIFERB -i ~/.ssh/China.pem -x ubuntu -N "iname"'"$nn"' --sudo"}}'`
-                  kbc="${kbc} --bootstrap-url http://221.228.92.21:8080/chef/install.sh"
-               else
-                  echo -e "\t-----------------------------------------------------------------------"
-                  echo "need to specify a <spiceweasel grep pattern>, <IP> and <node number>"
-                  return 2
-               fi
-               ;;
-            dts|sna)
-               kbc=`echo "$orig_cmd" | awk '{for (i=1;i<=NF;i++) {if ($i =="-r") {role=$(i+1)}; if ($i =="-N") {iname=$(i+1)}}; {print "knife bootstrap '"$nip"' -r "role" -c $KNIFERB -i ~/.ssh/China.pem -x ubuntu -N "iname"'"$nn"' --sudo"}}'`
-               kbc="${kbc} --bootstrap-url http://115.182.10.10:8080/chef/install.sh"
-               ;;
-            *)
-               echo "error: not sure how I got here"; return 2;;
-         esac
-         compare_lines "$orig_cmd" "$kbc"
-         echo -e "\t-----------------------------------------------------------------------"
-         read -p "is this correct - do you want to run it (y/n)? " ans
-         if [ "$ans" = "y" ]; then
-            echo "ok, running the command"
-            eval "$kbc"
-         else
-            echo "ok, NOT running the command"
-         fi
-      else
-         echo "need to specify a <spiceweasel grep pattern> and <IP>"
-      fi
-   fi
-}
+# if interactive shell - display message
+[ -n "$PS1" ] && echo -n "$THIS_FILE (begin)... "
+
+# -------------------- define functions --------------------
+
+# OLD Stuff - saving for posterity
+# function bon {
+#    # Bootstrap OpenStack Node
+#    if knife_env_set; then
+#       update_spiceweasel_repo
+#       sgp=$1
+#       nip=$2
+#       nn=$3
+#       if [ -n "$sgp" -a -n "$nip" ]; then
+#          orig_cmd=`spiceweasel $SW_YAML_FILE | \grep -w $sgp | sort -u`
+#          case $KNIFTLA in
+#             dtu|pew|pms|pue|puw|pte|ptu|rou)
+#                kbc=`echo "$orig_cmd" | awk '{for (i=1;i<=NF;i++) {if ($i =="-r") {role=$(i+1)}; if ($i =="-N") {iname=$(i+1)}}; {print "$KNIFE_CMD bootstrap '"$nip"' -r "role" -x praco -N "iname"'"$nn"' --sudo"}}'`
+#                ;;
+#             ccd|dts|pek|w11|w12|w13)
+#                if [ -n "$nn" ]; then
+#                   kbc=`echo "$orig_cmd" | awk '{for (i=1;i<=NF;i++) {if ($i =="-r") {role=$(i+1)}; if ($i =="-N") {iname=$(i+1)}}; {print "$KNIFE_CMD bootstrap '"$nip"' -r "role" -i ~/.ssh/China.pem -x ubuntu -N "iname"'"$nn"' --sudo"}}'`
+#                   kbc="${kbc} --bootstrap-url http://221.228.92.21:8080/chef/install.sh"
+#                else
+#                   echo -e "\t-----------------------------------------------------------------------"
+#                   echo "need to specify a <spiceweasel grep pattern>, <IP> and <node number>"
+#                   return 2
+#                fi
+#                ;;
+#             dts|sna)
+#                kbc=`echo "$orig_cmd" | awk '{for (i=1;i<=NF;i++) {if ($i =="-r") {role=$(i+1)}; if ($i =="-N") {iname=$(i+1)}}; {print "$KNIFE_CMD bootstrap '"$nip"' -r "role" -i ~/.ssh/China.pem -x ubuntu -N "iname"'"$nn"' --sudo"}}'`
+#                kbc="${kbc} --bootstrap-url http://115.182.10.10:8080/chef/install.sh"
+#                ;;
+#             *)
+#                echo "error: not sure how I got here"; return 2;;
+#          esac
+#          compare_lines "$orig_cmd" "$kbc"
+#          echo -e "\t-----------------------------------------------------------------------"
+#          read -p "is this correct - do you want to run it (y/n)? " ans
+#          if [ "$ans" = "y" ]; then
+#             echo "ok, running the command"
+#             eval "$kbc"
+#          else
+#             echo "ok, NOT running the command"
+#          fi
+#       else
+#          echo "need to specify a <spiceweasel grep pattern> and <IP>"
+#       fi
+#    fi
+# }
 
 function fric {
    # find roles that I've changed
    cd $CHEF_REPO/cookbooks
    for cookbook_dir in `/bin/ls`; do
-      echo " ------- $cookbook_dir	-------"
+      echo " ------- $cookbook_dir -------"
       (cd $cookbook_dir; hg stat; hg shelve -l)
    done
    cd -
@@ -71,7 +74,7 @@ function fsic {
    # find stuff that I've changed in the sub dirs of the cwd
    for sub_dir in `/bin/ls`; do
       if [ -d $sub_dir ]; then
-         echo " ------- $sub_dir	-------"
+         echo " ------- $sub_dir -------"
          (cd $sub_dir; hg stat; hg shelve -l)
       fi
    done
@@ -81,7 +84,7 @@ function fsip {
    # find stuff that I've pushed in the sub dirs of the cwd
    for sub_dir in `/bin/ls`; do
       if [ -d $sub_dir ]; then
-         echo " ------- $sub_dir	-------"
+         echo " ------- $sub_dir -------"
          (cd $sub_dir; hg slog | grep Raco)
       fi
    done
@@ -115,100 +118,102 @@ function kcl {
    fi
 }
 
-function kcn {
-   # knife Create Node - using spiceweasel
-   sgp=$1
-   shift
-   arg=$1
-   while [ -n "$arg" ]; do
-      shift
-      case $arg in
-         '-b') build=$1 ;;
-         '-n') nn=$1    ;;
-         '-z') zone=$1  ;;
-      esac
-      shift
-      arg=$1
-   done
-   if knife_env_set; then
-      update_spiceweasel_repo
-      if [ -n "$sgp" ]; then
-         orig_cmd=`spiceweasel $SW_YAML_FILE | \grep -w $sgp | sort -u`
-         case $KNIFTLA in
-            dtu|pte|ptu|rou)
-               kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":"`
-               if [[ $sgp =~ "game" ]]; then
-                  if [ -n "$build" ]; then
-                     kscc=`echo "$kscc" | sed "s:XXXX:$build:g;s:$sgp-$nn$build-:$sgp-$build-$nn:"`
-                  else
-                     echo -e "\t-----------------------------------------------------------------------"
-                     echo "need to specify a <spiceweasel grep pattern> and <build number>"
-                     return 2
-                  fi
-               fi
-               ;;
-            pew|pms|pue|puw)
-               kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":"`
-               if [[ $sgp =~ "game" ]]; then
-                  if [ -n "$build" ]; then
-                     kscc=`echo "$kscc" | sed "s:XXXX:$build:g;s:$sgp-$nn$build-:$sgp-$build-$nn:"`
-                  else
-                     echo -e "\t-----------------------------------------------------------------------"
-                     echo "need to specify a <spiceweasel grep pattern> and <build number>"
-                     return 2
-                  fi
-               fi
-               ;;
-            ccd|dts|pek|sna|w11|w12|w13)
-               if [ -n "$nn" -a -n "$zone" ]; then
-                  kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":;s:$sgp-:$sgp-$nn:;s: -T Group=Internal::;s: -g: -G:;s:vNN-ZONE-X:$zone:"`
-               else
-                  if [[ $sgp =~ "matchdirector" && -n "$zone" ]]; then
-                     kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":;s: -T Group=Internal::;s: -g: -G:;s:vNN-ZONE-X:$zone:"`
-                  else
-                     echo -e "\t-----------------------------------------------------------------------"
-                     echo "need to specify a <spiceweasel grep pattern>, <node number> and <zone-id>"
-                     return 2
-                  fi
-               fi
-               if [[ $sgp =~ "game" ]]; then
-                  if [ -n "$build" ]; then
-                     kscc=`echo "$kscc" | sed "s:XXXX:$build:g;s:$sgp-$nn$build-:$sgp-$build-$nn:"`
-                  else
-                     echo -e "\t-----------------------------------------------------------------------"
-                     echo "need to specify a <spiceweasel grep pattern>, <node number>, <zone-id> and <build number>"
-                     return 2
-                  fi
-               fi
-               ;;
-            *)
-               echo "error: not sure how I got here"; return 2;;
-         esac
-         compare_lines "$orig_cmd" "$kscc"
-         echo -e "\t-----------------------------------------------------------------------"
-         read -p "is this correct - do you want to run it (y/n/x)? " ans
-         if [ "$ans" = "y" ]; then
-            echo "ok, running the command"
-            eval "$kscc"
-         elif [ "$ans" = "x" ]; then
-            echo "ok, running the command in a xterm window"
-            $XTERM -e 'echo '"$kscc"';eval '"$kscc"';echo '"$kscc"';bash' &
-         else
-            echo "ok, NOT running the command"
-         fi
-      else
-         echo "need to specify a <spiceweasel grep pattern>"
-      fi
-   fi
-}
+# OLD - saving for posterity
+# function kcn {
+#    # knife Create Node - using spiceweasel
+#    sgp=$1
+#    shift
+#    arg=$1
+#    while [ -n "$arg" ]; do
+#       shift
+#       case $arg in
+#          '-b') build=$1 ;;
+#          '-n') nn=$1    ;;
+#          '-z') zone=$1  ;;
+#       esac
+#       shift
+#       arg=$1
+#    done
+#    if knife_env_set; then
+#       update_spiceweasel_repo
+#       if [ -n "$sgp" ]; then
+#          orig_cmd=`spiceweasel $SW_YAML_FILE | \grep -w $sgp | sort -u`
+#          case $KNIFTLA in
+#             dtu|pte|ptu|rou)
+#                kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":"`
+#                if [[ $sgp =~ "game" ]]; then
+#                   if [ -n "$build" ]; then
+#                      kscc=`echo "$kscc" | sed "s:XXXX:$build:g;s:$sgp-$nn$build-:$sgp-$build-$nn:"`
+#                   else
+#                      echo -e "\t-----------------------------------------------------------------------"
+#                      echo "need to specify a <spiceweasel grep pattern> and <build number>"
+#                      return 2
+#                   fi
+#                fi
+#                ;;
+#             pew|pms|pue|puw)
+#                kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":"`
+#                if [[ $sgp =~ "game" ]]; then
+#                   if [ -n "$build" ]; then
+#                      kscc=`echo "$kscc" | sed "s:XXXX:$build:g;s:$sgp-$nn$build-:$sgp-$build-$nn:"`
+#                   else
+#                      echo -e "\t-----------------------------------------------------------------------"
+#                      echo "need to specify a <spiceweasel grep pattern> and <build number>"
+#                      return 2
+#                   fi
+#                fi
+#                ;;
+#             ccd|dts|pek|sna|w11|w12|w13)
+#                if [ -n "$nn" -a -n "$zone" ]; then
+#                   kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":;s:$sgp-:$sgp-$nn:;s: -T Group=Internal::;s: -g: -G:;s:vNN-ZONE-X:$zone:"`
+#                else
+#                   if [[ $sgp =~ "matchdirector" && -n "$zone" ]]; then
+#                      kscc=`echo "$orig_cmd" | sed "s:-c .chef/knife.rb:-c "'$KNIFERB'":;s: -T Group=Internal::;s: -g: -G:;s:vNN-ZONE-X:$zone:"`
+#                   else
+#                      echo -e "\t-----------------------------------------------------------------------"
+#                      echo "need to specify a <spiceweasel grep pattern>, <node number> and <zone-id>"
+#                      return 2
+#                   fi
+#                fi
+#                if [[ $sgp =~ "game" ]]; then
+#                   if [ -n "$build" ]; then
+#                      kscc=`echo "$kscc" | sed "s:XXXX:$build:g;s:$sgp-$nn$build-:$sgp-$build-$nn:"`
+#                   else
+#                      echo -e "\t-----------------------------------------------------------------------"
+#                      echo "need to specify a <spiceweasel grep pattern>, <node number>, <zone-id> and <build number>"
+#                      return 2
+#                   fi
+#                fi
+#                ;;
+#             *)
+#                echo "error: not sure how I got here"; return 2;;
+#          esac
+#          compare_lines "$orig_cmd" "$kscc"
+#          echo -e "\t-----------------------------------------------------------------------"
+#          read -p "is this correct - do you want to run it (y/n/x)? " ans
+#          if [ "$ans" = "y" ]; then
+#             echo "ok, running the command"
+#             eval "$kscc"
+#          elif [ "$ans" = "x" ]; then
+#             echo "ok, running the command in a xterm window"
+#             $XTERM -e 'echo '"$kscc"';eval '"$kscc"';echo '"$kscc"';bash' &
+#          else
+#             echo "ok, NOT running the command"
+#          fi
+#       else
+#          echo "need to specify a <spiceweasel grep pattern>"
+#       fi
+#    fi
+# }
 
 function kcssh {
    # cssh to servers matching PATTERN provided by user
    # via `knife ssh` and internal FQDN's
    if knife_env_set; then
-      source_ssh_env 
+      source_ssh_env
       servers=$1
-      eval knife ssh "name:*${servers}*" -a internal_fqdn cssh -c $KNIFERB
+      # eval knife ssh "name:*${servers}*" -a internal_fqdn cssh -c $KNIFERB
+      eval $KNIFE_CMD ssh "name:*${servers}*" -a internal_fqdn cssh
    fi
 }
 
@@ -218,11 +223,13 @@ function kcssha {
  local fqdn_srvr_list
    if knife_env_set; then
       knife_node_list=`mktemp /tmp/knl.XXXX`
-      $KNIFE_CMD node list -c $KNIFERB > $knife_node_list
+      # $KNIFE_CMD node list -c $KNIFERB > $knife_node_list
+      $KNIFE_CMD node list > $knife_node_list
       for server_pattern in $*; do
          echo "looking for servers matching '$server_pattern'"
          for actual_server in `\grep $server_pattern $knife_node_list`; do
-            actual_server_ifqdn=`knife node show -a internal_fqdn -c $KNIFERB $actual_server | \grep fqdn | awk '{print $2}'`
+            # actual_server_ifqdn=`knife node show -a internal_fqdn -c $KNIFERB $actual_server | \grep fqdn | awk '{print $2}'`
+            actual_server_ifqdn=`$KNIFE_CMD node show -a internal_fqdn $actual_server | \grep fqdn | awk '{print $2}'`
             echo "found: $actual_server ($actual_server_ifqdn)"
             fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
          done
@@ -244,11 +251,13 @@ function kcsshau {
    local fqdn_srvr_list
    if knife_env_set; then
       knife_node_list=`mktemp /tmp/knl.XXXX`
-      $KNIFE_CMD node list -c $KNIFERB > $knife_node_list
+      # $KNIFE_CMD node list -c $KNIFERB > $knife_node_list
+      $KNIFE_CMD node list > $knife_node_list
       for server_pattern in $*; do
          echo "looking for servers matching '$server_pattern'"
          for actual_server in `\grep $server_pattern $knife_node_list`; do
-            actual_server_ifqdn=`knife node show -a internal_fqdn -c $KNIFERB $actual_server | \grep fqdn | awk '{print $2}'`
+            # actual_server_ifqdn=`knife node show -a internal_fqdn -c $KNIFERB $actual_server | \grep fqdn | awk '{print $2}'`
+            actual_server_ifqdn=`$KNIFE_CMD node show -a internal_fqdn $actual_server | \grep fqdn | awk '{print $2}'`
             echo "found: $actual_server ($actual_server_ifqdn)"
             fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
          done
@@ -271,9 +280,10 @@ function kcsshi {
    # cssh to servers matching PATTERN provided by user
    # via `knife ssh` and IP addresses
    if knife_env_set; then
-      source_ssh_env 
+      source_ssh_env
       servers=$1
-      eval knife ssh "name:*${servers}*" -a ipaddress cssh -c $KNIFERB
+      # eval knife ssh "name:*${servers}*" -a ipaddress cssh -c $KNIFERB
+      eval $KNIFE_CMD ssh "name:*${servers}*" -a ipaddress cssh
    fi
 }
 
@@ -281,7 +291,7 @@ function kcsshu {
    # cssh to servers matching PATTERN provided by user
    # via `knife ssh` and as ubuntu
    if knife_env_set; then
-      source_ssh_env 
+      source_ssh_env
       servers=$1
       case $KNIFTLA in
          ccd|pek|w11|w12|w13) ssh_identy_file=~/.ssh/China.pem     ;;
@@ -289,7 +299,8 @@ function kcsshu {
                          dts) ssh_identy_file=~/.ssh/DevTest.pem   ;;
                            *) ssh_identy_file=~/.ssh/Community.pem ;;
       esac
-      eval knife ssh "name:*${servers}*" -u ubuntu -i $ssh_identy_file -a ipaddress cssh -c $KNIFERB
+      # eval knife ssh "name:*${servers}*" -u ubuntu -i $ssh_identy_file -a ipaddress cssh -c $KNIFERB
+      eval $KNIFE_CMD ssh "name:*${servers}*" -u ubuntu -i $ssh_identy_file -a ipaddress cssh
    fi
 }
 
@@ -300,11 +311,13 @@ function kcurla {
    local fqdn_srvr_list
    if knife_env_set; then
       knife_node_list=`mktemp /tmp/knl.XXXX`
-      $KNIFE_CMD node list -c $KNIFERB > $knife_node_list
+      # $KNIFE_CMD node list -c $KNIFERB > $knife_node_list
+      $KNIFE_CMD node list > $knife_node_list
       for server_pattern in $*; do
          # echo "debug: looking for servers matching '$server_pattern'"
          for actual_server in `\grep $server_pattern $knife_node_list`; do
-            actual_server_ifqdn=`knife node show -a internal_fqdn -c $KNIFERB $actual_server | \grep fqdn | awk '{print $2}'`
+            # actual_server_ifqdn=`knife node show -a internal_fqdn -c $KNIFERB $actual_server | \grep fqdn | awk '{print $2}'`
+            actual_server_ifqdn=`$KNIFE_CMD node show -a internal_fqdn $actual_server | \grep fqdn | awk '{print $2}'`
             # echo "debug: found: $actual_server ($actual_server_ifqdn)"
             fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
          done
@@ -341,17 +354,20 @@ function kesd {
          else
             server=$1
          fi
-         inst_id=`knife node show $server -a ec2.instance_id -c $KNIFERB | \fgrep "instance_id:" | awk '{print $2}'`
+         # inst_id=`knife node show $server -a ec2.instance_id -c $KNIFERB | \fgrep "instance_id:" | awk '{print $2}'`
+         inst_id=`$KNIFE_CMD node show $server -a ec2.instance_id | \fgrep "instance_id:" | awk '{print $2}'`
          if [ -z "$inst_id" ]; then
             inst=`echo $server | cut -d- -f3`
             inst_id="i-$inst"
          fi
          echo "here's the command:"
-         echo "	knife ec2 server delete -y -R --purge --node $server $inst_id -c \$KNIFERB"
+         # echo "   knife ec2 server delete -y -R --purge --node $server $inst_id -c \$KNIFERB"
+         echo "   $KNIFE_CMD ec2 server delete -y -R --purge --node $server $inst_id"
          [ "$ans" == "n" ] && read -p "is this correct? " ans
          if [ "$ans" = "y" ]; then
             echo "ok, running the command"
-            knife ec2 server delete -y -R --purge --node $server $inst_id -c $KNIFERB
+            # knife ec2 server delete -y -R --purge --node $server $inst_id -c $KNIFERB
+            $KNIFE_CMD ec2 server delete -y -R --purge --node $server $inst_id
          else
             echo "ok, NOT running the command"
          fi
@@ -363,7 +379,7 @@ function kesd {
 
 function kf {
    if knife_env_set; then
-      eval knife '$*'
+      eval $KNIFE_CMD '$*'
    fi
 }
 
@@ -449,9 +465,11 @@ function kns {
 function knsc {
    # find the creator of one or more nodes
    if knife_env_set; then
-      for srvr in `knife node list -c $KNIFERB | \grep $1`; do
-         echo -n "$srvr:	"
-         $KNIFE_CMD node show $srvr -c $KNIFERB -a Creator
+      # for srvr in `knife node list -c $KNIFERB | \grep $1`; do
+      for srvr in `$KNIFE_CMD node list | \grep $1`; do
+         echo -n "$srvr: "
+         # $KNIFE_CMD node show $srvr -c $KNIFERB -a Creator
+         $KNIFE_CMD node show $srvr -a Creator
       done
    fi
 }
@@ -461,11 +479,13 @@ function kosd {
    if knife_env_set; then
       if [ -n "$1" ]; then
          server=$1
-         echo -n "run this?: 'knife openstack server delete $server -y --purge -c \$KNIFERB' [y/n]: "
+         # echo -n "run this?: 'knife openstack server delete $server -y --purge -c \$KNIFERB' [y/n]: "
+         echo -n "run this?: '$KNIFE_CMD openstack server delete $server -y --purge' [y/n]: "
          read ans
          if [ "$ans" = "y" ]; then
             echo "ok, running the command"
-            knife openstack server delete $server -y --purge -c $KNIFERB
+            # knife openstack server delete $server -y --purge -c $KNIFERB
+            $KNIFE_CMD openstack server delete $server -y --purge
          else
             echo "ok, NOT running the command"
          fi
@@ -484,7 +504,8 @@ function kscp {
    if knife_env_set; then
       if [[ $* =~ : ]]; then
          knife_node_list=`mktemp /tmp/knl.XXXX`
-         $KNIFE_CMD node list -c $KNIFERB > $knife_node_list
+         # $KNIFE_CMD node list -c $KNIFERB > $knife_node_list
+         $KNIFE_CMD node list > $knife_node_list
       fi
       if [ -n "$1" -a -n "$2" ]; then
          if [[ $1 =~ : ]]; then
@@ -494,12 +515,14 @@ function kscp {
             if [ $nos -gt 1 ]; then
                multiple_froms=true
                for _fs in $from_server_nc; do
-                  from_servers_ips[$_fs]=`$KNIFE_CMD node show -a ipaddress $_fs -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+                  # from_servers_ips[$_fs]=`$KNIFE_CMD node show -a ipaddress $_fs -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+                  from_servers_ips[$_fs]=`$KNIFE_CMD node show -a ipaddress $_fs | \grep ipaddress | awk '{print $2}'`
                done
             else
                multiple_froms=false
                from_server=$from_server_nc
-               from_server_ip=`$KNIFE_CMD node show -a ipaddress $from_server -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+               # from_server_ip=`$KNIFE_CMD node show -a ipaddress $from_server -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+               from_server_ip=`$KNIFE_CMD node show -a ipaddress $from_server | \grep ipaddress | awk '{print $2}'`
             fi
             from_file=`echo $1 | cut -d: -f2`
             ffc=":"
@@ -516,12 +539,14 @@ function kscp {
             if [ $nos -gt 1 ]; then
                multiple_tos=true
                for _ts in $to_server_nc; do
-                  to_servers_ips[$_ts]=`$KNIFE_CMD node show -a ipaddress $_ts -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+                  # to_servers_ips[$_ts]=`$KNIFE_CMD node show -a ipaddress $_ts -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+                  to_servers_ips[$_ts]=`$KNIFE_CMD node show -a ipaddress $_ts | \grep ipaddress | awk '{print $2}'`
                done
             else
                multiple_tos=false
                to_server=$to_server_nc
-               to_server_ip=`$KNIFE_CMD node show -a ipaddress $to_server -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+               # to_server_ip=`$KNIFE_CMD node show -a ipaddress $to_server -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+               to_server_ip=`$KNIFE_CMD node show -a ipaddress $to_server | \grep ipaddress | awk '{print $2}'`
             fi
             to_file=`echo $2 | cut -d: -f2`
             tfc=":"
@@ -568,7 +593,7 @@ function kscp {
             else
                echo "scp $from_file $to_file"
             fi
-            /usr/bin/scp $from_server_ip$ffc$from_file $to_server_ip$tfc$to_file 
+            /usr/bin/scp $from_server_ip$ffc$from_file $to_server_ip$tfc$to_file
          fi
          rm -f $knife_node_list
       else
@@ -583,8 +608,9 @@ function kssh {
       serverpattern=$1
       shift
       cmd="$*"
-      source_ssh_env 
-      server=`$KNIFE_CMD node list -c $KNIFERB | \grep $serverpattern`
+      source_ssh_env
+      # server=`$KNIFE_CMD node list -c $KNIFERB | \grep $serverpattern`
+      server=`$KNIFE_CMD node list | \grep $serverpattern`
       if [ $? -eq 1 ]; then
          echo "server not found (via 'knife node list')"
          return 2
@@ -595,10 +621,10 @@ function kssh {
          echo "which server?"
          for srvr in $server; do
             ((sai++))
-            echo "	$sai: $srvr"
+            echo "   $sai: $srvr"
             server_array[$sai]=$srvr
          done
-         echo "	a: all | n-m: range | x,y: select"
+         echo "   a: all | n-m: range | x,y: select"
          read -p "enter choice (1-$sai|a|n-m|x,y): " choice
          if [ -n "$choice" ]; then
             if [ $choice = a ]; then
@@ -607,7 +633,7 @@ function kssh {
             elif [[ $choice =~ ^[0-9]+-[0-9]+$ ]]; then
                s_n=${choice%-*}
                s_m=${choice#*-}
-               tsl=""		# the server list
+               tsl=""  # the server list
                for i in `seq $s_n $s_m`; do
                   [ -z "$tsl" ] && tsl="${server_array[$i]}" || tsl="$tsl ${server_array[$i]}"
                done
@@ -619,7 +645,7 @@ function kssh {
                ## kssha -l "${server_array[@]:choice}" "$cmd"
                return 0
             elif [[ $choice =~ ^[0-9]+(,[0-9]+)+ ]]; then
-               tsl=""		# the server list
+               tsl=""   # the server list
                for i in `echo $choice | tr ',' ' '`; do
                   [ -z "$tsl" ] && tsl="${server_array[$i]}" || tsl="$tsl ${server_array[$i]}"
                done
@@ -640,32 +666,33 @@ function kssh {
             return 5
          fi
       fi
-      server=`echo $server`	# get rid of leading whitespace and color
+      server=`echo $server`  # get rid of leading whitespace and color
       # echo "debug: server='$server'"
-      server_ifqdn=`$KNIFE_CMD node show $server -a internal_fqdn -c $KNIFERB | grep internal_fqdn | awk '{print $NF}'`
+      server_ifqdn=`$KNIFE_CMD node show $server -a internal_fqdn | grep internal_fqdn | awk '{print $NF}'`
       # echo "debug: server_ifqdn='$server_ifqdn'"
-      server_ip=`/usr/bin/host $server_ifqdn 2>/dev/null| awk '{print $NF}'`
+      server_ip=`host $server_ifqdn 2>/dev/null| awk '{print $NF}'`
       # echo "debug: server_ip='$server_ip'"
       if [[ ! $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-         echo "debug: couldn't get IP with 'host' (DNS) for < $server > - using 'knife'"
-         server_ip=`$KNIFE_CMD node show $server -a ipaddress -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+         # echo "debug: couldn't get IP with 'host' (DNS) for < $server > - using 'knife'"
+         # server_ip=`$KNIFE_CMD node show $server -a ipaddress -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+         server_ip=`$KNIFE_CMD node show $server -a ipaddress | \grep ipaddress | awk '{print $2}'`
       fi
       if [[ $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
          # don't do this for now - maybe later or with a smaller version of .bash_aliases
          ## if [ -z "$cmd" ]; then
          ##    scp -q ~/.{vim,bash}{rc,_aliases,_profile} $server_ip:/home/praco 2> /dev/null
          ## fi
-         # [ -z "$cmd" ] && echo -e "	${CYN}< $server > [ $server_ip ]${NRM}" || echo -e "	${CYN}< $server > [ $server_ip ] ( $cmd )${NRM}"
-         # [ -z "$cmd" ] && echo -e "	${CYN}$server ($server_ip)${NRM}" || echo -e "	${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
+         # [ -z "$cmd" ] && echo -e "   ${CYN}< $server > [ $server_ip ]${NRM}" || echo -e "   ${CYN}< $server > [ $server_ip ] ( $cmd )${NRM}"
+         # [ -z "$cmd" ] && echo -e "   ${CYN}$server ($server_ip)${NRM}" || echo -e "   ${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
          if [ -z "$cmd" -o "$cmd" == "." ]; then
-            echo -e "	${CYN}$server ($server_ip)${NRM}"
+            echo -e "   ${CYN}$server ($server_ip)${NRM}"
             if [ "$cmd" == "." ]; then
                /usr/bin/ssh -q $server_ip
             else
                $XTERM -e 'eval /usr/bin/ssh -q '"$server_ip"'' &
             fi
          else
-            echo -e "	${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
+            echo -e "   ${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
             eval /usr/bin/ssh -q $server_ip "$cmd"
          fi
          echo -ne "\033]0;`whoami`@`hostname`\007"
@@ -701,14 +728,16 @@ function kssha {
       server_list=""
    fi
    if knife_env_set; then
-      source_ssh_env 
+      source_ssh_env
       if [ -z "$server_list" ]; then
          if [ "$_ALL" = "true" ]; then
-            server_list=`$KNIFE_CMD node list -c $KNIFERB`
+            # server_list=`$KNIFE_CMD node list -c $KNIFERB`
+            server_list=$($KNIFE_CMD node list)
          else
             serverpattern="$1"
             shift
-            server_list=`$KNIFE_CMD node list -c $KNIFERB | \grep $serverpattern`
+            # server_list=`$KNIFE_CMD node list -c $KNIFERB | \grep $serverpattern`
+            server_list=$($KNIFE_CMD node list | \grep $serverpattern)
          fi
       fi
       cmd="$*"
@@ -716,18 +745,20 @@ function kssha {
       # echo "debug(kssha): cmd='$cmd'"
       if [ -n "$cmd" ]; then
          for server in $server_list; do
-            server=`echo $server`	# get rid of leading whitespace and color
-            server_ifqdn=`$KNIFE_CMD node show $server -a internal_fqdn -c $KNIFERB | grep internal_fqdn | awk '{print $NF}'`
+            server=`echo $server`  # get rid of leading whitespace and color
+            # server_ifqdn=`$KNIFE_CMD node show $server -a internal_fqdn -c $KNIFERB | grep internal_fqdn | awk '{print $NF}'`
+            server_ifqdn=$($KNIFE_CMD node show $server -a internal_fqdn | grep internal_fqdn | awk '{print $NF}')
             server_ip=`/usr/bin/host $server_ifqdn 2>/dev/null | awk '{print $NF}'`
             if [[ ! $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
                echo "debug: couldn't get IP with 'host' (DNS) for < $server > - using 'knife'"
-               server_ip=`$KNIFE_CMD node show $server -a ipaddress -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+               # server_ip=`$KNIFE_CMD node show $server -a ipaddress -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
+               server_ip=$($KNIFE_CMD node show $server -a ipaddress | \grep ipaddress | awk '{print $2}')
             fi
             if [[ $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
                if [ $QUIET == "true" ]; then
                   echo -ne "${CYN}$server ($server_ip)${NRM}: "
                else
-                  echo -e "	${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
+                  echo -e "   ${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
                fi
                eval /usr/bin/ssh -q $server_ip "$cmd"
                [ $? -ne 0 ] && echo
@@ -746,7 +777,8 @@ function ksshu {
    # ssh as ubuntu into a server using knife to get the IP
    if knife_env_set; then
       source_ssh_env
-      server=`$KNIFE_CMD node list -c $KNIFERB | \grep $1`
+      # server=`$KNIFE_CMD node list -c $KNIFERB | \grep $1`
+      server=$($KNIFE_CMD node list | \grep $1)
       nos=`echo "$server" | wc -l`
       if [ $nos -gt 1 ]; then
          echo "please be more specific:"
@@ -754,7 +786,8 @@ function ksshu {
          return
       fi
       server=`echo $server`        # get rid of leading whitespace and color
-      server_ip=`$KNIFE_CMD node show -a ipaddress $server -c $KNIFERB | \grep ipaddress | awk '{print $2}'|tr -d '\n'`
+      # server_ip=`$KNIFE_CMD node show -a ipaddress $server -c $KNIFERB | \grep ipaddress | awk '{print $2}'|tr -d '\n'`
+      server_ip=$($KNIFE_CMD node show -a ipaddress $server | \grep ipaddress | awk '{print $2}'|tr -d '\n')
       shift
       cmd="$*"
       case $KNIFTLA in
@@ -769,11 +802,32 @@ function ksshu {
    fi
 }
 
+function showef {
+   # show an environment specific function
+   ALIASES_FILE="$HOME/$THIS_FILE"
+   if [[ $1 ]]; then
+      grep -q "^function $1 " $ALIASES_FILE
+      if [ $? -eq 0 ]; then
+         sed -n '/^function '"$1"' /,/^}/p' $ALIASES_FILE
+      else
+         echo "function: '$1' - not found"
+      fi
+   else
+      echo
+      echo "which function do you want to see?"
+      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sef\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+      echo -ne "enter function: "
+      read func
+      echo
+      showef $func
+   fi
+}
+
 function ske {
    # set [Chef] knife environment
    local _CHEF_CREDS=$HOME/.chef/credentials
    [ ! -e $_CHEF_CREDS ] && { echo "error: chef credentials file does not exist: $_CHEF_CREDS"; return 1; }
-   local _CHEF_PROFILES=$(grep '^\[.*\]$' $_CHEF_CREDS | cut -d'[' -f2 | tr -s ']\n' ' ')
+   local _CHEF_PROFILES=$(grep '^\[[a-zA-Z]*\]$' $_CHEF_CREDS | cut -d'[' -f2 | tr -s ']\n' ' ')
    local _VALID_ARGS=$(echo "${_CHEF_PROFILES}unset" | tr ' ' ':')
    local _environment
    local _arg="$1"
@@ -793,18 +847,12 @@ function ske {
       fi
       if [ "$COLOR_PROMPT" == "yes" ]; then
          case $_environment in
-            dev)	# cyan prompt
-               PS_COL="$PCYN"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
-            test)	# magenta prompt
-               PS_COL="$PMAG"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
-            mixed)	# yellow prompt
-               PS_COL="$PYLW"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
-            prod)	# red prompt
-               PS_COL="$PRED"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
-            mine)	# green prompt
-               PS_COL="$PGRN"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
-            *)		# cyan prompt
-               PS_COL="$PNRM"; PS_AWS="$PNRM" ;;
+              dev) PS_COL="$PCYN"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
+             test) PS_COL="$PMAG"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
+            mixed) PS_COL="$PYLW"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
+             prod) PS_COL="$PRED"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
+             mine) PS_COL="$PGRN"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
+                *) PS_COL="$PNRM"; PS_AWS="$PNRM"                       ;;
          esac
       fi
    else
@@ -820,7 +868,7 @@ function son {
    if [ -n "$nip" ]; then
       snauc=`ssh ubuntu@$nip -i ~/.ssh/China.pem`
       echo "here's the command:"
-      echo "	$snauc"
+      echo "   $snauc"
       read -p "is this correct? " ans
       if [ "$ans" = "y" ]; then
          echo "ok, running the command"
@@ -833,35 +881,36 @@ function son {
    fi
 }
 
-function sons {	# TOOL
-   # ssh as ubuntu to an server via IP using knife
-   if knife_env_set; then
-      source_ssh_env 
-      server=`$KNIFE_CMD node list -c $KNIFERB | \grep $1`
-      nos=`echo "$server" | wc -l`
-      if [ $nos -gt 1 ]; then
-         sai=0
-         echo "which server?"
-         for srvr in $server; do
-            ((sai++))
-            echo "	$sai: $srvr"
-            server_array[$sai]=$srvr
-         done
-         read -p "enter choice (1-$sai): " choice
-         if [ $choice -gt 0 -a $choice -le $sai ]; then
-            server=${server_array[$choice]}
-         else
-            echo "seriously?"
-            return
-         fi
-      fi
-      server=`echo $server`	# get rid of leading whitespace and color
-      server_ip=`$KNIFE_CMD node show -a ipaddress $server -c $KNIFERB | \grep ipaddress | awk '{print $2}'`
-      echo "$server ($server_ip)"
-      echo "ssh ubuntu@$server_ip -i ~/.ssh/Community.pem"
-      ssh -q ubuntu@$server_ip -i ~/.ssh/Community.pem
-   fi
-}
+# OLD - not needed?
+# function sons {
+#    # ssh as ubuntu to an server via IP using knife
+#    if knife_env_set; then
+#       source_ssh_env
+#       server=`$KNIFE_CMD node list | \grep $1`
+#       nos=`echo "$server" | wc -l`
+#       if [ $nos -gt 1 ]; then
+#          sai=0
+#          echo "which server?"
+#          for srvr in $server; do
+#             ((sai++))
+#             echo "   $sai: $srvr"
+#             server_array[$sai]=$srvr
+#          done
+#          read -p "enter choice (1-$sai): " choice
+#          if [ $choice -gt 0 -a $choice -le $sai ]; then
+#             server=${server_array[$choice]}
+#          else
+#             echo "seriously?"
+#             return
+#          fi
+#       fi
+#       server=`echo $server`  # get rid of leading whitespace and color
+#       server_ip=`$KNIFE_CMD node show -a ipaddress $server | \grep ipaddress | awk '{print $2}'`
+#       echo "$server ($server_ip)"
+#       echo "ssh ubuntu@$server_ip -i ~/.ssh/Community.pem"
+#       ssh -q ubuntu@$server_ip -i ~/.ssh/Community.pem
+#    fi
+# }
 
 function swe {
    # set spiceweasel (github.com/mattray/spiceweasel) environment
@@ -908,9 +957,12 @@ function update_spiceweasel_repo {
    [ ! -e $SW_YAML_FILE ] && echo "No such file: $SW_YAML_FILE"
 }
 
-# ALIASES
+# -------------------- define aliases --------------------
+
 # alias kcl='kf client list'  # replaced? by a function
 # alias knl='kf node list'    # replaced? by a function
-alias vsy='vi $SW_YAML_FILE' 
+alias ef="grep '^function .* ' ~/$THIS_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sef\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias sef=showef
+alias vsy='vi $SW_YAML_FILE'
 
-[ -n "$PS1" ] && echo -n ".bash_aliases_chef (end). "
+[ -n "$PS1" ] && echo -n "$THIS_FILE (end). "

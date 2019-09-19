@@ -65,6 +65,7 @@ aws ec2 stop-instances --region REGION --instance-ids ID1 [ID2...]
 aws ec2 terminate-instances --region REGION --instance-ids ID1 [ID2...]
 aws ecr describe-images --repository-name REPO --region REGION
 aws ecr describe-repositories --region REGION
+aws eks update-kubeconfig --name EKS_CLUSTER_NAME [--kubeconfig /path/to/KUBE_CFG]
 aws elb describe-load-balancers --load-balancer-name ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName # get ELB DNS
 aws elb describe-load-balancers --region REGION [--load-balancer-names ELB_NAMES] --query "LoadBalancerDescriptions[].[LoadBalancerName,Instances[].InstanceId|join(', ',@)]" --output table
 aws iam add-role-to-instance-profile --instance-profile-name INST_PROFILE_NAME --role-name ROLE_NAME

@@ -2366,11 +2366,7 @@ function zipstuff {	# MISC
 alias ~="cd ~"
 alias ..="cd .."
 alias -- -="cd -"
-#alias a="alias" # use: `sa`
-#alias a="alias | cut -d= -f1 | sort | awk -v c=6 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
 alias a="alias | grep -v ^declare | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print \"\n\t--- Aliases (use \`sa\` to show details) ---\"}{if(NR%c){printf \"  %-12s\",\$2}else{printf \"  %-12s\n\",\$2}}END{print CR}'"
-#alias awsrlhz="aws route53 list-hosted-zones |jq -r .HostedZones[].Name|sort|sed 's/\.$//'"
-#alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | \"Zone: \" + .Name + \"   ID: \" +  .Id' | sort | sed 's/\. //'"
 alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + \")\"' | sort | sed 's:\./hostedzone/: (:'"
 alias c="clear"
 alias cc="tsend clear"
@@ -2386,24 +2382,23 @@ alias disp="tsend 'echo \$DISPLAY'"
 alias eaf="eval \"$(declare -F | sed -e 's/-f /-fx /')\""
 alias egrep="egrep --color=auto"
 alias egrpq="egrep --color=always"
-#alias f="declare -F | awk '{print \$3}' | more"
-#alias f="declare -F | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-15s\",\$3}else{printf \"  %-15s\n\",\$3}}END{print CR}'"
 alias f="grep '^function .* ' ~/.bash_aliases | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
 alias fgrep="fgrep --color=auto"
 alias fgrpa="fgrep --color=always"
 alias fuck='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 alias gci='aws sts get-caller-identity | jq -r .Arn | cut -d: -f5-6'
-# alias gh="history | grep" # now a function
 alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
 alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
 alias ghwt='sudo dmidecode | grep "Product Name"'
-#alias grep="grep --color=always"
 alias grep="grep --color=auto"
-alias grepxtf="grep --color=auto --exclude-dir .terraform"
 alias grpa="grep --color=always"
 alias guid='printf "%x\n" `date +%s`'
+alias gxtf="grep --color=auto --exclude-dir .terraform"
 alias h="history | tail -20"
 alias kaj='eval kill $(jobs -p)'
+alias kc='kubectl'
+alias kcc='kubectl config current-context'
+alias kcs='kubectl -n kube-system'
 if [ "$(uname -s)" == "Darwin" ]; then
    alias l.='ls -dGh .*'
    alias la='ls -aGh'
@@ -2420,11 +2415,9 @@ fi
 alias less="less -FrX"
 alias laan="for p in \$(grep '^\[profile' ~/.aws/config | awk '{print \$2}' | tr ']\n' ' '); do echo -en \"\$p: \"; echo \$(aws sts get-caller-identity --profile \$p | jq -r .Account); done"
 alias mv='mv -i'
-#alias psa='ps auxfw' # converted to a function
 alias myip='curl http://ipecho.net/plain; echo'
 alias pa='ps auxfw'
 alias pbp='pbpaste'
-#alias pse='ps -ef' # converted to a function
 alias pe='ps -ef'
 alias pssav='PS_SHOW_AV=1'
 alias psscv='PS_SHOW_CV=1'
@@ -2436,14 +2429,10 @@ alias pshpv='PS_SHOW_PV=0; unset PS_PY'
 alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_PV=0; unset PS_ANS; unset PS_CHF; unset PS_PY'
 alias ccrlf="sed -e 's//\n/g' -i .orig"
 alias rcrlf="sed -e 's/$//g' -i .orig"
-#alias ring="$HOME/scripts/tools/ring.sh"
 alias ring="$HOME/repos/ring/ring.sh"
 alias rsshk='ssh-keygen -f "$HOME/.ssh/known_hosts" -R'
 alias rm='rm -i'
 alias sa=alias
-#alias sba='echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
-# the following doesn't work and doesn't seem to allow changes to take affect
-#alias sba='source ~/.bash_aliases | sed "s/$/.../g" | tr "\n" " "; echo "done"'
 alias sba='source ~/.bash_aliases'
 alias sc="command -V"
 alias sdl="export DISPLAY=localhost:10.0"
@@ -2452,8 +2441,7 @@ alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 alias sing="$HOME/scripts/tools/sing.sh"
 alias sts="grep '= CFNType' $HOME/repos/stacker/stacker/blueprints/variables/types.py | awk '{print \$1}'"
 alias sw='stopwatch'
-#alias vagssh='cd ~/cloud_automation/vagrant/CentOS65/; vagrant ssh' # now a function
-#alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'
+#alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'  # change window title
 alias ta='tmux attach -t'
 alias tf11='/usr/local/bin/terraform.0.11.14'
 alias tf12='/usr/local/bin/terraform'
@@ -2464,26 +2452,22 @@ alias tt='echo -ne "\033]0;$(whoami)@$(hostname)\007"'
 alias tskap="_tmux_send_keys_all_panes"
 alias u='uptime'
 alias ua='unalias'
-#alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; echo "done"; echo -n "sourcing ~/.bash_aliases... "; source ~/.bash_aliases > /dev/null; echo "done"'
-#alias vba='echo -n "editing ~/.bash_aliases... "; vi ~/.bash_aliases; sba'
 alias vba='echo "editing: ~/.bash_aliases"; vi ~/.bash_aliases; sba'
 alias veba='[ -f $ENVIRONMENT_SHIT ] && { echo "editing: $ENVIRONMENT_SHIT"; vi $ENVIRONMENT_SHIT; sba; }'
-#alias vi='`which vim`'
-#alias view='`which vim` -R'
 # upgrade to neovim if available
 [ $(command -v nvim) ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
-alias vi='$VIM_CMD'
-alias vid='$VIM_CMD -d'
-alias vidh='$VIM_CMD -do'
-alias vidv='$VIM_CMD -dO'
-alias view='$VIM_CMD -R'
-alias vih='$VIM_CMD -o'
-alias vihd='$VIM_CMD -do'
-alias vim='$VIM_CMD'
-alias vit='$VIM_CMD -p'
-alias viv='$VIM_CMD -O'
-alias vivd='$VIM_CMD -dO'
-alias viw='$VIM_CMD -R'
+alias vi="$VIM_CMD"
+alias vid="$VIM_CMD -d"
+alias vidh="$VIM_CMD -do"
+alias vidv="$VIM_CMD -dO"
+alias view="$VIM_CMD -R"
+alias vih="$VIM_CMD -o"
+alias vihd="$VIM_CMD -do"
+alias vim="$VIM_CMD"
+alias vit="$VIM_CMD -p"
+alias viv="$VIM_CMD -O"
+alias vivd="$VIM_CMD -dO"
+alias viw="$VIM_CMD -R"
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
 if [ "$(uname -s)" == "Darwin" ]; then
    alias which='(alias; declare -f) | /usr/bin/which'

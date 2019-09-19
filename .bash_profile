@@ -75,8 +75,9 @@ export VIRTUAL_ENV_DISABLE_PROMPT=YES	# set to non-empty value to disable
 # set up pip list column output formating
 export PIP_FORMAT=columns
 # set up "vi" command line editing
-export EDITOR=vim 
-export VISUAL=vim 
+[ $(command -v nvim) ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
+export EDITOR=$VIM_CMD 
+export VISUAL=$VIM_CMD 
 #export MANPAGER="col -bx | vim -c 'set ft=man nolist nonu ' -MR -"
 #export MANPAGER="col -b | vim -c 'set ft=man ts=8 nomod nolist nonu noma' -"
 # use following for GNU
