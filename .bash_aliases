@@ -1587,7 +1587,7 @@ function fdgr {
    local _orig_wd=$(pwd)
    echo -ne "finding ALL 'git' repos (dirs)... "
    # local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -and -not -name Library -exec dirname {} \; 2> /dev/null)"
-   local _REPOS_TO_CHECK="$(find $HOME -type d -not -regex .*/Library/.* -name .git -exec dirname {} \; 2> /dev/null | tr ' ' '%')"
+   local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -not -regex ".*/Library/.*" -exec dirname {} \; 2> /dev/null | tr ' ' '%')"
    echo -ne "done\r"
    local _dir
    local _git_status
@@ -1608,7 +1608,7 @@ function fdgr {
       fi
    done
    cd $_orig_wd
-   [ $_last_status == "CLEAN" ] && echo -ne "${D2E}"
+   [ "$_last_status" == "CLEAN" ] && echo -ne "${D2E}"
 }
 
 function gdate {
