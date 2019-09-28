@@ -88,6 +88,7 @@ function _tmux_send_keys_all_panes {
 
 function awsar {
    # list all AWS regions available to me
+   [ -n "$AWS_DEBUG" ] && echo "debug: aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName"
    aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName
 }
 
@@ -117,6 +118,7 @@ function awssnsep {
    [ -z "$_app" ] && { echo "$_USAGE"; return; }
    local _region=$2
    [ -n "$_region" ] && _region="--region $_region"
+   [ -n "$AWS_DEBUG" ] && echo "debug: aws sns list-platform-applications $_region"
    if [ "$_app" == "all" ]; then
       echo "all platform applications found:"
       aws sns list-platform-applications $_region | grep PlatformApplicationArn | awk '{print $2}' | tr -d '"'
@@ -130,6 +132,7 @@ function awssnsep {
       echo "$_app_arn" | grep $_app
       return
    fi
+   [ -n "$AWS_DEBUG" ] && echo "debug: aws sns list-endpoints-by-platform-application $_region --platform-application-arn $_app_arn"
    local _app_eps=$(aws sns list-endpoints-by-platform-application $_region --platform-application-arn $_app_arn)
    local _enabled=$(echo $_app_eps | jq .Endpoints[].Attributes.Enabled | tr -d '"')
    local _token=$(echo $_app_eps | jq .Endpoints[].Attributes.Token | tr -d '"')
@@ -163,9 +166,11 @@ function awsasgcp {
    done
    [ -z "$_pc_cmd" ] && { echo "$_USAGE"; return; }
    local _asgn_pattern=$*
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_CMD $_region autoscaling describe-auto-scaling-groups | $_JQ_CMD -r .AutoScalingGroups[].AutoScalingGroupName | grep \"$_asgn_pattern\""
    asg_names=$($_AWS_CMD $_region autoscaling describe-auto-scaling-groups | $_JQ_CMD -r .AutoScalingGroups[].AutoScalingGroupName | grep "$_asgn_pattern")
    if [ -n "$asg_names" ]; then
       for asg_name in $asg_names; do
+         [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_CMD $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name"
          echo "$_dryrun: $(basename $_AWS_CMD) $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name"
          if [ $_dryrun == "running" ]; then
             $_AWS_CMD $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name
@@ -221,6 +226,7 @@ function awsci {
    local _ans
    echo "Instance: $_instance_name ($_instance_id) is $_instance_state"
    #read -p "Are you sure that you want to ${_CONTROL_CMD^^} it [yes/no]? " _ans
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_CMD ec2 $_aws_ec2_cmd --region $_region --instance-ids $_instance_id"
    read -p "Are you sure that you want to '${_CONTROL_CMD}' it [yes/no]? " _ans
    if [ "$_ans" == "yes" -o "$_ans" == "YES" ]; then
       $_AWS_CMD ec2 $_aws_ec2_cmd --region $_region --instance-ids $_instance_id
@@ -269,13 +275,13 @@ default display:
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          eval $_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeAddresses' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
    else
-      # debug # echo "$_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
       eval $_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeAddresses' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
@@ -356,6 +362,7 @@ default display:
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
@@ -364,7 +371,6 @@ default display:
          $_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
    else
-      #echo "$_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query "$_query" --output table"
       #$_AWSEC2DAMI_CMD --region=$_region --owners $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       $_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
@@ -426,6 +432,7 @@ default display:
       esac
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
@@ -517,6 +524,8 @@ default display:
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+   [ -n "$AWS_DEBUG" ] && echo "debug: aws ec2 get-password-data --instance-id $_instance_id --priv-launch-key $_pem_file | jq -r .PasswordData"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       if [ "$_show_pws" == "true" ]; then
@@ -540,7 +549,6 @@ default display:
          rm -f $_tmp_file
       else
          for _region in $_ALL_REGIONS; do
-            # echo "debug: $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
             eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          done
       fi
@@ -563,7 +571,6 @@ default display:
          done
          rm -f $_tmp_file
       else
-         # echo "debug: $_AWS_EC2_DI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
          eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
    fi
@@ -612,6 +619,7 @@ default display:
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DIS_CMD --region=$_region $_filters --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
@@ -667,6 +675,7 @@ default display:
       esac
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
@@ -729,6 +738,7 @@ default display:
       esac
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
@@ -787,6 +797,7 @@ default display:
       esac
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
@@ -863,6 +874,7 @@ default display:
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
@@ -929,6 +941,7 @@ default display:
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
@@ -1002,13 +1015,13 @@ default display:
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          eval $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query "$_query" --output table | egrep -v '^[-+]|DescribeVolumes' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
       done
    else
-      # DEBUG # echo "$_AWS_EC2_DV_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
       eval $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table | egrep -v '^[-+]|DescribeVolumes' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
    fi
 }
@@ -1062,14 +1075,13 @@ default display:
    [ -n "$_resource_filters" ] && _resource_filters="--resource-type-filters ${_resource_filters% }"
    [ -n "$_tag_filters" ] && _tag_filters="--tag-filters ${_tag_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
-         # echo "debug: $_AWS_RGT_GR_CMD --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table"
          eval $_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table | egrep -v '^[-+]|'"$_OUTPUT_HEADER"'' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       done
    else
-      # echo "debug: $_AWS_RGT_GR_CMD --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table"
       eval $_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table | egrep -v '^[-+]|'"$_OUTPUT_HEADER"'' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
@@ -1116,6 +1128,8 @@ default display:
    local _query="ResourceRecordSets[$_rec_type]"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    # get the Hosted Zone Id
+   [ -n "$AWS_DEBUG" ] && echo "debug: aws route53 list-hosted-zones-by-name --dns-name $_dns_name --max-items 1"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSRLRRS_CMD --hosted-zone-id $hosted_zone_id --query \"$_query\" --output table"
    hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name $_dns_name --max-items 1 | jq -r .HostedZones[].Id)
    if [ -z "$_reg_exp" ]; then
       $_AWSRLRRS_CMD --hosted-zone-id $hosted_zone_id --query "$_query" --output table | egrep -v '^[-+]|ListResourceRecordSets' | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
