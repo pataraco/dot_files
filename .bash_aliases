@@ -86,6 +86,52 @@ function _tmux_send_keys_all_panes {
    done
 }
 
+function assh {
+   # ssh to an IP found by 'aws ec2 describe-instances'
+   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+   local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
+   local _USAGE="usage: \
+assh [-h] [-p PROFILE] [-r REGION] HOSTNAME [COMMAND]
+  -h         - help (show this message)
+  -p PROFILE - AWS profile to use (aka --profile option)
+  -r REGION  - AWS region to use (aka --region option) [default: $_DEFAULT_REGION]
+  HOSTNAME   - hostname pattern to search for and get the private IP of
+  COMMAND    - optional command to run on the host and return"
+   local _host=""
+   local _max_items="--max-items 20"
+   local _region="$_DEFAULT_REGION"
+   [ "$1" == "-h" ] && { echo "$_USAGE"; return; }
+   [ "$1" == "-p" ] && { local _profile="--profile=$2"; shift 2; }
+   [ "$1" == "-r" ] && { local _region="$2"; shift 2; }
+   local _tag_name=$1
+   shift
+   local _command=$*
+   [ -z "$_tag_name" ] && { echo "$_USAGE"; return; }
+   local _filters="--filters \"Name=tag:Name,Values=*$_tag_name*\""
+   local _query="--query \"Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress]\""
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters $_query --output text"
+   _host=$(eval $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters $_query --output text)
+   if [ $(wc -w <<< $_host) -gt 2 ]; then
+      echo "there are more than one host that matches that name tag,"
+      echo "please be more specific:"
+      echo
+      awk '{print "\t"$1}' <<< "$_host"
+   elif [ $(wc -w <<< $_host) -lt 2 ]; then
+      echo "no matching hosts found with that name tag,"
+      echo "please try again"
+   else
+      _tag_name=$(awk '{print $1}' <<< $_host)
+      _host=$(awk '{print $2}' <<< $_host)
+      # echo -e "   ${CYN}< $_tag_name > ( $_host ) [ $_command ]${NRM}"
+      if [ -n "$_command" ]; then
+         echo -e "   ${BLU}<${GRN}$_tag_name${BLU}> (${YLW}$_host${BLU}) [${CYN}$_command${BLU}]${NRM}"
+      else
+         echo -e "   ${BLU}<${GRN}$_tag_name${BLU}> (${YLW}$_host${BLU})${NRM}"
+      fi
+      ssh $_host "$_command"
+   fi
+}
+
 function awsar {
    # list all AWS regions available to me
    [ -n "$AWS_DEBUG" ] && echo "debug: aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName"
