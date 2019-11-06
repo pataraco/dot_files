@@ -24,23 +24,28 @@ export ENVIRONMENT_SHIT=$HOME/.bash_aliases_chef
 
 # some ansi colorization escape sequences
 [ "$(uname)" == "Darwin" ] && ESC="\033" || ESC="\e"
-D2E="${ESC}[K"     # to delete the rest of the chars on a line
-BLD="${ESC}[1m"    # bold
-ULN="${ESC}[4m"    # underlined
-BLK="${ESC}[30m"   # black FG
-RED="${ESC}[31m"   # red FG
-GRN="${ESC}[32m"   # green FG
-YLW="${ESC}[33m"   # yellow FG
-BLU="${ESC}[34m"   # blue FG
-MAG="${ESC}[35m"   # magenta FG
-CYN="${ESC}[36m"   # cyan FG
-RBG="${ESC}[41m"   # red BG
-GBG="${ESC}[42m"   # green BG
-YBG="${ESC}[43m"   # yellow BG
 BBG="${ESC}[44m"   # blue BG
-MBG="${ESC}[45m"   # magenta BG
+BLD="${ESC}[1m"    # bold
+BLK="${ESC}[30m"   # black FG
+BLU="${ESC}[34m"   # blue FG
+BNK="${ESC}[5m"    # slow blink
 CBG="${ESC}[46m"   # cyan BG
+CYN="${ESC}[36m"   # cyan FG
+D2B="${ESC}[1K"    # delete to BOL
+D2E="${ESC}[K"     # delete to EOL
+DAL="${ESC}[2K"    # delete all of line
+GBG="${ESC}[42m"   # green BG
+GRN="${ESC}[32m"   # green FG
+HDC="${ESC}[?25l"  # hide cursor
+MAG="${ESC}[35m"   # magenta FG
+MBG="${ESC}[45m"   # magenta BG
 NRM="${ESC}[m"     # to make text normal
+RBG="${ESC}[41m"   # red BG
+RED="${ESC}[31m"   # red FG
+SHC="${ESC}[?25h"  # show cursor
+ULN="${ESC}[4m"    # underlined
+YBG="${ESC}[43m"   # yellow BG
+YLW="${ESC}[33m"   # yellow FG
 
 # set xterm defaults
 XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
@@ -49,15 +54,15 @@ XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
 ORIG_PS1=$PS1
 
 # for changing prompt colors
-PGRY='\[\e[1;30m\]'   # grey (bold black)
-PRED='\[\e[1;31m\]'   # red (bold)
-PGRN='\[\e[1;32m\]'   # green (bold)
-PYLW='\[\e[1;33m\]'   # yellow (bold)
 PBLU='\[\e[1;34m\]'   # blue (bold)
-PMAG='\[\e[1;35m\]'   # magenta (bold)
 PCYN='\[\e[1;36m\]'   # cyan (bold)
-PWHT='\[\e[1;36m\]'   # white (bold)
+PGRN='\[\e[1;32m\]'   # green (bold)
+PGRY='\[\e[1;30m\]'   # grey (bold black)
+PMAG='\[\e[1;35m\]'   # magenta (bold)
 PNRM='\[\e[m\]'       # to make text normal
+PRED='\[\e[1;31m\]'   # red (bold)
+PWHT='\[\e[1;36m\]'   # white (bold)
+PYLW='\[\e[1;33m\]'   # yellow (bold)
 
 # directory where all (most) repos are
 REPO_DIR=$HOME/repos
@@ -91,8 +96,10 @@ function assh {
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
    local _USAGE="usage: \
-assh [-h] [-p PROFILE] [-r REGION] HOSTNAME [COMMAND]
+assh [-h] [-e|-u] [-p PROFILE] [-r REGION] HOSTNAME [COMMAND]
   -h         - help (show this message)
+  -e         - ssh as 'ec2-user'
+  -u         - ssh as 'ubuntu'
   -p PROFILE - AWS profile to use (aka --profile option)
   -r REGION  - AWS region to use (aka --region option) [default: $_DEFAULT_REGION]
   HOSTNAME   - hostname pattern to search for and get the private IP of
@@ -101,6 +108,8 @@ assh [-h] [-p PROFILE] [-r REGION] HOSTNAME [COMMAND]
    local _max_items="--max-items 20"
    local _region="$_DEFAULT_REGION"
    [ "$1" == "-h" ] && { echo "$_USAGE"; return; }
+   [ "$1" == "-e" ] && { local _user="ec2-user@"; shift 1; }
+   [ "$1" == "-u" ] && { local _user="ubuntu@"; shift 1; }
    [ "$1" == "-p" ] && { local _profile="--profile=$2"; shift 2; }
    [ "$1" == "-r" ] && { local _region="$2"; shift 2; }
    local _tag_name=$1
@@ -128,7 +137,7 @@ assh [-h] [-p PROFILE] [-r REGION] HOSTNAME [COMMAND]
       else
          echo -e "   ${BLU}<${GRN}$_tag_name${BLU}> (${YLW}$_host${BLU})${NRM}"
       fi
-      ssh $_host "$_command"
+      ssh $_user$_host "$_command"
    fi
 }
 
@@ -711,12 +720,12 @@ default display:
           -r) _region=$2                 ; shift 2;;
          +az) _more_qs="$_more_qs${_more_qs:+,}AvailabilityZones[]|join(', '@)"   ; shift;;
           +d) _more_qs="$_more_qs${_more_qs:+,}DNSName"                           ; shift;;
+         +hc) _more_qs="$_more_qs${_more_qs:+,}HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold"; shift;;
           +i) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', '@)"; shift;;
+         +li) _more_qs="$_more_qs${_more_qs:+,}ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol"; shift;;
           +s) _more_qs="$_more_qs${_more_qs:+,}Scheme"                            ; shift;;
          +sg) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"       ; shift;;
          +sn) _more_qs="$_more_qs${_more_qs:+,}Subnets[]|join(', '@)"             ; shift;;
-         +hc) _more_qs="$_more_qs${_more_qs:+,}HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold"; shift;;
-         +li) _more_qs="$_more_qs${_more_qs:+,}ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol"; shift;;
         -h|*) echo "$_USAGE"; return;;
       esac
    done
@@ -743,7 +752,7 @@ default display:
 function awsdlb2 {
    # some 'aws elbv2 describe-load-balancer' hacks
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWSELBDLB_CMD="aws elbv2 describe-load-balancers"
+   local _AWSELBV2DLB_CMD="aws elbv2 describe-load-balancers"
    local _USAGE="usage: \
 awsdlb [OPTIONS]
   -n NAME      - filter results by this Launch Config Name
@@ -757,6 +766,7 @@ awsdlb [OPTIONS]
   +s           - show Scheme
   +sg          - show Security Groups
   +sn          - show Subnets
+  +t           - show Type
   -h           - help (show this message)
 default display:
   Load Balancer name"
@@ -774,31 +784,32 @@ default display:
           -r) _region=$2                 ; shift 2;;
          +az) _more_qs="$_more_qs${_more_qs:+,}AvailabilityZones[]|join(', '@)"   ; shift;;
           +d) _more_qs="$_more_qs${_more_qs:+,}DNSName"                           ; shift;;
+         +hc) _more_qs="$_more_qs${_more_qs:+,}HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold"; shift;;
           +i) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', '@)"; shift;;
+         +li) _more_qs="$_more_qs${_more_qs:+,}ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol"; shift;;
           +s) _more_qs="$_more_qs${_more_qs:+,}Scheme"                            ; shift;;
          +sg) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"       ; shift;;
          +sn) _more_qs="$_more_qs${_more_qs:+,}Subnets[]|join(', '@)"             ; shift;;
-         +hc) _more_qs="$_more_qs${_more_qs:+,}HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold"; shift;;
-         +li) _more_qs="$_more_qs${_more_qs:+,}ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol"; shift;;
+          +t) _more_qs="$_more_qs${_more_qs:+,}Type"                              ; shift;;
         -h|*) echo "$_USAGE"; return;;
       esac
    done
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table"
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
       local _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
       for _region in $_ALL_REGIONS; do
          if [ -z "$_reg_exp" ]; then
-            $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            $_AWSELBV2DLB_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          else
-            $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+            $_AWSELBV2DLB_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
          fi
       done
    else
       if [ -z "$_reg_exp" ]; then
-         $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSELBV2DLB_CMD --region=$_region $_max_items --query "$_query" --output table | egrep -v '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       else
-         $_AWSELBDLB_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+         $_AWSELBV2DLB_CMD --region=$_region $_max_items --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
    fi
 }
@@ -1645,7 +1656,7 @@ function elbinsts {
 function fdgr {
    # find dirty git repos
    local _orig_wd=$(pwd)
-   echo -ne "finding ALL 'git' repos (dirs)... "
+   echo -ne "finding ALL 'git' repos (dirs)... ${BNK}"
    # local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -and -not -name Library -exec dirname {} \; 2> /dev/null)"
    local _REPOS_TO_CHECK="$(\
       find $HOME \
@@ -1657,7 +1668,7 @@ function fdgr {
          -not -regex ".*.terraform.*" \
          -exec dirname {} \; 2> /dev/null | \
       tr ' ' '%')"
-   echo -ne "done\r"
+   echo -ne "${NRM}done${HDC}\r"
    local _dir
    local _git_status
    local _last_status
@@ -1667,19 +1678,16 @@ function fdgr {
       cd "$_repo"
       _gitstatus=$(git status --porcelain 2> /dev/null)
       if [ -n "$_gitstatus" ]; then
-         # echo -e "repo: $_repo status [${RED}DIRTY${NRM}]${D2E}"
-         # echo -e "${_repo/$HOME/\$HOME} [${RED}DIRTY${NRM}]${D2E}"
          echo -e "${_repo/$HOME/~} [${RED}DIRTY${NRM}]${D2E}"
          _last_status="DIRTY"
       else
-         # echo -ne "repo: $_repo status [${GRN}CLEAN${NRM}]${D2E}\r"
-         # echo -ne "${_repo/$HOME/\$HOME} [${GRN}CLEAN${NRM}]${D2E}\r"
          echo -ne "${_repo/$HOME/~} [${GRN}CLEAN${NRM}]${D2E}\r"
          _last_status="CLEAN"
       fi
    done
    cd $_orig_wd
    [ "$_last_status" == "CLEAN" ] && echo -ne "${D2E}"
+   echo -ne "${SHC}"
 }
 
 function gdate {
@@ -2059,8 +2067,8 @@ function sae { # TOOL
       echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
       echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
       # obfuscate the KEYs with some *'s
-      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HJLMO-QT-VXZ03-9]:*:g'
-      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[bd-np-zF-HJLO-QU-V03-9+]:*:g'
+      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HO-QT-V3-8]:*:g'
+      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[d-np-zF-HO-QU-V4-9+]:*:g'
       echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
    fi
 }
@@ -2134,8 +2142,8 @@ function sar { # TOOL
       echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
       echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
       # obfuscate the KEYs with some *'s
-      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HJLMO-QT-VXZ03-9]:*:g'
-      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[bd-np-zF-HJLO-QU-V03-9+]:*:g'
+      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HO-QT-V3-8]:*:g'
+      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[d-np-zF-HO-QU-V4-9+]:*:g'
       echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
    fi
 }
@@ -2406,10 +2414,11 @@ function xssh {
 function y2j {
    # convert YAML to JSON (from either STDIN or by specifying a file
    if [ -n $1 ]; then
-      cat $1 | python -c 'import json, sys, yaml; json.dump(yaml.load(sys.stdin), sys.stdout, indent=4)'
+      # cat $1 | python -c 'import json, sys, yaml; json.dump(yaml.load(sys.stdin, Loader=yaml.FullLoader), sys.stdout, indent=4)'
+      cat $1 | python -c 'import json, sys, yaml; [json.dump(f, sys.stdout, indent=4) for f in yaml.load_all(sys.stdin, Loader=yaml.FullLoader)]' | jq .
    else
       #python -c 'import json, sys, yaml; y=yaml.load(sys.stdin.read()); print json.dump(y)'
-      python -c 'import json, sys, yaml; json.dump(yaml.load(sys.stdin), sys.stdout, indent=4)'
+      python -c 'import json, sys, yaml; [json.dump(f, sys.stdout, indent=4) for f in yaml.load_all(sys.stdin, Loader=yaml.FullLoader)]' | jq .
    fi
 }
 
@@ -2483,8 +2492,11 @@ alias gxtf="grep --color=auto --exclude-dir .terraform"
 alias h="history | tail -20"
 alias kaj='eval kill $(jobs -p)'
 alias kc='kubectl'
+alias kca='kubectl api-resources'
 alias kcc='kubectl config current-context'
 alias kcs='kubectl -n kube-system'
+alias kct='kubectl -n testing'
+alias kcw='kubectl -o wide'
 if [ "$(uname -s)" == "Darwin" ]; then
    alias l.='ls -dGh .*'
    alias la='ls -aGh'
@@ -2516,6 +2528,7 @@ alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_PV=0; unset PS_ANS; unset PS_
 alias ccrlf="sed -e 's//\n/g' -i .orig"
 alias rcrlf="sed -e 's/$//g' -i .orig"
 alias ring="$HOME/repos/ring/ring.sh"
+alias rmt="rancher-migration-tools"  # github.com/rancher/migration-tools
 alias rsshk='ssh-keygen -f "$HOME/.ssh/known_hosts" -R'
 alias rm='rm -i'
 alias sa=alias
