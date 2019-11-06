@@ -98,7 +98,7 @@ aws route53 get-hosted-zone --id $HOSTED_ZONE_ID
 aws route53 list-hosted-zones --query "HostedZones[?Name==autogravity.com.].[Name,Id,Config.PrivateZone,ResourceRecordSetCount,Config.Comment]" --output table
 aws route53 list-vpc-association-authorizations --hosted-zone-id $HOSTED_ZONE_ID
 aws s3 cp $FILE s3://$BUCKET/$KEY --sse aws:kms --sse-kms-key-id $KMS_ARN
-aws s3 ls s3://S3_BUCKET/KEY --recursive --profile PROFILE
+aws s3 ls s3://S3_BUCKET/KEY --profile PROFILE --recursive --summarize --human-readable
 aws s3 mb s3://BUCKET_NAME
 aws s3 mv s3://S3_BUCKET/KEY/FILE s3://S3_BUCKET/KEY/FILE --sse aws:kms --sse-kms-key-id KMS_KEY_ID --profile PROFILE
 aws s3 rb s3://BUCKET_NAME --force # remove bucket and all of it's contents
