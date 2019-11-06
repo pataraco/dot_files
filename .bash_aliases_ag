@@ -84,9 +84,9 @@ function saem {
       echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
       echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
       # obfuscate the KEYs with some *'s
-      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HJLMO-QT-VXZ03-9]:*:g'
-      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[bd-np-zF-HJLO-QU-V03-9+]:*:g'
-      echo "AWS_SESSION_TOKEN     = ${AWS_SESSION_TOKEN:-N/A}" | sed 's:[bd-np-zF-HJLP-QU-V03-9+]:*:g' | cut -c1-79
+      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HO-QT-V3-8]:*:g'
+      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[d-np-zF-HO-QU-V4-9+]:*:g'
+      echo "AWS_SESSION_TOKEN     = ${AWS_SESSION_TOKEN:-N/A}" | sed 's:[d-np-zF-HP-QU-V4-8+]:*:g' | cut -c1-79
       echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
    fi
 }
