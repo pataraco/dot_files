@@ -693,7 +693,7 @@ function kssh {
             fi
          else
             echo -e "   ${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
-            eval /usr/bin/ssh -q $server_ip "$cmd"
+            eval /usr/bin/ssh -q $server_ip \'"$cmd"\'
          fi
          echo -ne "\033]0;`whoami`@`hostname`\007"
       else
