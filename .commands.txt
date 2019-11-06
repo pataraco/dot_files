@@ -45,7 +45,6 @@ cssh -l ubuntu -o "-i ~/.ssh/Red5China.pem" 10.248.4.2 10.248.4.5 10.248.4.6 10.
 curl --data "Hello from Slackbot" $'https://r5s.slack.com/services/hooks/slackbot?token=nbvhEDf2Dov4mwn&channel=%23techops'
 curl -s https://api.github.com/users/pataraco/repos|grep clone_url|awk '{print $2}'|tr -d '",'
 curl http://169.254.169.254/latest/meta-data/; echo    # AWS EC2 instance info
-curl http://ipecho.net/plain; echo	# myip
 curl https://webkeys.vpc02.wux01.r5external.com/firefall-china_prod-build-1913/aes-pass.bin --cacert /r5/certificates/red5-rootcert.crt --cert /r5/certificates/1913.crt --key /r5/certificates/1913_nopass.key --ssl
 curl ifconfig.co/port/22; echo	# show if my port is reachable
 date +%s%N | sha512sum
@@ -56,7 +55,8 @@ dbaccess dev $tempsql
 defaults write com.apple.finder AppleShowAllFiles YES  # Max OS: Finder - show all/hidden files
 df -BM /eci/dev/sqr
 df -BM /maint				# need 500MB free for RHEL6 upgrade
-dig +short myip.opendns.com @resolver1.opendns.com	# get my IP - FAST
+dig +short myip.opendns.com @resolver1.opendns.com	# get my IP - Faster?
+curl http://ipecho.net/plain; echo			# get my IP
 dig MX example.com
 dig NS us-east-1.amazonaws.com
 dmidecode | egrep -i 'date|bios'
