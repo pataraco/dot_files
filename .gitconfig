@@ -83,7 +83,8 @@
 	excludesfile = /home/praco/.gitignore
 [user]
 	name = Patrick Raco
-	email = pataraco@gmail.com
+	# email = pataraco@gmail.com
+	email = patrick.raco@autogravity.com
 # [credential]
 # 	helper = !aws --profile rdrake --region us-east-1 codecommit credential-helper $@
 # 	UseHttpPath = true
