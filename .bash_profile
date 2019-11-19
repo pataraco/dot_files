@@ -6,6 +6,17 @@
 #[ -n "$PS1" ] && echo "sourcing: .bash_profile"
 [ -n "$PS1" ] && echo -n ".bash_profile (begin)... "
 
+# set to use AWS related functions/aliases
+export AWS_SHIT=$HOME/.bash_aliases_aws
+
+# set to use Chef/Knife related functions/aliases
+export CHEF_SHIT=$HOME/.bash_aliases_chef
+
+# set company specific variable to create/use
+# company specific functions/aliases
+export COMPANY="ag"
+export COMPANY_SHIT=$HOME/.bash_aliases_$COMPANY
+
 # the default umask is set in /etc/profile; for setting the umask
 # for ssh logins, install and configure the libpam-umask package.
 #umask 022
@@ -50,9 +61,9 @@ hb_mysql_clnt_bin="/usr/local/opt/mysql-client/bin"
 
 # Should not need this stuff
 ## add Ruby related info
-#export PATH=$PATH:$HOME/.gem/ruby/1.9.1/bin:$HOME/.gem/ruby/2.2.0/bin
-#export GEM_PATH=$HOME/.gem/ruby/1.9.1
-#export GEM_HOME=$GEM_PATH
+# export PATH=$PATH:$HOME/.gem/ruby/1.9.1/bin:$HOME/.gem/ruby/2.2.0/bin
+# export GEM_PATH=$HOME/.gem/ruby/1.9.1
+# export GEM_HOME=$GEM_PATH
 
 # if running bash
 if [ -n "$BASH_VERSION" ]; then
@@ -63,12 +74,12 @@ if [ -n "$BASH_VERSION" ]; then
 fi
 
 # set up some Ansible environment variable
-#export ANSIBLE_HOME=$HOME/repos/cloud_automation/ansible
-#export ANSIBLE_CONFIG=$HOME/repos/cloud_automation/ansible/inventory/ansible.cfg
-#export ANSIBLE_LIBRARY=$HOME/repos/cloud_automation/ansible/library
-export ANSIBLE_HOME=$HOME/cloud_automation/ansible
-export ANSIBLE_CONFIG=$HOME/cloud_automation/ansible/inventory/ansible.cfg
-export ANSIBLE_LIBRARY=$HOME/cloud_automation/ansible/library
+# export ANSIBLE_HOME=$HOME/repos/cloud_automation/ansible
+# export ANSIBLE_CONFIG=$HOME/repos/cloud_automation/ansible/inventory/ansible.cfg
+# export ANSIBLE_LIBRARY=$HOME/repos/cloud_automation/ansible/library
+# export ANSIBLE_HOME=$HOME/cloud_automation/ansible
+# export ANSIBLE_CONFIG=$HOME/cloud_automation/ansible/inventory/ansible.cfg
+# export ANSIBLE_LIBRARY=$HOME/cloud_automation/ansible/library
 
 # set up VirtualEnv enviroment variables
 export VIRTUAL_ENV_DISABLE_PROMPT=YES	# set to non-empty value to disable
@@ -78,10 +89,10 @@ export PIP_FORMAT=columns
 [ $(command -v nvim) ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
 export EDITOR=$VIM_CMD 
 export VISUAL=$VIM_CMD 
-#export MANPAGER="col -bx | vim -c 'set ft=man nolist nonu ' -MR -"
-#export MANPAGER="col -b | vim -c 'set ft=man ts=8 nomod nolist nonu noma' -"
+# export MANPAGER="col -bx | vim -c 'set ft=man nolist nonu ' -MR -"
+# export MANPAGER="col -b | vim -c 'set ft=man ts=8 nomod nolist nonu noma' -"
 # use following for GNU
-#export MANPAGER="sh -c \"col -b | vim -c 'set ft=man ts=8 nomod nolist nonu noma' -\""
+# export MANPAGER="sh -c \"col -b | vim -c 'set ft=man ts=8 nomod nolist nonu noma' -\""
 # Less Colors for Man Pages
 export LESS_TERMCAP_mb=$'\E[01;31m'       # begin blinking
 #export LESS_TERMCAP_md=$'\E[01;38;5;74m'  # begin bold
