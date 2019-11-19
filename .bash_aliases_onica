@@ -2,10 +2,10 @@
 #
 # these are functions/aliases specific to Onica
 
-THIS_FILE=".bash_aliases_$COMPANY"
+CO_BA_FILE=".bash_aliases_$COMPANY"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$THIS_FILE (begin)... "
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE (begin)... "
 
 # set up shell for Onica Single Sign-on (onica-sso)
 [ $(command -v onica-sso) ] && eval "$(onica-sso shell-init bash)"
@@ -30,7 +30,7 @@ function rde {
    fi
 }
 
-function showcf {	# TOOL
+function showcof {	# TOOL
    # show a company specific function
    if [ -n "$COMPANY_SHIT" ]; then
       ALIASES_FILE=$COMPANY_SHIT
@@ -44,11 +44,11 @@ function showcf {	# TOOL
       else
          echo
          echo "which function do you want to see?"
-         grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+         grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scof\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
          echo -ne "enter function: "
          read func
          echo
-         showcf $func
+         showcof $func
       fi
    else
       echo "company alias file not set (COMPANY_SHIT)"
@@ -139,9 +139,9 @@ function ssol {	# TOOL
 # -------------------- define aliases --------------------
 
 # company common
-alias cf="grep '^function .* ' ~/$THIS_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
-alias scba='source ~/$THIS_FILE'
-alias scf=showcf
+alias cf="grep '^function .* ' ~/$CO_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scof\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias scba='source ~/$CO_BA_FILE'
+alias scof=showcof
 alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 # company specific
 alias actss="source $HOME/envs/sentient-science/bin/activate"
@@ -159,4 +159,4 @@ alias ssoc="sso-console"
 alias ssor="sso-relogin"
 alias ssocnb="sso-console --no-browser >& /dev/null"
 
-[ -n "$PS1" ] && echo -n "$THIS_FILE (end). "
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE (end). "

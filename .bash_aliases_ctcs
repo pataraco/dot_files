@@ -2,10 +2,10 @@
 #
 # these are functions/aliases specific to Comtech TCS
 
-THIS_FILE=".bash_aliases_$COMPANY"
+CO_BA_FILE=".bash_aliases_$COMPANY"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$THIS_FILE (begin)... "
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE (begin)... "
 
 # -------------------- define functions --------------------
 
@@ -31,9 +31,9 @@ function searchrepos {	# TOOL
 
 }
 
-function showcf {	# TOOL
+function showcof {	# TOOL
    # show a company specific function
-   ALIASES_FILE="$HOME/$THIS_FILE"
+   ALIASES_FILE="$HOME/$CO_BA_FILE"
    if [[ $1 ]]; then
       grep -q "^function $1 " $ALIASES_FILE
       if [ $? -eq 0 ]; then
@@ -44,11 +44,11 @@ function showcf {	# TOOL
    else
       echo
       echo "which function do you want to see?"
-      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scof\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
       echo -ne "enter function: "
       read func
       echo
-      showcf $func
+      showcof $func
    fi
 }
 
@@ -577,9 +577,9 @@ function zipstuff {	# MISC
 # -------------------- define aliases --------------------
 
 # company common
-alias cf="grep '^function .* ' ~/$THIS_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
-alias scba='source ~/$THIS_FILE'
-alias scf=showcf
+alias cf="grep '^function .* ' ~/$CO_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scof\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias scba='source ~/$CO_BA_FILE'
+alias scof=showcof
 alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 # company specific
 alias act1='source ~/envs/Ansible_1.x/bin/activate; ansible --version'
@@ -594,4 +594,4 @@ alias cdr="cd ~/cloud_automation/ansible/roles"
 alias cvhf='~/cloud_automation/ansible/playbooks/VMedix/scripts/create_vm_qa_hosts_file.sh'
 alias cvqhf='~/scripts/$COMPANY/vmedix/create_vm_qa_hosts_file.sh'
 
-[ -n "$PS1" ] && echo -n "$THIS_FILE (end). "
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE (end). "

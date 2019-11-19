@@ -2,10 +2,10 @@
 #
 # these are functions/aliases specific to AG
 
-THIS_FILE=".bash_aliases_$COMPANY"
+CO_BA_FILE=".bash_aliases_$COMPANY"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$THIS_FILE (begin)... "
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE (begin)... "
 
 # -------------------- define functions --------------------
 
@@ -91,9 +91,9 @@ function saem {
    fi
 }
 
-function showcf {
+function showcof {
    # show a company specific function
-   ALIASES_FILE="$HOME/$THIS_FILE"
+   ALIASES_FILE="$HOME/$CO_BA_FILE"
    if [[ $1 ]]; then
       grep -q "^function $1 " $ALIASES_FILE
       if [ $? -eq 0 ]; then
@@ -104,23 +104,21 @@ function showcf {
    else
       echo
       echo "which function do you want to see?"
-      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scof\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
       echo -ne "enter function: "
       read func
       echo
-      showcf $func
+      showcof $func
    fi
 }
 
 # -------------------- define aliases --------------------
 
-# company common
-alias cf="grep '^function .* ' ~/$THIS_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
-alias scba='source ~/$THIS_FILE'
-alias scf=showcf
-alias vl='export VAULT_ADDR=$(cat ~/.ssh/ag_vault_address); vault login -method=github token=$(cat ~/.ssh/github_ag_access_token)'
-alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
-# company specific
+alias cof="grep '^function .* ' ~/$CO_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scof\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias scoba='source $COMPANY_SHIT'
+alias scof=showcof
+alias vcoba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 alias vi-wpn="vi ~/Documents/projects/wordpress/wordpress-project-notes.txt"
+alias vl='export VAULT_ADDR=$(cat ~/.ssh/ag_vault_address); vault login -method=github token=$(cat ~/.ssh/github_ag_access_token)'
 
-[ -n "$PS1" ] && echo -n "$THIS_FILE (end). "
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE (end). "
