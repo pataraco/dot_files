@@ -1,16 +1,16 @@
 #!bash - ~/.bash_aliases_chef - sourced by ~/.bash_aliases (if enabled)
 #
-# these are functions/aliases specific to Chef
+# these are functions/aliases specific to Chef/Knife
 
 # -------------------- global variables --------------------
 
 CHEF_REPO=$HOME/repos
 KNIFE_CMD=$(command -v knife)
 REPO_DIR=$HOME/repos
-THIS_FILE=".bash_aliases_chef"
+CHEF_BA_FILE=".bash_aliases_chef"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$THIS_FILE (begin)... "
+[ -n "$PS1" ] && echo -n "$CHEF_BA_FILE (begin)... "
 
 # -------------------- define functions --------------------
 
@@ -378,6 +378,7 @@ function kesd {
 }
 
 function kf {
+   # `knife` command wrapper to use my dynamically set knife.rb file
    if knife_env_set; then
       eval $KNIFE_CMD '$*'
    fi
@@ -395,18 +396,19 @@ function knife_env_set {
 
 function knl {
    # preform a knife node list (and optionally grep for a pattern)
+   local _chef_nodes_nc
    if knife_env_set; then
       if [ -n "$1" ]; then
-         chef_nodes=`$KNIFE_CMD node list | grep $*`
+         chef_nodes=`$KNIFE_CMD node list | grep "$*"`
          if [ -n "$chef_nodes" ]; then
             echo "$chef_nodes"
          else
             echo "did not find any nodes matching '$1' in the node list"
          fi
       else
-         chef_nodes_nc=`$KNIFE_CMD node list`
-         if [ -n "$chef_nodes_nc" ]; then
-            echo "$chef_nodes_nc"
+         _chef_nodes_nc=`$KNIFE_CMD node list`
+         if [ -n "$_chef_nodes_nc" ]; then
+            echo "$_chef_nodes_nc"
          else
             echo "could not find any nodes to list"
          fi
@@ -418,38 +420,54 @@ function kns {
    # perform knife node show for one or more node and
    # optionally specify an attribute
    # you can give -a option to show only one attribute
+   local _USAGE="usage: \
+kns [-h | -l] [-a ATTRIBUTE] [NODE]
+description: knife node show
+options:
+   -h  help (show this message)
+   -l  long format
+   -a  show attribute only (shortcuts)
+        az   ec2.availability_zone
+        fq   fqdn
+        id   ec2.instance_id
+        ifq  internal_fqdn
+        ip   ipaddress
+        os   hostnamectl.operating_system
+        rl   run_list"
    if knife_env_set; then
-      local _chef_node_nc
-      local _chef_node
       local _attrib
+      local _chef_node
+      local _chef_nodes_nc  # chef nodes no-color (from grep)
       local _l_opt
-      if [ "$1" = "-a" ]; then
-         case $2 in
-             az) _attrib=firefall.availability_zone ;;
-             fq) _attrib=fqdn ;;
-            ifq) _attrib=internal_fqdn ;;
-             ip) _attrib=ipaddress ;;
-             rl) _attrib=run_list ;;
-              *) _attrib=$2 ;;
+      while [[ "$1" =~ ^"-" ]]; do
+         case $1 in
+            -a)
+               case $2 in
+                   az) _attrib=ec2.availability_zone ;;
+                   fq) _attrib=fqdn ;;
+                   id) _attrib=ec2.instance_id ;;
+                   ip) _attrib=ipaddress ;;
+                   rl) _attrib=run_list ;;
+                  ifq) _attrib=internal_fqdn ;;
+                    *) _attrib=$2 ;;
+               esac
+               shift 2 ;;
+            -l) _l_opt="$1"; shift ;;
+            -h) echo "$_USAGE"; return ;;
          esac
-         shift 2
-      elif [ "$1" = "-l" ]; then
-         _l_opt="$1"
-         shift
-      fi
+      done
       if [ -n "$1" ]; then
-         chef_nodes_nc=`$KNIFE_CMD node list | \grep $*`
+         _chef_nodes_nc=`$KNIFE_CMD node list | \grep "$1"`
       else
-         chef_nodes_nc=`$KNIFE_CMD node list`
+         _chef_nodes_nc=`$KNIFE_CMD node list`
       fi
-      if [ -n "$chef_nodes_nc" ]; then
-         for _chef_node_nc in $chef_nodes_nc; do
-            [ -n "$*" ] && _chef_node=`echo "$_chef_node_nc" | grep $*`
-            echo -e "\t\t\t-----  $_chef_node  -----"
+      if [ -n "$_chef_nodes_nc" ]; then
+         for _chef_node in $_chef_nodes_nc; do
+            echo -e "\t\t\t-----  ${GRN}$_chef_node${NRM}  -----"
             if [ -n "$_attrib" ]; then
-               $KNIFE_CMD node show $_chef_node_nc -a $_attrib
+               $KNIFE_CMD node show $_chef_node -a $_attrib
             else
-               $KNIFE_CMD node show $_chef_node_nc $_l_opt
+               $KNIFE_CMD node show $_chef_node $_l_opt
             fi
          done
       else
@@ -802,9 +820,9 @@ function ksshu {
    fi
 }
 
-function showef {
+function showcf {
    # show an environment specific function
-   ALIASES_FILE="$HOME/$THIS_FILE"
+   ALIASES_FILE="$HOME/$CHEF_BA_FILE"
    if [[ $1 ]]; then
       grep -q "^function $1 " $ALIASES_FILE
       if [ $? -eq 0 ]; then
@@ -815,11 +833,11 @@ function showef {
    else
       echo
       echo "which function do you want to see?"
-      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sef\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
       echo -ne "enter function: "
       read func
       echo
-      showef $func
+      showcf $func
    fi
 }
 
@@ -959,10 +977,12 @@ function update_spiceweasel_repo {
 
 # -------------------- define aliases --------------------
 
-# alias kcl='kf client list'  # replaced? by a function
-# alias knl='kf node list'    # replaced? by a function
-alias ef="grep '^function .* ' ~/$THIS_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sef\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
-alias sef=showef
+alias cf="grep '^function .* ' ~/$CHEF_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias scba='source $CHEF_SHIT'
+alias scf=showcf
+alias vcba='[ -f $CHEF_SHIT ] && { echo "editing: $CHEF_SHIT"; vi $CHEF_SHIT; sba; }'
 alias vsy='vi $SW_YAML_FILE'
 
-[ -n "$PS1" ] && echo -n "$THIS_FILE (end). "
+# -------------------- final touches --------------------
+
+[ -n "$PS1" ] && echo -n "$CHEF_BA_FILE (end). "
