@@ -155,6 +155,7 @@ openssl rand -base64 24   # generate 32 char password
 openssl req -in DOMAIN_NAME.csr -noout -subject
 openssl req -in consult.firecrackerhealth.com.csr.orig -noout -subject
 openssl req -new -newkey rsa:2048 -nodes -keyout DOMAIN_NAME.key -out DOMAIN_NAME.csr
+openssl req -new -newkey rsa:2048 -nodes -sha256 -keyout DOMAIN_NAME.key -out DOMAIN_NAME.csr -config CSR_CONFIG
 openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout www.example.com.selfsigned.key -out www.example.com.selfsigned.crt -subj /CN=www.example.com -days 3650
 openssl rsa -in AWS_IMPORTED.pem -pubout -outform DER | openssl md5 -c                           # get fingerprint
 ssh-keygen -ef OPEN_SSH_KEY -m PEM | openssl rsa -RSAPublicKey_in -outform DER | openssl md5 -c  # get fingerprint
