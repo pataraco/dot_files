@@ -1027,7 +1027,7 @@ function vin {
          virtual) actual_note_file=Virtual_Environments_Notes.txt ;;
                *) echo "unknown alias - try again"; return 2 ;;
       esac
-      eval vim $REPO_DIR/$NOTES_DIR/$actual_note_file
+      eval vim $REPO_DIR/pataraco/$NOTES_DIR/$actual_note_file
    else
       echo "you didn't specify a file (alias) to edit"
    fi
