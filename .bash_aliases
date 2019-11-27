@@ -272,16 +272,16 @@ function cgcai {
 function chkrepodiffs {
    # usage: chkrepodiffs [-v] [file]
    # checks files in current dir against file in home dir for diffs
-   # only works on https://github.com/pataraco/bash_aliases repo now
+   # only works on https://github.com/pataraco/dot_files repo now
    # comparing those files against those in home directory
-   cd ~/repos/bash_aliases
+   cd ~/repos/pataraco/dot_files
    local _verbose=$1
    if [ "$_verbose" == "-v" ]; then
       shift
    fi
    local _files=$*
    local _file
-   [ -z "$_files" ] && _files=$(ls -A -I .git)
+   [ -z "$_files" ] && _files=$(ls -A | grep -v .git)
    for _file in $_files; do
       if [ -e $_file -a -e ~/$_file ]; then
          diff -q $_file ~/$_file
@@ -1209,7 +1209,7 @@ alias pshpv='PS_SHOW_PV=0; unset PS_PY'
 alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_PV=0; unset PS_ANS; unset PS_CHF; unset PS_PY'
 alias ccrlf="sed -e 's//\n/g' -i .orig"
 alias rcrlf="sed -e 's/$//g' -i .orig"
-alias ring="$HOME/repos/ring/ring.sh"
+alias ring="$HOME/repos/pataraco/ring/ring.sh"
 alias rmt="rancher-migration-tools"  # github.com/rancher/migration-tools
 alias rsshk='ssh-keygen -f "$HOME/.ssh/known_hosts" -R'
 alias rm='rm -i'
