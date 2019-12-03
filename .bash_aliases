@@ -1209,7 +1209,7 @@ alias pshpv='PS_SHOW_PV=0; unset PS_PY'
 alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_PV=0; unset PS_ANS; unset PS_CHF; unset PS_PY'
 alias ccrlf="sed -e 's//\n/g' -i .orig"
 alias rcrlf="sed -e 's/$//g' -i .orig"
-alias ring="$HOME/repos/pataraco/ring/ring.sh"
+alias ring="$HOME/repos/pataraco/scripts/misc/ring.sh"
 alias rmt="rancher-migration-tools"  # github.com/rancher/migration-tools
 alias rsshk='ssh-keygen -f "$HOME/.ssh/known_hosts" -R'
 alias rm='rm -i'
