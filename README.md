@@ -31,7 +31,7 @@ repo containing my important dot files
   * sourced by .bash_aliases (enabled in .bash_profile)
   * list and show functions with: `cf()` and `scf()`
 * .bash_aliases_{ag,ctcs,onica,r5s} (Company specific)
-  * a bunch of cool aliases and functions specific to companies I{,'ve} work at
+  * a bunch of cool aliases and functions specific to companies I've worked at
   * sourced by .bash_aliases (enabled in .bash_profile)
   * list and show functions with: `cof()` and `scof()`
 * .bash_logout
