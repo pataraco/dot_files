@@ -1067,8 +1067,9 @@ function awsrlrrs {
    # some 'aws route53 list-resource-record-sets' hacks
    local _AWSRLRRS_CMD="aws route53 list-resource-record-sets"
    local _USAGE="usage: \
-awsrlrrs DNS_NAME [OPTIONS]
+awsrlrrs [OPTIONS]
   -d DNS_NAME - the DNS Name or Hosted Zone to query
+  -i ZONE_ID  - the Hosted Zone ID to query
   -m MAX      - the maximum number of items to display
   -n NAME     - filter results by this Record Name
   -t TYPE     - record TYPE to display
@@ -1081,8 +1082,8 @@ awsrlrrs DNS_NAME [OPTIONS]
 default display:
   Record Name | Type | Record Value"
    local _max_items=""
+   local _hosted_zone_id=""
    local _rec_type="*"
-   # local _queries="Name,Type,ResourceRecords[].Value|[0],AliasTarget.DNSName"
    local _queries="Name,Type"
    local _default_queries="Name,Type,ResourceRecords[].Value|[0]"
    local _reg_exp=""
@@ -1090,6 +1091,7 @@ default display:
    while [ $# -gt 0 ]; do
       case $1 in
           -d) _dns_name="$2"             ; shift 2;;
+          -i) _hosted_zone_id="$2"       ; shift 2;;
           -m) _max_items="--max-items $2"; shift 2;;
           -n) _reg_exp="$2"              ; shift 2;;
           -t) _rec_type="?Type=='$2'"    ; shift 2;;
@@ -1106,12 +1108,20 @@ default display:
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
    # get the Hosted Zone Id
    [ -n "$AWS_DEBUG" ] && echo "debug: aws route53 list-hosted-zones-by-name --dns-name $_dns_name --max-items 1"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSRLRRS_CMD --hosted-zone-id $hosted_zone_id --query \"$_query\" --output table"
-   hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name $_dns_name --max-items 1 | jq -r .HostedZones[].Id)
+   if [ -z "$_hosted_zone_id" ]; then
+      _hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name $_dns_name | jq -r .HostedZones[].Id)
+      if [ $(wc -l <<< "$_hosted_zone_id" | awk '{print $1}') -gt 1 ]; then
+         echo "there is more than one hosted zone with the domain name: '$_dns_name'"
+         aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + ") " + .Config.Comment' | sort | sed 's:\./hostedzone/: (:' | grep $_dns_name | awk '{print "  - "$0}'
+         echo "please use the '-i' option and specify the desired Hosted Zone ID"
+         return
+      fi
+   fi
+   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSRLRRS_CMD --hosted-zone-id $_hosted_zone_id --query \"$_query\" --output table"
    if [ -z "$_reg_exp" ]; then
-      $_AWSRLRRS_CMD --hosted-zone-id $hosted_zone_id --query "$_query" --output table | egrep -v '^[-+]|ListResourceRecordSets' | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      $_AWSRLRRS_CMD --hosted-zone-id $_hosted_zone_id --query "$_query" --output table | egrep -v '^[-+]|ListResourceRecordSets' | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    else
-      $_AWSRLRRS_CMD --hosted-zone-id $hosted_zone_id --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      $_AWSRLRRS_CMD --hosted-zone-id $_hosted_zone_id --query "$_query" --output table | grep "$_reg_exp" | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
 
@@ -1333,7 +1343,7 @@ function wtac {
 
 # -------------------- define aliases --------------------
 
-alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + \")\"' | sort | sed 's:\./hostedzone/: (:'"
+alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + \") \" + .Config.Comment' | sort | sed 's:\./hostedzone/: (:'"
 alias af="grep '^function .* ' ~/$AWS_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`saf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
 alias gci='aws sts get-caller-identity | jq -r .Arn | cut -d: -f5-6'
 alias laan="for p in \$(grep '^\[profile' ~/.aws/config | awk '{print \$2}' | tr ']\n' ' '); do echo -en \"\$p: \"; echo \$(aws sts get-caller-identity --profile \$p | jq -r .Account); done"
