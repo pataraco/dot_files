@@ -27,7 +27,8 @@ function saem {
       if [ "$_arg" == "unset" ]; then
          echo "environment has been unset"
       else
-         if [ -n "$AWS_STS_EXPIRES_TS" -o -e $_AWS_STS_CREDS ]; then
+         [ ! -s $_AWS_STS_CREDS ] && rm -f $_AWS_STS_CREDS
+         if [ -n "$AWS_STS_EXPIRES_TS" -o -s $_AWS_STS_CREDS ]; then
             local _now_ts=$(date +%s)
             _mfa_exp_time=$(jq -r .Credentials.Expiration $_AWS_STS_CREDS)
             _mfa_exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_mfa_exp_time +"%s")
@@ -36,16 +37,17 @@ function saem {
             [ -z "$AWS_STS_EXPIRES_TS" ] && AWS_STS_EXPIRES_TS=0
             # echo "debug: AWS_STS_EXPIRES_TS: $AWS_STS_EXPIRES_TS, _now_ts: $_now_ts, _mfa_exp_ts: $_mfa_exp_ts, AWS_SESSION_TOKEN: $AWS_SESSION_TOKEN"
             if [ $AWS_STS_EXPIRES_TS -lt $_now_ts -a $_mfa_exp_ts -lt $_now_ts ]; then
-               echo -en "Enter the 6-digit code from your MFA device: "
+               echo -en "(1): Enter the 6-digit code from your MFA device: "
             ## elif [ $AWS_STS_EXPIRES_TS -gt $_now_ts -a -z "$AWS_SESSION_TOKEN" ]; then
             ##    echo -en "Enter the 6-digit code from your MFA device: "
             ## elif [ $_mfa_exp_ts -gt $_now_ts -a -z "$AWS_SESSION_TOKEN" ]; then
             ##    echo -en "Enter the 6-digit code from your MFA device: "
             fi
+         elif [ -z "$AWS_SESSION_TOKEN" ]; then
+            echo -en "(2): Enter the 6-digit code from your MFA device: "
          else
-            echo -en "Enter the 6-digit code from your MFA device: "
+            echo -en "(3): Enter the 6-digit code from your MFA device: "
          fi
-         [ -z "$AWS_SESSION_TOKEN" ] && echo -en "Enter the 6-digit code from your MFA device: "
          local _aws_mfa_results
          _aws_mfa_results=$(aws-mfa --profile $_arg 2>&1)
          _exit_code=$?
