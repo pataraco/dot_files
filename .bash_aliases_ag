@@ -37,16 +37,16 @@ function saem {
             [ -z "$AWS_STS_EXPIRES_TS" ] && AWS_STS_EXPIRES_TS=0
             # echo "debug: AWS_STS_EXPIRES_TS: $AWS_STS_EXPIRES_TS, _now_ts: $_now_ts, _mfa_exp_ts: $_mfa_exp_ts, AWS_SESSION_TOKEN: $AWS_SESSION_TOKEN"
             if [ $AWS_STS_EXPIRES_TS -lt $_now_ts -a $_mfa_exp_ts -lt $_now_ts ]; then
-               echo -en "(1): Enter the 6-digit code from your MFA device: "
+               echo -en "Enter the 6-digit code from your MFA device: "
             ## elif [ $AWS_STS_EXPIRES_TS -gt $_now_ts -a -z "$AWS_SESSION_TOKEN" ]; then
             ##    echo -en "Enter the 6-digit code from your MFA device: "
             ## elif [ $_mfa_exp_ts -gt $_now_ts -a -z "$AWS_SESSION_TOKEN" ]; then
             ##    echo -en "Enter the 6-digit code from your MFA device: "
             fi
          elif [ -z "$AWS_SESSION_TOKEN" ]; then
-            echo -en "(2): Enter the 6-digit code from your MFA device: "
+            echo -en "Enter the 6-digit code from your MFA device: "
          else
-            echo -en "(3): Enter the 6-digit code from your MFA device: "
+            echo -en "Enter the 6-digit code from your MFA device: "
          fi
          local _aws_mfa_results
          _aws_mfa_results=$(aws-mfa --profile $_arg 2>&1)

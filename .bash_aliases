@@ -182,7 +182,7 @@ function bash_prompt {
       if [ $ONICA_SSO_EXPIRES_TS -gt $_now_ts ]; then
          # set the window title
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007"
-         if [ $(($ONICA_SSO_EXPIRES_TS - $_now_ts)) -lt 300 ]; then
+         if [ $(($ONICA_SSO_EXPIRES_TS - $_now_ts)) -lt 900 ]; then
             PS_AWS="[$PYLW$ONICA_SSO_ACCOUNT_KEY$PNRM]"
             PS_COL=$PYLW
          else
@@ -201,15 +201,23 @@ function bash_prompt {
       # local _exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
       local _exp_ts=$AWS_STS_EXPIRES_TS
       if [ $_exp_ts -gt $_now_ts ]; then
-         # set the window title
-         local _tminus=$(date -jf "%s" $(($_exp_ts - $_now_ts)) +"(T-%H:%M:%S)")
-         echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007"
-         if [ $(($_exp_ts - $_now_ts)) -lt 300 ]; then
-            PS_AWS="[$PYLW$AWS_DEFAULT_PROFILE$PNRM]"
-            PS_COL=$PYLW
-         # else
-         #    PS_AWS="[$PRED$AWS_DEFAULT_PROFILE$PNRM]"
-         #    PS_COL=$PRED
+         # TODO: disabling sts lookup until i can come up with a faster solution
+         echo aws sts get-caller-identity &> /dev/null
+         if [ $? -eq 0 ]; then
+            # set the window title
+            local _tminus=$(date -jf "%s" $(($_exp_ts - $_now_ts)) +"(T-%H:%M:%S)")
+            echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007"
+            if [ $(($_exp_ts - $_now_ts)) -lt 900 ]; then
+               PS_AWS="[${PYLW}${AWS_DEFAULT_PROFILE}${PNRM}]"
+               PS_COL=$PYLW
+            fi
+         else
+            export AWS_STS_EXPIRES_TS=$_now_ts
+            rm -f ~/.aws/${AWS_DEFAULT_PROFILE}_mfa_credentials
+            # set the window title
+            echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007"
+            PS_AWS="[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
+            PS_COL=$PGRY
          fi
       else
          # set the window title
