@@ -10,8 +10,10 @@ aws autoscaling delete-launch-configuration --launch-configuration-name LC_NAME
 aws autoscaling update-auto-scaling-group --auto-scaling-group-name ASG_NAME --min-size MIN --max-size MAX --desired-capacity DESIRED
 aws cloudformation create-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE --disable-rollback --notification-arns NOTIFICATION_ARN --tags Key=Name,Value=CF_STACK_NAME
 aws cloudformation delete-stack --stack-name CF_STACK_NAME
+aws cloudformation deploy --template-file TEMPLATE.yaml --stack-name STACK_NAME --capabilities CAPABILITY_IAM
 aws cloudformation describe-stacks --stack-name CF_STACK_NAME
 aws cloudformation get-template --stack-name STACK_NAME | jq -r .TemplateBody
+aws cloudformation package --template-file TEMPLATE.yaml --output-template-file SAM_TEMPLATE.yaml --s3-bucket BUCKET --s3-prefix KEY
 aws cloudformation update-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE
 aws cloudformation wait stack-create-complete --stack-name CF_STACK_NAME
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
@@ -129,4 +131,12 @@ curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-c
 echo -e "protocol=httpsnpath=/v1/repos/testnhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get
 for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling resume-processes --region REGION --auto-scaling-group-name $asgn; done"
 for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling suspend-processes --region REGION --auto-scaling-group-name $asgn; done"
+sam deploy --template-file SAM_TEMPLATE.yaml --stack-name STACK_NAME --capabilities CAPABILITY_IAM --tags Key1=Val1 Key2=Val2 --parameter-overrides Key1=Val1 Key2=Val2
+sam local generate-event SERVICE EVENT
+sam local invoke FUNCTION
+sam local start-api
+sam local start-lambda
+sam logs -n RESOURCE_ID --stack-name STACK_NAME --tail
+sam package --template-file TEMPLATE.yaml --output-template-file SAM_TEMPLATE.yaml --s3-bucket BUCKET --s3-prefix KEY
+sam validate
 wget http://169.254.169.254/latest/user-data
