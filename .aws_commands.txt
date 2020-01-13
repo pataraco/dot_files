@@ -17,7 +17,11 @@ aws cloudformation package --template-file TEMPLATE.yaml --output-template-file 
 aws cloudformation update-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE
 aws cloudformation wait stack-create-complete --stack-name CF_STACK_NAME
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
+aws codecommit get-repository --repository-name REPO_NAME
 aws codecommit list-repositories --region REGION
+aws codepipeline get-pipeline-state --name PIPELINE_NAME
+aws codepipeline list-pipelines
+aws codepipeline put-approval-result --pipeline-name PIPELINE_NAME --stage-name STAGE_NAME --action-name ACTION_NAME --token STATE_TOKEN --result summary='SUMMARY',status='Approved|Rejected'
 aws deploy create-application --application-name APP_NAME
 aws deploy create-deployment --application-name APP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name DEPLOY_GRP_NAME --s3-location bucket=BUCKET,key=KEY,bundleType=zip
 aws deploy create-deployment-group --application-name APP_NAME --auto-scaling-groups ASG_NAME --deployment-group-name DEPLOY_GRP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --service-role-arn ARN
@@ -89,6 +93,7 @@ aws iam list-group-policies --group-name GROUP_NAME
 aws iam list-groups
 aws iam list-groups-for-user --user-name USER_NAME		# list all groups user is in
 aws iam list-policies
+aws iam list-ssh-public-keys
 aws iam list-users --query Users[*].[UserName,UserId] --output table
 aws iam put-role-policy --role-name ROLE_NAME --policy-name POLICY_NAME --policy-document file://PATH_TO/POLICY_DOC.json
 aws iam update-login-profile --user-name USER_NAME --password PASSWORD --password-reset-required
@@ -130,7 +135,7 @@ aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --
 aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct  # get AWS account
 curl http://169.254.169.254/latest/meta-data/; echo
 curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance/; echo
-echo -e "protocol=httpsnpath=/v1/repos/testnhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get
+echo -e "protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get  # set up HTTPS access
 for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling resume-processes --region REGION --auto-scaling-group-name $asgn; done"
 for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling suspend-processes --region REGION --auto-scaling-group-name $asgn; done"
 sam deploy --template-file SAM_TEMPLATE.yaml --stack-name STACK_NAME --capabilities CAPABILITY_IAM --tags Key1=Val1 Key2=Val2 --parameter-overrides Key1=Val1 Key2=Val2

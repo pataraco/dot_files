@@ -17,7 +17,9 @@
 		git merge origin/master && \
 		git checkout -b"
 	# fmm: fetch & merge master; do this instead of `git pull`
+	fmd = "!git checkout dev && git fetch -p origin && git merge origin/dev"
 	fmm = "!git checkout master && git fetch -p origin && git merge origin/master"
+	fms = "!git checkout stage && git fetch -p origin && git merge origin/stage"
 	#cm = "!git add -A && git commit -m"
 	cm = commit -m
 	co = checkout
@@ -99,6 +101,7 @@
 [credential]
 	helper = cache --timeout=604800
 	UseHttpPath = false
+# [credential "https://git-codecommit.us-west-2.amazonaws.com"]
 [credential]
 	helper = !aws codecommit credential-helper $@
 	UseHttpPath = true
