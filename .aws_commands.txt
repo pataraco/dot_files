@@ -16,6 +16,7 @@ aws cloudformation get-template --stack-name STACK_NAME | jq -r .TemplateBody
 aws cloudformation package --template-file TEMPLATE.yaml --output-template-file SAM_TEMPLATE.yaml --s3-bucket BUCKET --s3-prefix KEY
 aws cloudformation update-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE
 aws cloudformation wait stack-create-complete --stack-name CF_STACK_NAME
+aws codebuild list-builds-for-project --project-name PROJECT_NAME --sort-order DESCENDING --max-items 1 --output text | grep IDS | cut -d':' -f2  # get latest build ID
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
 aws codecommit get-repository --repository-name REPO_NAME
 aws codecommit list-repositories --region REGION
