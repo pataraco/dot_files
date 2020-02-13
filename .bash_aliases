@@ -532,9 +532,13 @@ function fdgr {
          -type d \
          -name .git \
          -not -regex ".*Library.*" \
+         -not -regex ".*.drewdresser.*" \
          -not -regex ".*.jenkins.*" \
          -not -regex ".*.pyenv-repository.*" \
          -not -regex ".*.terraform.*" \
+         -not -regex ".*.tmux.*" \
+         -not -regex ".*.turncar-backend-save.*" \
+         -not -regex ".*.turncar-backend-testing.*" \
          -exec dirname {} \; 2> /dev/null | \
       tr ' ' '%')"
    echo -ne "${NRM}done${HDC}\r"
@@ -1120,21 +1124,23 @@ function zipstuff {
    STUFFZIP="$HOME/.$COMPANY.stuff.zip"
    FILES="
       .*rc
-      .ansible.cfg
-      .aws_commands.txt
-      .aws/config
-      .bash*
-      .csshrc
-      .commands.txt
-      .gitconfig
-      .gitignore
+      .ansible
+      .aws
+      .aws-sam
+      .bash_history
+      .chef
+      .config
+      .composer
+      .docker
       .git-credentials
-      .files.txt
-      .s3cfg
-      .ssh/config
-      .ssh/environment
-      .tmux.conf
+      .groovy
+      .kube
+      .rancher
+      .serverlessrc
+      .ssh
+      .tmux
       automation
+      Documents
       notes
       projects
       scripts"
