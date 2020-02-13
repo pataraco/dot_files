@@ -75,6 +75,7 @@ aws ecr describe-repositories --region REGION
 aws eks update-kubeconfig --name EKS_CLUSTER_NAME [--kubeconfig /path/to/KUBE_CFG]
 aws elb describe-load-balancers --load-balancer-name ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName # get ELB DNS
 aws elb describe-load-balancers --region REGION [--load-balancer-names ELB_NAMES] --query "LoadBalancerDescriptions[].[LoadBalancerName,Instances[].InstanceId|join(', ',@)]" --output table
+aws elb set-load-balancer-listener-ssl-certificate --load-balancer-name LB_NAME --load-balancer-port PROT --ssl-certificate-id CERT_ARN
 aws iam add-role-to-instance-profile --instance-profile-name INST_PROFILE_NAME --role-name ROLE_NAME
 aws iam add-user-to-group --group-name GROUP_NAME --user-name USER_NAME
 aws iam attach-group-policy --group-name GROUP_NAME --policy-arn POLICY_ARN
