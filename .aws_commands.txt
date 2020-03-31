@@ -20,9 +20,15 @@ aws codebuild list-builds-for-project --project-name PROJECT_NAME --sort-order D
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
 aws codecommit get-repository --repository-name REPO_NAME
 aws codecommit list-repositories --region REGION
+aws codepipeline delete-webhook --name WEBHOOK_NAME
+aws codepipeline deregister-webhook-with-third-party --webhook-name WEBHOOK_NAME
+aws codepipeline get-pipeline --name PIPELINE_NAME
 aws codepipeline get-pipeline-state --name PIPELINE_NAME
 aws codepipeline list-pipelines
+aws codepipeline list-webhooks
 aws codepipeline put-approval-result --pipeline-name PIPELINE_NAME --stage-name STAGE_NAME --action-name ACTION_NAME --token STATE_TOKEN --result summary='SUMMARY',status='Approved|Rejected'
+aws codepipeline put-webhook --cli-input-json file://path/to/webhook_config.json
+aws codepipeline register-webhook-with-third-party --webhook-name WEBHOOK_NAME
 aws deploy create-application --application-name APP_NAME
 aws deploy create-deployment --application-name APP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name DEPLOY_GRP_NAME --s3-location bucket=BUCKET,key=KEY,bundleType=zip
 aws deploy create-deployment-group --application-name APP_NAME --auto-scaling-groups ASG_NAME --deployment-group-name DEPLOY_GRP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --service-role-arn ARN
