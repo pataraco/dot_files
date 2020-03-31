@@ -237,15 +237,15 @@ default display:
    local _region="$_DEFAULT_REGION"
    while [ $# -gt 0 ]; do
       case $1 in
-          -n) _filters="Name=tag:Name,Values=*$2* $_filters"               ; shift 2;;
-          -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters" ; shift 2;;
-          -m) _max_items="--max-items $2"                                  ; shift 2;;
-          -r) _region=$2                                                   ; shift 2;;
-          +alid) _more_qs="$_more_qs${_more_qs:+,}AllocationId"                                 ; shift;;
-          +asid) _more_qs="$_more_qs${_more_qs:+,}AssociationId"                                 ; shift;;
-          +niid) _more_qs="$_more_qs${_more_qs:+,}NetworkInterfaceId"                                 ; shift;;
-          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                       ; shift 2;;
-        -h|*) echo "$_USAGE"; return;;
+            -n) _filters="Name=tag:Name,Values=*$2* $_filters"               ; shift 2;;
+            -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters" ; shift 2;;
+            -m) _max_items="--max-items $2"                                  ; shift 2;;
+            -r) _region=$2                                                   ; shift 2;;
+         +alid) _more_qs="$_more_qs${_more_qs:+,}AllocationId"               ; shift;;
+         +asid) _more_qs="$_more_qs${_more_qs:+,}AssociationId"              ; shift;;
+         +niid) _more_qs="$_more_qs${_more_qs:+,}NetworkInterfaceId"         ; shift;;
+            +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]" ; shift 2;;
+          -h|*) echo "$_USAGE"; return;;
       esac
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
@@ -306,32 +306,32 @@ default display:
    local _query="Images[]"
    while [ $# -gt 0 ]; do
       case $1 in
-          -a) _filters="Name=architecture,Values=*$2* $_filters"                    ; shift 2;;
-         -ht) _filters="Name=hypervisor,Values=*$2* $_filters"                      ; shift 2;;
-          -i) _filters="Name=image-id,Values=*$2* $_filters"                        ; shift 2;;
-         -it) _filters="Name=image-type,Values=*$2* $_filters"                      ; shift 2;;
-         -nt) _filters="Name=tag:Name,Values=*$2* $_filters"                        ; shift 2;;
-          -n) _filters="Name=name,Values=*$2* $_filters"                            ; shift 2;;
-          -o) _owners="--owners $2"                                                 ; shift 2;;
-          -p) _filters="Name=tag:Project,Values=*$2* $_filters"                     ; shift 2;;
-          -s) _filters="Name=state,Values=*$2* $_filters"                           ; shift 2;;
-          -v) _filters="Name=virtualization-type,Values=*$2* $_filters"             ; shift 2;;
-         -vs) _filters="Name=block-device-mapping.volume-size,Values=*$2* $_filters"; shift 2;;
-         -vt) _filters="Name=block-device-mapping.volume-type,Values=*$2* $_filters"; shift 2;;
-          -r) _region=$2                                                            ; shift 2;;
-          +a) _more_qs="$_more_qs${_more_qs:+,}Architecture"                                     ; shift;;
-         +cd) _more_qs="$_more_qs${_more_qs:+,}CreationDate"                                     ; shift;;
-         +ht) _more_qs="$_more_qs${_more_qs:+,}Hypervisor"                                       ; shift;;
-          +i) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
-         +it) _more_qs="$_more_qs${_more_qs:+,}ImageType"                                        ; shift;;
-          +o) _more_qs="$_more_qs${_more_qs:+,}OwnerId"                                          ; shift;;
-         +ps) _more_qs="$_more_qs${_more_qs:+,}Public"                                           ; shift;;
-         +rn) _more_qs="$_more_qs${_more_qs:+,}RootDeviceName"                                   ; shift;;
-         +rt) _more_qs="$_more_qs${_more_qs:+,}RootDeviceType"                                   ; shift;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}State"                                            ; shift;;
-          +v) _more_qs="$_more_qs${_more_qs:+,}VirtualizationType"                               ; shift;;
-         +vs) _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeSize"            ; shift;;
-         +vt) _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeType"            ; shift;;
+          -a) _filters="Name=architecture,Values=*$2* $_filters"                      ; shift 2;;
+         -ht) _filters="Name=hypervisor,Values=*$2* $_filters"                        ; shift 2;;
+          -i) _filters="Name=image-id,Values=*$2* $_filters"                          ; shift 2;;
+         -it) _filters="Name=image-type,Values=*$2* $_filters"                        ; shift 2;;
+         -nt) _filters="Name=tag:Name,Values=*$2* $_filters"                          ; shift 2;;
+          -n) _filters="Name=name,Values=*$2* $_filters"                              ; shift 2;;
+          -o) _owners="--owners $2"                                                   ; shift 2;;
+          -p) _filters="Name=tag:Project,Values=*$2* $_filters"                       ; shift 2;;
+          -s) _filters="Name=state,Values=*$2* $_filters"                             ; shift 2;;
+          -v) _filters="Name=virtualization-type,Values=*$2* $_filters"               ; shift 2;;
+         -vs) _filters="Name=block-device-mapping.volume-size,Values=*$2* $_filters"  ; shift 2;;
+         -vt) _filters="Name=block-device-mapping.volume-type,Values=*$2* $_filters"  ; shift 2;;
+          -r) _region=$2                                                              ; shift 2;;
+          +a) _more_qs="$_more_qs${_more_qs:+,}Architecture"                          ; shift;;
+         +cd) _more_qs="$_more_qs${_more_qs:+,}CreationDate"                          ; shift;;
+         +ht) _more_qs="$_more_qs${_more_qs:+,}Hypervisor"                            ; shift;;
+          +i) _more_qs="$_more_qs${_more_qs:+,}ImageId"                               ; shift;;
+         +it) _more_qs="$_more_qs${_more_qs:+,}ImageType"                             ; shift;;
+          +o) _more_qs="$_more_qs${_more_qs:+,}OwnerId"                               ; shift;;
+         +ps) _more_qs="$_more_qs${_more_qs:+,}Public"                                ; shift;;
+         +rn) _more_qs="$_more_qs${_more_qs:+,}RootDeviceName"                        ; shift;;
+         +rt) _more_qs="$_more_qs${_more_qs:+,}RootDeviceType"                        ; shift;;
+          +s) _more_qs="$_more_qs${_more_qs:+,}State"                                 ; shift;;
+          +v) _more_qs="$_more_qs${_more_qs:+,}VirtualizationType"                    ; shift;;
+         +vs) _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeSize" ; shift;;
+         +vt) _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeType" ; shift;;
         -h|*) echo "$_USAGE"; return;;
       esac
    done
@@ -1275,7 +1275,8 @@ function sar {
             local _aws_env=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}; (pfound=="true" && $1~/profile/) {exit}' $_AWS_CFG | sed 's/ *$//')
             export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
             local _exp_time=$(jq -r .Credentials.Expiration $_AWS_STS_CREDS)
-            export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
+            # export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
+            export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S" ${_exp_time%+*} +"%s")
             echo "role has been assumed --> $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE) [$_role_name]"
             [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
             [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
