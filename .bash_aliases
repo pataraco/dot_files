@@ -19,28 +19,31 @@ MAIN_BA_FILE=".bash_aliases"
 
 # some ansi colorization escape sequences
 [ "$(uname)" == "Darwin" ] && ESC="\033" || ESC="\e"
-BBG="${ESC}[44m"   # blue BG
 BLD="${ESC}[1m"    # bold
 BLK="${ESC}[30m"   # black FG
+RED="${ESC}[31m"   # red FG
+GRN="${ESC}[32m"   # green FG
+YLW="${ESC}[33m"   # yellow FG
 BLU="${ESC}[34m"   # blue FG
-BNK="${ESC}[5m"    # slow blink
-CBG="${ESC}[46m"   # cyan BG
+MAG="${ESC}[35m"   # magenta FG
 CYN="${ESC}[36m"   # cyan FG
+WHT="${ESC}[37m"   # white FG (same as 38 & 39)
+BBB="${ESC}[40m"   # black FG
+RBG="${ESC}[41m"   # red BG
+GBG="${ESC}[42m"   # green BG
+YBG="${ESC}[43m"   # yellow BG
+BBG="${ESC}[44m"   # blue BG
+MBG="${ESC}[45m"   # magenta BG
+CBG="${ESC}[46m"   # cyan BG
+WBG="${ESC}[47m"   # white BG
+BNK="${ESC}[5m"    # slow blink
 D2B="${ESC}[1K"    # delete to BOL
 D2E="${ESC}[K"     # delete to EOL
 DAL="${ESC}[2K"    # delete all of line
-GBG="${ESC}[42m"   # green BG
-GRN="${ESC}[32m"   # green FG
 HDC="${ESC}[?25l"  # hide cursor
-MAG="${ESC}[35m"   # magenta FG
-MBG="${ESC}[45m"   # magenta BG
 NRM="${ESC}[m"     # to make text normal
-RBG="${ESC}[41m"   # red BG
-RED="${ESC}[31m"   # red FG
 SHC="${ESC}[?25h"  # show cursor
 ULN="${ESC}[4m"    # underlined
-YBG="${ESC}[43m"   # yellow BG
-YLW="${ESC}[33m"   # yellow FG
 
 # set xterm defaults
 XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
@@ -1210,6 +1213,7 @@ fi
 alias less="less -FrX"
 alias mv='mv -i'
 alias myip='curl http://ipecho.net/plain; echo'
+alias n='echo n'
 alias pa='ps auxfw'
 alias pbp='pbpaste'
 alias pe='ps -ef'
@@ -1273,6 +1277,7 @@ fi
 alias wgft='echo "$(history -p \!\!) | grep"; $(history -p \!\!) | grep'
 alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less -FrX'
 alias xterm='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
+alias y='echo y'
 
 # -------------------- final touches --------------------
 
