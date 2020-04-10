@@ -1,4 +1,6 @@
-#!bash - ~/.bash_aliases - sourced by ~/.bashrc
+#!/usr/bin/env bash
+
+# file: ~/.bash_aliases - sourced by ~/.bashrc
 
 # -------------------- initial directives --------------------
 
@@ -85,7 +87,7 @@ export GREP_COLOR="1;40;32"
 function _tmux_send_keys_all_panes {
    # send keys to all tmux panes
    for _pane in $(tmux list-panes -F '#P'); do
-      tmux send-keys -t ${_pane} "$@" Enter
+      tmux send-keys -t "${_pane}" "$@" Enter
    done
 }
 
@@ -95,7 +97,8 @@ function bash_prompt {
    if [ $PS_SHOW_CV -eq 1 ]; then
       # get Chef version
       if [ -z "$CHEF_VERSION" ]; then
-         export CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
+         CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
+         export CHEF_VERSION
       fi
       PS_CHF="${PYLW}C$CHEF_VERSION$PNRM|"
       (( _versions_len += ${#CHEF_VERSION} + 2 ))
@@ -103,20 +106,21 @@ function bash_prompt {
    if [ $PS_SHOW_AV -eq 1 ]; then
    # get Ansible version
       if [ -z "$ANSIBLE_VERSION" ]; then
-         export ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
+         ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
+         export ANSIBLE_VERSION
       fi
       PS_ANS="${PCYN}A$ANSIBLE_VERSION$PNRM|"
       (( _versions_len += ${#ANSIBLE_VERSION} + 2 ))
    fi
    if [ $PS_SHOW_PV -eq 1 ]; then
       # get Python version
-      export PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
+      PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
+      export PYTHON_VERSION
       PS_PY="${PMAG}P$PYTHON_VERSION$PNRM|"
       (( _versions_len += ${#PYTHON_VERSION} + 2 ))
    fi
    # get git info
-   git branch &> /dev/null
-   if [ $? -eq 0 ]; then   # in a git repo
+   if git branch &> /dev/null; then   # in a git repo
       # local _git_branch=$(git branch 2>/dev/null|grep '^*'|awk '{print $NF}')
       # local _git_branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)
       # local _git_branch=$(git name-rev --name-only HEAD 2>/dev/null)
@@ -135,11 +139,11 @@ function bash_prompt {
          #for debug#echo "git ready to commit"
          PS_GIT="$PNRM$PGRN${_git_branch}✔$PNRM"
          (( _git_branch_len++ ))
-      elif [ "$_git_has_mods_cached" -o "$_git_has_dels_cached" ]; then
+      elif [ "$_git_has_mods_cached" ] || [ "$_git_has_dels_cached" ]; then
          #for debug#echo "git has mods cached or has dels cached"
          PS_GIT="$PNRM$PCYN${_git_branch}+$PNRM"
          (( _git_branch_len++ ))
-      elif [ "$_git_has_mods" -o "$_git_has_renames" -o "$_git_has_adds" -o "$_git_has_dels" ]; then
+      elif [ "$_git_has_mods" ] || [ "$_git_has_renames" ] || [ "$_git_has_adds" ] || [ "$_git_has_dels" ]; then
          #for debug#echo "git has mods or adds or dels"
          PS_GIT="$PNRM$PRED${_git_branch}*$PNRM"
          (( _git_branch_len++ ))
@@ -149,8 +153,9 @@ function bash_prompt {
       else
          #for debug#echo "git has ???"
          _git_status=$(git status -bs 2> /dev/null)
-         if [[ $_git_status =~ "[ahead " ]]; then
-            local _gitahead=$(echo $_git_status | awk '{print $NF}' | cut -d']' -f1)
+         if [[ $_git_status =~ \[ahead.*\] ]]; then
+            local _gitahead
+            _gitahead=$(awk '{print $NF}' | cut -d']' -f1 <<< "$_git_status")
             PS_GIT="$PNRM$PMAG${_git_branch}>$_gitahead$PNRM"
             (( _git_branch_len += 1 + ${#_gitahead} ))
          else
@@ -169,23 +174,24 @@ function bash_prompt {
       local _git_branch_len=0
    fi
    # customize path depending on width/space available
-   local _space_for_path=$(( $COLUMNS - $_versions_len - $_git_branch_len ))
+   local _space_for_path=$((COLUMNS - _versions_len - _git_branch_len))
    local _pwd=${PWD/$HOME/'~'}
    if [  ${#_pwd} -lt $_space_for_path ]; then
       PS_PATH="$PGRN\w$PNRM"
    else
       (( _space_for_path -= 2 ))
-      local _ps_path_start_pos=$(( ${#_pwd} - $_space_for_path ))
+      local _ps_path_start_pos=$((${#_pwd} - _space_for_path))
       local _ps_path_chopped="..${_pwd:$_ps_path_start_pos:$_space_for_path}"
       PS_PATH="$PGRN${_ps_path_chopped}$PNRM"
    fi
    PS_WHO="$PBLU\u@\h$PNRM"
-   if [ "$COMPANY" == "onica" -a -n "$ONICA_SSO_ACCOUNT_KEY" -a -n "$ONICA_SSO_EXPIRES_TS" ]; then
-      local _now_ts=$(date +%s)
-      if [ $ONICA_SSO_EXPIRES_TS -gt $_now_ts ]; then
+   if [ "$COMPANY" == "onica" ] && [ -n "$ONICA_SSO_ACCOUNT_KEY" ] && [ -n "$ONICA_SSO_EXPIRES_TS" ]; then
+      local _now_ts
+      _now_ts=$(date +%s)
+      if [ "$ONICA_SSO_EXPIRES_TS" -gt "$_now_ts" ]; then
          # set the window title
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007"
-         if [ $(($ONICA_SSO_EXPIRES_TS - $_now_ts)) -lt 900 ]; then
+         if [ $((ONICA_SSO_EXPIRES_TS - _now_ts)) -lt 900 ]; then
             PS_AWS="[$PYLW$ONICA_SSO_ACCOUNT_KEY$PNRM]"
             PS_COL=$PYLW
          else
@@ -198,25 +204,26 @@ function bash_prompt {
          PS_AWS="[$PGRY$ONICA_SSO_ACCOUNT_KEY$PNRM]"
          PS_COL=$PGRY
       fi
-   elif [ "$COMPANY" == "ag" -a -n "$AWS_SESSION_TOKEN" -a -n "$AWS_DEFAULT_PROFILE" -a -n "$AWS_STS_EXPIRES_TS" ]; then
-      local _now_ts=$(date +%s)
+   elif [ "$COMPANY" == "ag" ] && [ -n "$AWS_SESSION_TOKEN" ] && [ -n "$AWS_DEFAULT_PROFILE" ] && [ -n "$AWS_STS_EXPIRES_TS" ]; then
+      local _now_ts
+      _now_ts=$(date +%s)
       # local _exp_time=$(jq -r .Credentials.Expiration ~/.aws/${AWS_DEFAULT_PROFILE}_mfa_credentials)
       # local _exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
       local _exp_ts=$AWS_STS_EXPIRES_TS
-      if [ $_exp_ts -gt $_now_ts ]; then
+      if [ "$_exp_ts" -gt "$_now_ts" ]; then
          # TODO: disabling sts lookup until i can come up with a faster solution
-         echo aws sts get-caller-identity &> /dev/null
-         if [ $? -eq 0 ]; then
+         if echo aws sts get-caller-identity &> /dev/null; then
             # set the window title
-            local _tminus=$(date -jf "%s" $(($_exp_ts - $_now_ts)) +"(T-%H:%M:%S)")
+            local _tminus
+            _tminus=$(date -jf "%s" $((_exp_ts - _now_ts)) +"(T-%H:%M:%S)")
             echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007"
-            if [ $(($_exp_ts - $_now_ts)) -lt 900 ]; then
+            if [ $((_exp_ts - _now_ts)) -lt 900 ]; then
                PS_AWS="[${PYLW}${AWS_DEFAULT_PROFILE}${PNRM}]"
                PS_COL=$PYLW
             fi
          else
             export AWS_STS_EXPIRES_TS=$_now_ts
-            rm -f ~/.aws/${AWS_DEFAULT_PROFILE}_mfa_credentials
+            rm -f "$HOME/.aws/${AWS_DEFAULT_PROFILE}_mfa_credentials"
             # set the window title
             echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007"
             PS_AWS="[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
@@ -233,9 +240,9 @@ function bash_prompt {
       echo -ne "\033]0;$(whoami)@$(hostname)\007"
    fi
    # check for pyenv virtual environment
-   [ -n "$VIRTUAL_ENV" ] && PS_PROJ="($PCYN$(basename $VIRTUAL_ENV)$PNRM)" || PS_PROJ=""
+   [ -n "$VIRTUAL_ENV" ] && PS_PROJ="($PCYN$(basename "$VIRTUAL_ENV")$PNRM)" || PS_PROJ=""
    # check for jobs running in the background
-   if [ $(jobs | wc -l | tr -d ' ') -gt 1 ]; then
+   if [ "$(jobs | wc -l | tr -d ' ')" -gt 1 ]; then
       # using "1" because the `git branch` above runs in the background
       PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO(\j)$PS_COL$ $PNRM"
    else
@@ -245,7 +252,7 @@ function bash_prompt {
 
 function ccc {
    # Synchronize tmux windows
-   for I in $@; do
+   for I in "$@"; do
       tmux splitw "ssh $I"
       tmux select-layout tiled
    done
@@ -285,7 +292,7 @@ function chkrepodiffs {
    # checks files in current dir against file in home dir for diffs
    # only works on https://github.com/pataraco/dot_files repo now
    # comparing those files against those in home directory
-   cd ~/repos/pataraco/dot_files
+   cd ~/repos/pataraco/dot_files || return
    local _verbose=$1
    if [ "$_verbose" == "-v" ]; then
       shift
