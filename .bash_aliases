@@ -1232,9 +1232,9 @@ alias pshav='PS_SHOW_AV=0; unset PS_ANS'
 alias pshcv='PS_SHOW_CV=0; unset PS_CHF'
 alias pshpv='PS_SHOW_PV=0; unset PS_PY'
 alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_PV=0; unset PS_ANS; unset PS_CHF; unset PS_PY'
-alias ccrlf="sed -e 's//\n/g' -i .orig"
-alias rcrlf="sed -e 's/$//g' -i .orig"
-alias ring="$HOME/repos/pataraco/scripts/misc/ring.sh"
+alias ccrlf="sed -e 's/[[:cntrl:]]/\n/g' -i .orig"
+alias rcrlf="sed -e 's/[[:cntrl:]]$//g' -i .orig"
+alias ring="\$HOME/repos/pataraco/scripts/misc/ring.sh"
 alias rmt="rancher-migration-tools"  # github.com/rancher/migration-tools
 alias rsshk='ssh-keygen -f "$HOME/.ssh/known_hosts" -R'
 alias rm='rm -i'
@@ -1244,8 +1244,8 @@ alias sc="command -V"
 alias sdl="export DISPLAY=localhost:10.0"
 alias sf='showf'
 alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
-alias sing="$HOME/scripts/tools/sing.sh"
-alias sts="grep '= CFNType' $HOME/repos/stacker/stacker/blueprints/variables/types.py | awk '{print \$1}'"
+alias sing="\$HOME/scripts/tools/sing.sh"
+alias sts="grep '= CFNType' \$HOME/repos/stacker/stacker/blueprints/variables/types.py | awk '{print \$1}'"
 alias sw='stopwatch'
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'  # change window title
 alias ta='tmux attach -t'
@@ -1260,7 +1260,7 @@ alias u='uptime'
 alias ua='unalias'
 alias vba='echo "editing: ~/.bash_aliases"; vi ~/.bash_aliases; sba'
 # upgrade to neovim if available
-[ $(command -v nvim) ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
+[ "$(command -v nvim)" ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
 alias vi="$VIM_CMD"
 alias vid="$VIM_CMD -d"
 alias vidh="$VIM_CMD -do"
