@@ -151,11 +151,11 @@ function bash_prompt {
          PS_GIT="$PNRM$PYLW${_git_branch}$PNRM"
       else
          [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git is ???"
-         _git_status=$(git status -bs 2> /dev/null)
+         _git_status=$(git status -bs 2> /dev/null | grep -F "ahead")
          if [[ "$_git_status" =~ \[ahead.*\] ]]; then
             [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git is ahead"
             local _gitahead
-            _gitahead=$(awk '{print $NF}' | cut -d']' -f1 <<< "$_git_status")
+            _gitahead=$({ awk '{print $NF}' | cut -d']' -f1; } <<< "$_git_status")
             PS_GIT="$PNRM$PMAG${_git_branch}>$_gitahead$PNRM"
             (( _git_branch_len += 1 + ${#_gitahead} ))
          else
