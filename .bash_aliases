@@ -152,7 +152,7 @@ function bash_prompt {
       else
          [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git is ???"
          _git_status=$(git status -bs 2> /dev/null)
-         if [[ $_git_status =~ \[ahead.*\] ]]; then
+         if [[ "$_git_status" =~ \[ahead.*\] ]]; then
             [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git is ahead"
             local _gitahead
             _gitahead=$(awk '{print $NF}' | cut -d']' -f1 <<< "$_git_status")
