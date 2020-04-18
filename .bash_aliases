@@ -532,33 +532,66 @@ function dj {
    fi
 }
 
+# shellcheck disable=SC2155
 function fdgr {
    # find dirty git repos
+   local _EXCLUDE_DIRS="
+      .aws-sam
+      .cookiecutters
+      .jenkins
+      .kube
+      .local/share/nvim
+      .pyenv-repository
+      .terraform
+      .tmux/plugins
+      Applications
+      Desktop
+      Documents
+      Downloads
+      Library
+      Movies
+      Music
+      Pictures
+      Postman
+      Public
+      awacs
+      awslabs
+      formica
+      go/src
+      others
+      sceptre
+      terraform-aws-modules
+      tmux
+      tmux.wiki
+      troposphere
+   "
+   local _dir
+   local _excludes=()
+   local _git_status
+   local _last_status
    local _orig_wd=$(pwd)
+   local _repo
+   for _dir in ${_EXCLUDE_DIRS}; do
+      # all find results start with './'
+      # look for beginning "./" for specific dir to exclude, otherwise match all
+      [[ ${_dir%%[^./]*} != "./" ]] && _dir="*/${_dir}"
+      _excludes+=(! -path "$_dir/*" -a)
+   done
+   # echo "debug: _excludes='${_excludes[*]}'"
+
    echo -ne "finding ALL 'git' repos (dirs)... ${BNK}"
-   # local _REPOS_TO_CHECK="$(find $HOME -type d -name .git -and -not -name Library -exec dirname {} \; 2> /dev/null)"
    local _REPOS_TO_CHECK="$(\
-      find $HOME \
+      find "$HOME" \
+         "${_excludes[@]}" \
          -type d \
          -name .git \
-         -not -regex ".*Library.*" \
-         -not -regex ".*.drewdresser.*" \
-         -not -regex ".*.jenkins.*" \
-         -not -regex ".*.pyenv-repository.*" \
-         -not -regex ".*.terraform.*" \
-         -not -regex ".*.tmux.*" \
-         -not -regex ".*.turncar-backend-save.*" \
-         -not -regex ".*.turncar-backend-testing.*" \
          -exec dirname {} \; 2> /dev/null | \
       tr ' ' '%')"
    echo -ne "${NRM}done${HDC}\r"
-   local _dir
-   local _git_status
-   local _last_status
-   local _repo
+   # echo "debug: _REPOS_TO_CHECK='$_REPOS_TO_CHECK'"
    for _dir in $_REPOS_TO_CHECK; do
       _repo=${_dir//\%/ }
-      cd "$_repo"
+      cd "$_repo" || return
       _gitstatus=$(git status --porcelain 2> /dev/null)
       if [ -n "$_gitstatus" ]; then
          echo -e "${_repo/$HOME/~} [${RED}DIRTY${NRM}]${D2E}"
@@ -568,7 +601,7 @@ function fdgr {
          _last_status="CLEAN"
       fi
    done
-   cd $_orig_wd
+   cd "$_orig_wd" || return
    [ "$_last_status" == "CLEAN" ] && echo -ne "${D2E}"
    echo -ne "${SHC}"
 }
