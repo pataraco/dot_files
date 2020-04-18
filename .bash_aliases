@@ -709,7 +709,7 @@ function lgr {
    # list GitHub Repos for a user
    local _DEFAULT_USER="pataraco"
    local _USER=${1:-$_DEFAULT_USER}
-   curl -s https://api.github.com/users/$_USER/repos|grep clone_url|awk '{print $2}'|tr -d '",'
+   curl -s "https://api.github.com/users/$_USER/repos"|grep clone_url|awk '{print $2}'|tr -d '",'|sed 's^\(https://\)^[\1|git@]^'
 }
 
 function listcrts {
