@@ -94,66 +94,66 @@ function _tmux_send_keys_all_panes {
 function bash_prompt {
    # customize Bash Prompt
    local _versions_len=0
-   if [ $PS_SHOW_CV -eq 1 ]; then
-      # get Chef version
+   if [ $PS_SHOW_CV -eq 1 ]; then  # get Chef version
       if [ -z "$CHEF_VERSION" ]; then
-         CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
          export CHEF_VERSION
+         CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
       fi
       PS_CHF="${PYLW}C$CHEF_VERSION$PNRM|"
       (( _versions_len += ${#CHEF_VERSION} + 2 ))
    fi
-   if [ $PS_SHOW_AV -eq 1 ]; then
-   # get Ansible version
+   if [ $PS_SHOW_AV -eq 1 ]; then  # get Ansible version
       if [ -z "$ANSIBLE_VERSION" ]; then
-         ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
          export ANSIBLE_VERSION
+         ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
       fi
       PS_ANS="${PCYN}A$ANSIBLE_VERSION$PNRM|"
       (( _versions_len += ${#ANSIBLE_VERSION} + 2 ))
    fi
-   if [ $PS_SHOW_PV -eq 1 ]; then
-      # get Python version
-      PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
+   if [ $PS_SHOW_PV -eq 1 ]; then  # get Python version
       export PYTHON_VERSION
+      PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
       PS_PY="${PMAG}P$PYTHON_VERSION$PNRM|"
       (( _versions_len += ${#PYTHON_VERSION} + 2 ))
    fi
+   local _git_branch _git_branch_len _git_status
+   local _git_has_mods=false        _git_has_mods_cached=false
+   local _git_has_adds=false        _git_has_renames=false
+   local _git_has_dels=false        _git_has_dels_cached=false
+   local _git_ready_to_commit=false _git_has_untracked_files=false
    # get git info
    if git branch &> /dev/null; then   # in a git repo
-      # local _git_branch=$(git branch 2>/dev/null|grep '^*'|awk '{print $NF}')
-      # local _git_branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)
-      # local _git_branch=$(git name-rev --name-only HEAD 2>/dev/null)
-      local _git_branch=$(git rev-parse --quiet --abbrev-ref HEAD 2>/dev/null)
-      local _git_branch_len=$(( ${#_git_branch} + 1 ))
-      local _git_status=$(git status --porcelain 2> /dev/null)
-      [[ $_git_status =~ ($'\n'|^).M ]] && local _git_has_mods=true
-      [[ $_git_status =~ ($'\n'|^)M ]] && local _git_has_mods_cached=true
-      [[ $_git_status =~ ($'\n'|^)A ]] && local _git_has_adds=true
-      [[ $_git_status =~ ($'\n'|^)R ]] && local _git_has_renames=true
-      [[ $_git_status =~ ($'\n'|^).D ]] && local _git_has_dels=true
-      [[ $_git_status =~ ($'\n'|^)D ]] && local _git_has_dels_cached=true
-      [[ $_git_status =~ ($'\n'|^)\?\? ]] && local _git_has_untracked_files=true
-      [[ $_git_status =~ ($'\n'|^)[ADMR] && ! $_git_status =~ ($'\n'|^).[ADMR\?] ]] && local _git_ready_to_commit=true
-      if [ "$_git_ready_to_commit" ]; then
-         #for debug#echo "git ready to commit"
+      _git_branch=$(git rev-parse --quiet --abbrev-ref HEAD 2>/dev/null)
+      _git_branch_len=$(( ${#_git_branch} + 1 ))
+      _git_status=$(git status --porcelain 2> /dev/null)
+      [[ "$_git_status" =~ ($'\n'|^).M ]] && _git_has_mods=true
+      [[ "$_git_status" =~ ($'\n'|^)M ]] && _git_has_mods_cached=true
+      [[ "$_git_status" =~ ($'\n'|^)A ]] && _git_has_adds=true
+      [[ "$_git_status" =~ ($'\n'|^)R ]] && _git_has_renames=true
+      [[ "$_git_status" =~ ($'\n'|^).D ]] && _git_has_dels=true
+      [[ "$_git_status" =~ ($'\n'|^)D ]] && _git_has_dels_cached=true
+      [[ "$_git_status" =~ ($'\n'|^)\?\? ]] && _git_has_untracked_files=true
+      [[ "$_git_status" =~ ($'\n'|^)[ADMR] && ! "$_git_status" =~ ($'\n'|^).[ADMR\?] ]] && _git_ready_to_commit=true
+      if $_git_ready_to_commit; then
+         [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git ready to commit"
          PS_GIT="$PNRM$PGRN${_git_branch}✔$PNRM"
          (( _git_branch_len++ ))
-      elif [ "$_git_has_mods_cached" ] || [ "$_git_has_dels_cached" ]; then
-         #for debug#echo "git has mods cached or has dels cached"
+      elif $_git_has_mods_cached || $_git_has_dels_cached; then
+         [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git has mods cached or has dels cached"
          PS_GIT="$PNRM$PCYN${_git_branch}+$PNRM"
          (( _git_branch_len++ ))
-      elif [ "$_git_has_mods" ] || [ "$_git_has_renames" ] || [ "$_git_has_adds" ] || [ "$_git_has_dels" ]; then
-         #for debug#echo "git has mods or adds or dels"
+      elif $_git_has_mods || $_git_has_renames || $_git_has_adds || $_git_has_dels; then
+         [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git has mods or adds or dels"
          PS_GIT="$PNRM$PRED${_git_branch}*$PNRM"
          (( _git_branch_len++ ))
-      elif [ "$_git_has_untracked_files" ]; then
-         #for debug#echo "git has untracked files"
+      elif $_git_has_untracked_files; then
+         [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git has untracked files"
          PS_GIT="$PNRM$PYLW${_git_branch}$PNRM"
       else
-         #for debug#echo "git has ???"
+         [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git is ???"
          _git_status=$(git status -bs 2> /dev/null)
          if [[ $_git_status =~ \[ahead.*\] ]]; then
+            [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git is ahead"
             local _gitahead
             _gitahead=$(awk '{print $NF}' | cut -d']' -f1 <<< "$_git_status")
             PS_GIT="$PNRM$PMAG${_git_branch}>$_gitahead$PNRM"
@@ -162,16 +162,15 @@ function bash_prompt {
             PS_GIT="$PNRM$PNRM${_git_branch}$PNRM"
          fi
       fi
-      if [ "$_git_has_untracked_files" ]; then
-         #PS_GIT="$PNRM[$PS_GIT$PYLW?$PNRM]"
+      if $_git_has_untracked_files; then
          PS_GIT="$PNRM$PS_GIT$PYLW?$PNRM"
          (( _git_branch_len++ ))
       fi
-      #PS_GIT="[$PS_GIT]"
       PS_GIT="$PS_GIT|"
    else   # NOT in a git repo
+      [ -n "$PS_DEBUG" ] && echo "debug: not a git repo"
       PS_GIT=""
-      local _git_branch_len=0
+      _git_branch_len=0
    fi
    # customize path depending on width/space available
    local _space_for_path=$((COLUMNS - _versions_len - _git_branch_len))
@@ -709,7 +708,11 @@ function lgr {
    # list GitHub Repos for a user
    local _DEFAULT_USER="pataraco"
    local _USER=${1:-$_DEFAULT_USER}
-   curl -s "https://api.github.com/users/$_USER/repos"|grep clone_url|awk '{print $2}'|tr -d '",'|sed 's^\(https://\)^[\1|git@]^'
+   curl -s "https://api.github.com/users/$_USER/repos" | \
+      grep clone_url | \
+      awk '{print $2}' | \
+      tr -d '",' | \
+      sed 's^\(https://\)^[\1|git@]^'
 }
 
 function listcrts {
