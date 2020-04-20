@@ -1,0 +1,13 @@
+Amazon Music
+Atom
+Chrome
+Docker
+LastPass
+MySQLWorkbench
+Pandora
+Postman
+Slack
+Spotify
+VirtualBox
+Visual Studio Code
+iTerm
