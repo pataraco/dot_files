@@ -1167,7 +1167,10 @@ function y2j {
 
 function zipstuff {
    # zip up specified files for backup
-   STUFFZIP="$HOME/.$COMPANY.stuff.zip"
+   local _ZIP_FILE_NAME="$HOME/.$COMPANY.stuff.zip"
+   local _CWD
+   local _found_zip_files
+   _CWD=$(pwd)
    FILES="
       .*rc
       .ansible
@@ -1176,7 +1179,6 @@ function zipstuff {
       .bash_history
       .chef
       .config
-      .composer
       .docker
       .git-credentials
       .groovy
@@ -1189,16 +1191,45 @@ function zipstuff {
       Documents
       notes
       projects
-      scripts"
-   # didn't figure out how to make this work
-   ##EXCLUDE_FILES="*/.hg/\* repos/.chef/checksums/\* *.zip"
-   cd
-   thisserver=`hostname`
-   echo "ziping $FILES to $STUFFZIP... "
-   ##/usr/bin/zip -ru $STUFFZIP $FILES -x $EXCLUDE_FILES
-   ##/usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* repos/.chef/checksums/\* */*/.git/\* */*.zip */*/*.zip
-   /usr/bin/zip -ru $STUFFZIP $FILES -x */.hg/\* */.git/\* */*/.git/\* */*.zip */*/*.zip
-   echo done
+      scripts
+   "
+   # for some reason '*.zip' does not work to exclude all *.zip files
+   # like other exclude patterns e.g. '*.sh' to exclude all *.sh files
+   # have to specify each sub directory with an extra '*/'
+   EXCLUDE_FILES='
+      *.DS_Store
+      *.zip
+      */*.zip
+      *.git*
+      *.hg*
+      *.terraform*
+   '
+   cd || return
+   echo "ziping these files/directories to $_ZIP_FILE_NAME... "
+   echo -en "\n   "
+   # shellcheck disable=SC2001,SC2086
+   sed 's/[[:space:]]/, /g' <<< $FILES
+   # shellcheck disable=SC2086
+   if
+      _found_zip_files=$(
+         zip --show-files -ru "$_ZIP_FILE_NAME" $FILES -x $EXCLUDE_FILES |
+         grep "\.zip$"
+      )
+   then
+      echo -e "\n[warning] the following zip files would be added to the archieve"
+      echo "$_found_zip_files"
+      echo -e "\nplease add them to the 'exclude files' list!"
+      echo "exiting"
+      return
+   else
+      echo
+      zip \
+         --recurse-paths --update --encrypt \
+         "$_ZIP_FILE_NAME" $FILES \
+         --exclude $EXCLUDE_FILES
+   fi
+   echo "done"
+   cd "$_CWD" || return
 }
 
 # -------------------- define aliases --------------------
