@@ -2,6 +2,8 @@
 
 # file: ~/.bash_aliases - sourced by ~/.bashrc
 
+# shellcheck disable=SC2034
+
 # -------------------- initial directives --------------------
 
 # update change the title bar of the terminal
@@ -298,14 +300,15 @@ function chkrepodiffs {
    fi
    local _files=$*
    local _file
-   [ -z "$_files" ] && _files=$(ls -A | grep -v .git)
+   # shellcheck disable=SC2010
+   [ -z "$_files" ] && _files=$(ls -1A | grep -v .git)
    for _file in $_files; do
-      if [ -e $_file -a -e ~/$_file ]; then
+      if [ -e "$_file" ] && [ -e "$HOME/$_file" ]; then
          diff -q $_file ~/$_file
          if [ $? -eq 1 ]; then
             if [ "$_verbose" == "-v" ]; then
-              read -p "Hit [Enter] to continue" junk
-              diff $_file ~/$_file | \less -rX
+              read -rp "Hit [Enter] to continue" junk
+              diff "$_file" "$HOME/$_file" | \less -rX
               echo
             fi
          else
@@ -316,7 +319,7 @@ function chkrepodiffs {
          [ ! -e ~/$_file ] && ls ~/$_file
       fi
    done
-   cd - > /dev/null
+   cd - > /dev/null || return
 }
 
 function chksums {
@@ -681,7 +684,7 @@ function gh {
 
 function gl {
    # grep and pipe to less
-   eval grep --color=always $@ | less
+   eval grep --color=always "$@" | less
 }
 
 function gpw {
@@ -697,8 +700,8 @@ function gpw {
 
 function j2y {
    # convert JSON to YAML (from either STDIN or by specifying a file
-   if [ -n $1 ]; then
-      cat $1 | python -c 'import json, sys, yaml; yaml.safe_dump(json.load(sys.stdin), sys.stdout)'
+   if [ -n "$1" ]; then
+      python -c 'import json, sys, yaml; yaml.safe_dump(json.load(sys.stdin), sys.stdout)' < "$1"
    else
       python -c 'import json, sys, yaml; yaml.safe_dump(json.load(sys.stdin), sys.stdout)'
    fi
@@ -707,12 +710,21 @@ function j2y {
 function lgr {
    # list GitHub Repos for a user
    local _DEFAULT_USER="pataraco"
+   local _GIT_URL_OPT=$1
+   [ "$_GIT_URL_OPT" == "-g" ] && shift
    local _USER=${1:-$_DEFAULT_USER}
-   curl -s "https://api.github.com/users/$_USER/repos" | \
-      grep clone_url | \
-      awk '{print $2}' | \
-      tr -d '",' | \
-      sed 's^\(https://\)^[\1|git@]^'
+   if [ "$_GIT_URL_OPT" == "-g" ]; then
+      curl -s "https://api.github.com/users/$_USER/repos" | \
+         grep clone_url | \
+         awk '{print $2}' | \
+         tr -d '",' | \
+         sed 's^https://github.com/^git@github.com:^'
+   else
+      curl -s "https://api.github.com/users/$_USER/repos" | \
+         grep clone_url | \
+         awk '{print $2}' | \
+         tr -d '",'
+   fi
 }
 
 function listcrts {
