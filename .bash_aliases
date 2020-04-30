@@ -2,7 +2,7 @@
 
 # file: ~/.bash_aliases - sourced by ~/.bashrc
 
-# shellcheck disable=SC2034
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142
 
 # -------------------- initial directives --------------------
 
@@ -23,37 +23,31 @@ MAIN_BA_FILE=".bash_aliases"
 
 # some ansi colorization escape sequences
 [ "$(uname)" == "Darwin" ] && ESC="\033" || ESC="\e"
-BLD="${ESC}[1m"    # bold
-BLK="${ESC}[30m"   # black FG
-RED="${ESC}[31m"   # red FG
-GRN="${ESC}[32m"   # green FG
-YLW="${ESC}[33m"   # yellow FG
-BLU="${ESC}[34m"   # blue FG
-MAG="${ESC}[35m"   # magenta FG
-CYN="${ESC}[36m"   # cyan FG
-WHT="${ESC}[37m"   # white FG (same as 38 & 39)
-BBB="${ESC}[40m"   # black FG
-RBG="${ESC}[41m"   # red BG
-GBG="${ESC}[42m"   # green BG
-YBG="${ESC}[43m"   # yellow BG
-BBG="${ESC}[44m"   # blue BG
-MBG="${ESC}[45m"   # magenta BG
-CBG="${ESC}[46m"   # cyan BG
-WBG="${ESC}[47m"   # white BG
-BNK="${ESC}[5m"    # slow blink
-D2B="${ESC}[1K"    # delete to BOL
-D2E="${ESC}[K"     # delete to EOL
-DAL="${ESC}[2K"    # delete all of line
-HDC="${ESC}[?25l"  # hide cursor
-NRM="${ESC}[m"     # to make text normal
-SHC="${ESC}[?25h"  # show cursor
-ULN="${ESC}[4m"    # underlined
-
-# set xterm defaults
-XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
-
-# set/save original bash prompt
-ORIG_PS1=$PS1
+export BLD="${ESC}[1m"    # bold
+export BLK="${ESC}[30m"   # black FG
+export RED="${ESC}[31m"   # red FG
+export GRN="${ESC}[32m"   # green FG
+export YLW="${ESC}[33m"   # yellow FG
+export BLU="${ESC}[34m"   # blue FG
+export MAG="${ESC}[35m"   # magenta FG
+export CYN="${ESC}[36m"   # cyan FG
+export WHT="${ESC}[37m"   # white FG (same as 38 & 39)
+export BBB="${ESC}[40m"   # black FG
+export RBG="${ESC}[41m"   # red BG
+export GBG="${ESC}[42m"   # green BG
+export YBG="${ESC}[43m"   # yellow BG
+export BBG="${ESC}[44m"   # blue BG
+export MBG="${ESC}[45m"   # magenta BG
+export CBG="${ESC}[46m"   # cyan BG
+export WBG="${ESC}[47m"   # white BG
+export BNK="${ESC}[5m"    # slow blink
+export D2B="${ESC}[1K"    # delete to BOL
+export D2E="${ESC}[K"     # delete to EOL
+export DAL="${ESC}[2K"    # delete all of line
+export HDC="${ESC}[?25l"  # hide cursor
+export NRM="${ESC}[m"     # to make text normal
+export SHC="${ESC}[?25h"  # show cursor
+export ULN="${ESC}[4m"    # underlined
 
 # for changing prompt colors
 PBLU='\[\e[1;34m\]'   # blue (bold)
@@ -65,6 +59,12 @@ PNRM='\[\e[m\]'       # to make text normal
 PRED='\[\e[1;31m\]'   # red (bold)
 PWHT='\[\e[1;36m\]'   # white (bold)
 PYLW='\[\e[1;33m\]'   # yellow (bold)
+
+# set xterm defaults
+XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
+
+# set/save original bash prompt
+ORIG_PS1=$PS1
 
 # directory where all (most) repos are
 REPO_DIR=$HOME/repos
@@ -356,7 +356,7 @@ function cktj {
    # convert a key file so that it can be used in a 
    # json entry (i.e. change \n -> "\n")
    if [ -n "$1" ]; then
-      cat $1 | tr '\n' '_' | sed 's/_/\\n/g'
+      tr '\n' '_' < "$1" | sed 's/_/\\n/g'
       echo
    else
       echo "error: you did not specify a key file to convert"
@@ -365,36 +365,36 @@ function cktj {
 
 function compare_lines {
    # compare two lines and colorize the diffs
-   local line1="$1 "
-   local line2="$2 "
-   local line1diffs
-   local line2diffs
-   local newword
-   local word
-   for word in $line1; do
-      echo "$line2" | \fgrep -q -- "$word "
-      if [ $? -eq 1 ]; then
-         newword="${RED}$word${NRM}"
+   local _line1="$1 "
+   local _line2="$2 "
+   local _line1diffs
+   local _line2diffs
+   local _newword
+   local _word
+   for _word in $_line1; do
+      if grep -F -q -- "$_word " <<< "$_line2"; then
+         _newword=$_word
       else
-         newword=$word
+         _newword="${RED}$_word${NRM}"
       fi
-      line1diffs="$line1diffs $newword"
+      _line1diffs="$_line1diffs $_newword"
    done
-   line1diffs=`echo "$line1diffs" | sed 's/^ //'`
-   for word in $line2; do
-      echo "$line1" | \fgrep -q -- "$word "
-      if [ $? -eq 1 ]; then
-         newword="${GRN}$word${NRM}"
+   # shellcheck disable=SC2001
+   _line1diffs=$(sed 's/^ //' <<< "$_line1diffs")
+   for _word in $_line2; do
+      if grep -F -q -- "$_word " <<< "$_line1"; then
+         _newword=$_word
       else
-         newword=$word
+         _newword="${GRN}$_word${NRM}"
       fi
-      line2diffs="$line2diffs $newword"
+      _line2diffs="$_line2diffs $_newword"
    done
-   line2diffs=`echo "$line2diffs" | sed 's/^ //'`
+   # shellcheck disable=SC2001
+   _line2diffs=$(sed 's/^ //' <<< "$_line2diffs")
    echo -e "\t--------------------- missing in red ---------------------"
-   echo -e "$line1diffs"
+   echo -e "$_line1diffs"
    echo -e "\t--------------------- added in green ---------------------"
-   echo -e "$line2diffs"
+   echo -e "$_line2diffs"
 }
 
 # This is commented out because it was for a previous place of 
@@ -487,38 +487,41 @@ function compare_lines {
 
 function decimal_to_base32 {
    # convert a decimal number to base 32
-   BASE32=($(echo {0..9} {a..v}))
-   arg1=$@
-   for i in $(bc <<< "obase=32; $arg1"); do
-      echo -n ${BASE32[$(( 10#$i ))]}
+   local _BASE32
+   IFS=" " read -r -a _BASE32 <<< "$(echo {0..9} {a..v})"
+   local _arg1="$*"
+   for i in $(bc <<< "obase=32; $_arg1"); do
+      echo -n "${_BASE32[$((10#$i))]}"
    done && echo
 }
 
 function decimal_to_base36 {
    # convert a decimal number to base 36
-   BASE36=($(echo {0..9} {a..z}))
-   arg1=$@
-   for i in $(bc <<< "obase=36; $arg1"); do
-      echo -n ${BASE36[$(( 10#$i ))]}
+   local _BASE36
+   IFS=" " read -r -a _BASE36 <<< "$(echo {0..9} {a..z})"
+   local _arg1="$*"
+   for i in $(bc <<< "obase=36; $_arg1"); do
+      echo -n "${_BASE36[$((10#$i))]}"
    done && echo
 }
 
 function decimal_to_baseN {
    # convert a decimal number to any base
-   DIGITS=($(echo {0..9} {a..z}))
+   local _DIGITS
+   IFS=" " read -r -a _DIGITS <<< "$(echo {0..9} {a..z})"
    if [ $# -eq 2 ]; then
-      base=$1
-      if [ $base -lt 2 -o $base -gt 36 ]; then
+      local _base="$1"
+      if [ "$_base" -lt 2 ] || [ "$_base" -gt 36 ]; then
          echo "base must be between 2 and 36"
          return 2
       fi
       shift
-      decimal=$@
-      if [ $base -le 16 ]; then
-         echo "obase=$base; $decimal" | bc | tr '[:upper:]' '[:lower:]'
+      local _decimal="$*"
+      if [ "$_base" -le 16 ]; then
+         echo "obase=$_base; $_decimal" | bc | tr '[:upper:]' '[:lower:]'
       else
-         for i in $(bc <<< "obase=$base; $decimal"); do
-            echo -n ${DIGITS[$(( 10#$i ))]}
+         for i in $(bc <<< "obase=$_base; $_decimal"); do
+            echo -n "${_DIGITS[$((10#$i))]}"
          done && echo
       fi
       else
@@ -531,17 +534,17 @@ function dj {
    # either add a daily journal entry provided on the command line or edit it
    DAILY_JOURNAL_DIR="$HOME/notes"
    DAILY_JOURNAL_FILE="$DAILY_JOURNAL_DIR/Daily_Journal.txt"
-   [ ! -d $DAILY_JOURNAL_DIR ] && mkdir $DAILY_JOURNAL_DIR
+   [ ! -d "$DAILY_JOURNAL_DIR" ] && mkdir "$DAILY_JOURNAL_DIR"
    if [ $# -ne 0 ]; then
       case $1 in
-         cat) cat $DAILY_JOURNAL_FILE ;;
+         cat) cat "$DAILY_JOURNAL_FILE" ;;
          help) echo "usage: dj [cat|help|last|tail|LOG_ENTRY]" ;;
-         last) tail -n 1 $DAILY_JOURNAL_FILE ;;
-         tail) tail $DAILY_JOURNAL_FILE ;;
-         *) echo "$(date +'%d-%m-%Y'): $*" >> $DAILY_JOURNAL_FILE ;;
+         last) tail -n 1 "$DAILY_JOURNAL_FILE" ;;
+         tail) tail "$DAILY_JOURNAL_FILE" ;;
+         *) echo "$(date +'%d-%m-%Y'): $*" >> "$DAILY_JOURNAL_FILE" ;;
       esac
    else
-      $VIM_CMD $DAILY_JOURNAL_FILE
+      $VIM_CMD "$DAILY_JOURNAL_FILE"
    fi
 }
 
@@ -621,7 +624,12 @@ function fdgr {
 
 function gdate {
    # convert hex date value to date
-   date --date=@`printf "%d\n" 0x$1`
+   # see the 'guid' alias to create a hex date value
+   if [ "$(uname)" == "Darwin" ]; then
+      date -jf "%s" "$(printf "%d\n" 0x"$1")"
+   else
+      date --date=@"$(printf "%d\n" 0x"$1")"
+   fi
 }
 
 ##function getramsz {
@@ -707,7 +715,7 @@ function gpw {
       [ ! "$(command -v "$_cmd")" ] && { echo "error: missing command '$_cmd'"; return 1; } 
    done
    local _pws=${1:-$DEFAULT_LENGTH}
-   pwgen -y $_pws 1 | tr -d '\n' | pbcopy
+   pwgen -y "$_pws" 1 | tr -d '\n' | pbcopy
 }
 
 function j2y {
@@ -749,6 +757,7 @@ function listcrts {
    #         (e.g. -subject|dates|text|serial|pubkey|modulus
    #               -purpose|fingerprint|alias|hash|issuer_hash)
    #    (default options: -subject -dates -issuer and always: -noout)
+   #    (add options with a "+", e.g.: +serial)
    local _DEFAULT_OPENSSL_OPTS="-subject -dates -issuer"
    local _cbs _cb
    local _cert_bundle=$1
@@ -757,19 +766,17 @@ function listcrts {
    else
       unset _cert_bundle
    fi
-   local _openssl_opts=$*
-   echo "$_openssl_opts" | grep -q '+[a-z].*'
-   if [ $? -eq 0 ]; then
-      _openssl_opts="$_DEFAULT_OPENSSL_OPTS $(echo "$_openssl_opts" | sed 's/+/-/g')"
+   local _openssl_opts="$*"
+   if grep -q '+[a-z].*' <<< "$_openssl_opts"; then
+      _openssl_opts="$_DEFAULT_OPENSSL_OPTS ${_openssl_opts//+/-}"
    fi
    _openssl_opts=${_openssl_opts:=$_DEFAULT_OPENSSL_OPTS}
    _openssl_opts="$_openssl_opts -noout"
-   #echo "debug: opts: '$_openssl_opts'"
+   # echo "debug: opts: '$_openssl_opts'"
    if [ -z "$_cert_bundle" ]; then
-      ls *.crt > /dev/null 2>&1
-      if [ $? -eq 0 ]; then
+      if ls ./*.crt > /dev/null 2>&1; then
          echo "certificate(s) found"
-         _cbs=$(ls *.crt)
+         _cbs=$(ls ./*.crt)
       else
          echo "no certificate files found"
          return
@@ -777,48 +784,52 @@ function listcrts {
    else
       _cbs=$_cert_bundle
    fi
+   # shellcheck disable=SC2030,SC2086
    for _cb in $_cbs; do
       echo "---------------- ( $_cb ) ---------------------"
-      cat $_cb | \
-         awk '{\
-            if ($0 == "-----BEGIN CERTIFICATE-----") cert=""; \
-            else if ($0 == "-----END CERTIFICATE-----") print cert; \
-            else cert=cert$0}' | \
-               while read cert; do
-                  [[ $_more ]] && echo "---"
-                  echo "$cert" | \
-                     base64 --decode | \
-                     #base64 -d | \
-                        openssl x509 -inform DER $_openssl_opts | \
-                           awk '{
-                              if ($1~/subject=/)
-                                 { gsub("subject=","  sub:",$0); print $0 }
-                              else if ($1~/issuer=/)
-                                 { gsub("issuer=","isuer:",$0); print $0 }
-                              else if ($1~/notBefore/)
-                                 { gsub("notBefore=","dates: ",$0); printf $0" -> " }
-                              else if ($1~/notAfter/)
-                                 { gsub("notAfter=","",$0); print $0 }
-                              else if ($1~/[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]/)
-                                 { print " hash: "$0 }
-                              else
-                                 { print $0 }
-                           }'
-                  local _more=yes
-               done
+      awk '{
+         if ($0 == "-----BEGIN CERTIFICATE-----") cert="";
+         else if ($0 == "-----END CERTIFICATE-----") print cert;
+         else cert=cert$0
+      }' "$_cb" | \
+         while read -r cert; do
+            $_more && echo "---"
+            echo "$cert" | \
+               base64 --decode | \
+                  openssl x509 -inform DER $_openssl_opts | \
+                     awk '{
+                        if ($1~/subject=/)
+                           { gsub("subject=","  sub:",$0); print $0 }
+                        else if ($1~/issuer=/)
+                           { gsub("issuer=","isuer:",$0); print $0 }
+                        else if ($1~/notBefore/)
+                           { gsub("notBefore=","dates: ",$0); printf $0" -> " }
+                        else if ($1~/notAfter/)
+                           { gsub("notAfter=","",$0); print $0 }
+                        else if ($1~/[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]/)
+                           { print " hash: "$0 }
+                        else
+                           { print $0 }
+                     }'
+            _more=true
+         done
+      echo "---------------- ( $_cb ) ---------------------"
    done
 }
 
 function listcrts2 {
    # another way to list all info in a crt bundle
+   # usage: listcrts2 FILE
+   local _n_cert _c
+   [ -z "$1" ] && echo "no cert file specified"
    for _c; do
       echo
       echo "Certificate: $_c"
       [ ! -f "$_c" ] && { echo " X - Certificate not found"; continue; }
       _n_cert=$(grep -hc "BEGIN CERTIFICATE" "$_c")
       [ "$_n_cert" -lt 1 ] && { echo " X - Not valid certificate"; continue; }
-      for n in $(seq 1 $_n_cert);do
-         awk -v n=$n '/BEGIN CERT/ { n -= 1;} n == 0 { print }' "$_c" | \
+      for n in $(seq 1 "$_n_cert");do
+         awk -v n="$n" '/BEGIN CERT/ { n -= 1;} n == 0 { print }' "$_c" | \
             openssl x509 -noout -text | sed -n \
                -e 's/^/ o - /' \
                -e 's/ *Signature Algorithm: / signature=/p' \
@@ -832,89 +843,86 @@ function listcrts2 {
    done
 }
 
+# shellcheck disable=SC2086,SC2139
 function mkalias {
    # make an alias and add it to this file
    if [[ $1 && $2 ]]; then
-      echo "alias $1=\"$2\"" >> ~/.bash_aliases
+      echo "alias $1=\"$2\"" >> "$HOME/$MAIN_BA_FILE"
       alias $1="$2"
    fi
 }
 
-function mktb {
-   # get rid of all the MISC, RHUG, and TRUG functions from $BRCSRC
-   # and save the rest to $BRCDST
-   local BRCSRC=$HOME/.bashrc
-   local BRCDST=$HOME/.bashrc.tools
-   rm -f $BRCDST
-   sed '/^function.*# MISC$/,/^}$/d;/^function.*# RHUG$/,/^}$/d;/^function.*# TRUG$/,/^}$/d' $BRCSRC > $BRCDST
-}
-
+# shellcheck disable=SC2009
 function pag {
    # run ps and grep for a pattern
-   ps auxfw | grep $*
+   ps auxfw | grep "$@"
 }
 
 function pbc {
    # enhance `pbcopy`
    if [ -n "$1" ]; then
-      cat $1 | pbcopy
+      pbcopy < "$1"
    else
-      eval $(history -p \!\!) | pbcopy
+      eval "$(history -p \!\!)" | pbcopy
    fi
 }
 
+# shellcheck disable=SC2009
 function peg {
    # run ps and grep for a pattern
-   ps -ef | grep $*
+   ps -ef | grep "$@"
 }
 
 function pl {
    # run a command and pipe it through `less`
-   eval $@ | less
+   eval "$@" | less
 }
 
 function rc {
    # remember command - save the given command for later retreval
-   COMMAND="$*"
-   COMMANDS_FILE=$HOME/.commands.txt
-   echo "$COMMAND" >> $COMMANDS_FILE
-   sort $COMMANDS_FILE > $COMMANDS_FILE.sorted
-   /bin/cp -f $COMMANDS_FILE.sorted $COMMANDS_FILE
-   /bin/rm -f $COMMANDS_FILE.sorted
-   echo "added: '$COMMAND'"
-   echo "   to: $COMMANDS_FILE"
+   local _COMMAND="$*"
+   local _COMMANDS_FILE=$HOME/.commands.txt
+   echo "$_COMMAND" >> "$_COMMANDS_FILE"
+   sort "$_COMMANDS_FILE" > "$_COMMANDS_FILE.sorted"
+   cp -f "$_COMMANDS_FILE.sorted" "$_COMMANDS_FILE"
+   rm -f "$_COMMANDS_FILE.sorted"
+   echo "added: '$_COMMAND'"
+   echo "   to: $_COMMANDS_FILE"
 }
 
 function rf {
    # remember file - save the given file for later retreval
-   FILE="$*"
-   FILES_FILE=$HOME/.files.txt
-   echo "$FILE" >> $FILES_FILE
-   sort $FILES_FILE > $FILES_FILE.sorted
-   /bin/cp -f $FILES_FILE.sorted $FILES_FILE
-   /bin/rm -f $FILES_FILE.sorted
-   echo "added '$FILE' to: $FILES_FILE"
+   _FILE="$*"
+   _FILES_FILE=$HOME/.files.txt
+   echo "$_FILE" >> "$_FILES_FILE"
+   sort "$_FILES_FILE" > "$_FILES_FILE.sorted"
+   cp -f "$_FILES_FILE.sorted" "$_FILES_FILE"
+   rm -f "$_FILES_FILE.sorted"
+   echo "added '$_FILE' to: $_FILES_FILE"
 }
 
 function s3e {
    # set s3cfg (s3tools.org) environment
-   local _S3CFG_CFG=$HOME/.s3cfg/config
-   [ ! -e $_S3CFG_CFG ] && { echo "error: s3cfg config file does not exist: $_S3CFG_CFG"; return 1; }
-   local _S3CFG_PROFILES=$(grep '^\[profile' $_S3CFG_CFG | awk '{print $2}' | tr -s ']\n' ' ')
-   local _VALID_ARGS=$(echo "${_S3CFG_PROFILES}unset" | tr ' ' ':')
+   local _S3CFG_CFG="$HOME/.s3cfg/config"
+   [ ! -e "$_S3CFG_CFG" ] && { echo "error: s3cfg config file does not exist: $_S3CFG_CFG"; return 1; }
+   local _S3CFG_PROFILES
+   _S3CFG_PROFILES=$(grep '^\[profile' "$_S3CFG_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
+   local _VALID_ARGS
+   _VALID_ARGS=$(tr ' ' ':' <<< "${_S3CFG_PROFILES}unset")
    local _environment
    local _arg="$1"
    if [ -n "$_arg" ]; then
       if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
-         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $_S3CFG_PROFILES
+         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_S3CFG_PROFILES"
          return 2
       fi
       if [ "$_arg" == "unset" ]; then
          unset S3CFG
          echo "s3cfg environment has been unset"
       else
-         export S3CFG=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_S3CFG_CFG)
-         _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_S3CFG_CFG)
+         export S3CFG
+         S3CFG=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_S3CFG_CFG")
+         _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_S3CFG_CFG")
          echo "s3cfg environment has been set to --> $_environment ($S3CFG)"
          [ -z "$S3CFG" ] && unset S3CFG
       fi
@@ -929,20 +937,19 @@ function showf {
    # show a function defined in in this file
    ALIASES_FILE="$HOME/$MAIN_BA_FILE"
    if [[ $1 ]]; then
-      grep -q "^function $1 " $ALIASES_FILE
-      if [ $? -eq 0 ]; then
-         sed -n '/^function '"$1"' /,/^}/p' $ALIASES_FILE
+      if grep -q "^function $1 " "$ALIASES_FILE"; then
+         sed -n '/^function '"$1"' /,/^}/p' "$ALIASES_FILE"
       else
          echo "function: '$1' - not found"
       fi
    else
       echo
       echo "which function do you want to see?"
-      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
-      echo -ne "enter function: "
-      read func
+      grep "^function .* " "$ALIASES_FILE" | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`sf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+      echo -ne "\nenter function: "
+      read -r func
       echo
-      showf $func
+      showf "$func"
    fi
 }
 
@@ -950,24 +957,31 @@ function soe {
    # set OpenStack (www.openstack.org) environment
    # (sets/sources OSRC to a config e.g. "$HOME/.openstack/os_rc.prod.sh")
    local _OS_CFG=$HOME/.openstack/config
-   [ ! -e $_OS_CFG ] && { echo "error: openwtack config file does not exist: $_OS_CFG"; return 1; }
-   local _OS_PROFILES=$(grep '^\[profile' $_OS_CFG | awk '{print $2}' | tr -s ']\n' ' ')
-   local _VALID_ARGS=$(echo "${_OS_PROFILES}unset" | tr ' ' ':')
+   [ ! -e "$_OS_CFG" ] && { echo "error: openwtack config file does not exist: $_OS_CFG"; return 1; }
+   local _OS_PROFILES
+   _OS_PROFILES=$(grep '^\[profile' "$_OS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
+   local _VALID_ARGS
+   _VALID_ARGS=$(echo "${_OS_PROFILES}unset" | tr ' ' ':')
    local _environment
    local _arg="$1"
    if [ -n "$_arg" ]; then
       if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
-         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $_OS_PROFILES
+         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_OS_PROFILES"
          return 2
       fi
       if [ "$_arg" == "unset" ]; then
          unset OSRC
          echo "s3cfg environment has been unset"
       else
-         export OSRC=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_OS_CFG)
-         _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' $_OS_CFG)
+         export OSRC
+         OSRC=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_OS_CFG")
+         _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_OS_CFG")
          echo "s3cfg environment has been set to --> $_environment ($OSRC)"
-         [ -n "$OSRC" ] && source $OSRC || unset OSRC
+         if [ -n "$OSRC" ]; then
+            source "$OSRC"
+         else
+            unset OSRC
+         fi
       fi
    else
       echo -n "--- OpenStack Environment "
@@ -978,10 +992,11 @@ function soe {
 
 function source_ssh_env {
    # shource ~/.ssh/environment file for ssh-agent
-   SSH_ENV="$HOME/.ssh/environment"
-   if [ -f "$SSH_ENV" ]; then
-      source $SSH_ENV > /dev/null
-      ps -u $USER | grep -q "$SSH_AGENT_PID.*ssh-agent$" || start_ssh_agent
+   local _SSH_ENV="$HOME/.ssh/environment"
+   if [ -f "$_SSH_ENV" ]; then
+      source "$_SSH_ENV" > /dev/null
+      # shellcheck disable=SC2009
+      ps -u "$USER" | grep -q "$SSH_AGENT_PID.*ssh-agent$" || start_ssh_agent
    else
       start_ssh_agent
    fi
@@ -991,13 +1006,14 @@ function sse {
    # ssh in to a server as user "ec2-user" and run optional command
    local _this_function="sse"
    local _user="ec2-user"
+   local _server
    if [ "$1" != "" ]; then
       _server=$1
       shift
       if [ "$*" == "" ]; then
-         ssh -A $_user@${_server}
+         ssh -A "$_user@${_server}"
       else
-         ssh -A $_user@${_server} "$*"
+         ssh -A "$_user@${_server}" "$*"
       fi
    else
       echo "USAGE: $_this_function HOST [COMMAND(S)]"
@@ -1026,13 +1042,15 @@ function ssu {
    # ssh in to a server as user "ubuntu" and run optional command
    local _this_function="ssu"
    local _user="ubuntu"
+   local _server
    if [ "$1" != "" ]; then
       _server=$1
       shift
       if [ "$*" == "" ]; then
-         ssh $_user@${_server}
+         ssh "$_user@${_server}"
       else
-         ssh $_user@${_server} "$*"
+         # shellcheck disable=SC2029
+         ssh "$_user@${_server}" "$*"
       fi
    else
       echo "USAGE: $_this_function HOST [COMMAND(S)]"
@@ -1041,18 +1059,18 @@ function ssu {
 
 function start_ssh_agent {
    # start ssh-add agent
-   SSH_ENV="$HOME/.ssh/environment"
+   local _SSH_ENV="$HOME/.ssh/environment"
    echo -n "Initializing new SSH agent... "
-   /usr/bin/ssh-agent | sed 's/^echo/#echo/' > $SSH_ENV
+   /usr/bin/ssh-agent | sed 's/^echo/#echo/' > "$_SSH_ENV"
    echo "succeeded"
-   chmod 600 $SSH_ENV
-   source $SSH_ENV > /dev/null
+   chmod 600 "$_SSH_ENV"
+   source "$_SSH_ENV" > /dev/null
    /usr/bin/ssh-add
 }
 
 function stopwatch {
    # display a "stopwatch"
-   trap "return" SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT
+   trap "return" SIGINT SIGTERM SIGHUP SIGQUIT
    trap 'echo; stty echoctl; trap - SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT RETURN' RETURN
    stty -echoctl # don't echo "^C" when [Ctrl-C] is entered
    local _started _start_secs _current _current_secs _delta
@@ -1063,7 +1081,7 @@ function stopwatch {
       _current=$(date +'%d-%b-%Y %T')
       [ "$(uname)" != "Darwin" ] && _current_secs=$(date +%s -d "$_current") || _current_secs=$(date -jf '%d-%b-%Y %T' "$_current" +'%s')
       # TODO: almost works for Darwin, need to figure out proper delta
-      [ "$(uname)" != "Darwin" ] && _delta=$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs") || _delta=$(date -jf '%s' "0 $(($_current_secs - $_start_secs))" +'%T')
+      [ "$(uname)" != "Darwin" ] && _delta=$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs") || _delta=$(date -jf '%s' "0 $((_current_secs - _start_secs))" +'%T')
       echo -ne "  Start: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$_delta${NRM}\r"
    done
 }
@@ -1109,7 +1127,7 @@ function vin {
          virtual) actual_note_file=Virtual_Environments_Notes.txt ;;
                *) echo "unknown alias - try again"; return 2 ;;
       esac
-      eval vim $REPO_DIR/pataraco/$NOTES_DIR/$actual_note_file
+      eval vim "$REPO_DIR/pataraco/$NOTES_DIR/$actual_note_file"
    else
       echo "you didn't specify a file (alias) to edit"
    fi
@@ -1119,19 +1137,19 @@ function wtc {
    # what's that command - retrieve the given command for use
    COMMAND_PATTERN="$*"
    COMMANDS_FILE=$HOME/.commands.txt
-   grep --colour=always "$COMMAND_PATTERN" $COMMANDS_FILE
-   while read _line; do
+   grep --colour=always "$COMMAND_PATTERN" "$COMMANDS_FILE"
+   while read -r _line; do
       history -s "$_line"
-   done <<< "$(grep "$COMMAND_PATTERN" $COMMANDS_FILE | sed 's:\\:\\\\:g')"
+   done <<< "$(grep "$COMMAND_PATTERN" "$COMMANDS_FILE" | sed 's:\\:\\\\:g')"
 }
 
 function wtf {
    # what's that file - retrieve the given file for use
    # sets var $file to the last one found to use
-   FILE_PATTERN="$*"
-   FILES_FILE=$HOME/.files.txt
-   grep --colour=always $FILE_PATTERN $FILES_FILE
-   file=`grep $FILE_PATTERN $FILES_FILE | tail -1`
+   local _FILE_PATTERN="$*"
+   local _FILES_FILE=$HOME/.files.txt
+   grep --colour=always "$_FILE_PATTERN" "$_FILES_FILE"
+   file=$(grep "$_FILE_PATTERN" "$_FILES_FILE" | tail -1)
 }
 
 function wutch {
@@ -1140,19 +1158,20 @@ function wutch {
    #   just remove all "out" files - they'll get quickly replaced
    #trap "rm -f $_TMP_WUTCH_OUT; return" SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT
    rm -f /tmp/.wutch.out.*
-   local _TMP_WUTCH_OUT=$(mktemp /tmp/.wutch.out.XXX)
+   local _TMP_WUTCH_OUT
+   _TMP_WUTCH_OUT=$(mktemp /tmp/.wutch.out.XXX)
    local _secs
    [ "$1" == "-n" ] && { _secs=$2; shift 2; } || _secs=2
    local _cmd="$*"
    local _hcmd="${_cmd:0:35}..."
    clear
    while true; do
-      /bin/bash -c "$_cmd" > $_TMP_WUTCH_OUT
+      /bin/bash -c "$_cmd" > "$_TMP_WUTCH_OUT"
       clear
-      echo "Every ${_secs}.0s: $_hcmd: `date`"
+      echo "Every ${_secs}.0s: $_hcmd: $(date)"
       echo "Command: '$_cmd'"
       echo "---"
-      cat $_TMP_WUTCH_OUT
+      cat "$_TMP_WUTCH_OUT"
       tput ed
       sleep $_secs
    done
@@ -1180,11 +1199,9 @@ function xssh {
 
 function y2j {
    # convert YAML to JSON (from either STDIN or by specifying a file
-   if [ -n $1 ]; then
-      # cat $1 | python -c 'import json, sys, yaml; json.dump(yaml.load(sys.stdin, Loader=yaml.FullLoader), sys.stdout, indent=4)'
-      cat $1 | python -c 'import json, sys, yaml; [json.dump(f, sys.stdout, indent=4) for f in yaml.load_all(sys.stdin, Loader=yaml.FullLoader)]' | jq .
+   if [ -n "$1" ]; then
+      python -c 'import json, sys, yaml; [json.dump(f, sys.stdout, indent=4) for f in yaml.load_all(sys.stdin, Loader=yaml.FullLoader)]' < "$1" | jq .
    else
-      #python -c 'import json, sys, yaml; y=yaml.load(sys.stdin.read()); print json.dump(y)'
       python -c 'import json, sys, yaml; [json.dump(f, sys.stdout, indent=4) for f in yaml.load_all(sys.stdin, Loader=yaml.FullLoader)]' | jq .
    fi
 }
@@ -1330,7 +1347,7 @@ alias rmt="rancher-migration-tools"  # github.com/rancher/migration-tools
 alias rsshk='ssh-keygen -f "$HOME/.ssh/known_hosts" -R'
 alias rm='rm -i'
 alias sa=alias
-alias sba='source ~/.bash_aliases'
+alias sba='source "$HOME/$MAIN_BA_FILE"'
 alias sc="command -V"
 alias sdl="export DISPLAY=localhost:10.0"
 alias sf='showf'
@@ -1349,9 +1366,10 @@ alias tt='echo -ne "\033]0;$(whoami)@$(hostname)\007"'
 alias tskap="_tmux_send_keys_all_panes"
 alias u='uptime'
 alias ua='unalias'
-alias vba='echo "editing: ~/.bash_aliases"; vi ~/.bash_aliases; sba'
+alias vba='echo "editing: $HOME/$MAIN_BA_FILE"; vi "$HOME/$MAIN_BA_FILE"; sba'
 # upgrade to neovim if available
 [ "$(command -v nvim)" ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
+# shellcheck disable=SC2139
 alias vi="$VIM_CMD"
 alias vid="$VIM_CMD -d"
 alias vidh="$VIM_CMD -do"
@@ -1367,7 +1385,7 @@ alias viw="$VIM_CMD -R"
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
 if [ "$(uname -s)" == "Darwin" ]; then
    alias which='(alias; declare -f) | /usr/bin/which'
-elif [ "$(uname -so)" == "Linux GNU/Linux" ]; then
+elif [ "$(uname -so)" == "Linux Android" ]; then
    alias which='(alias; declare -f) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot'
 else
    alias which='(alias; declare -f) | /usr/bin/which'
@@ -1380,13 +1398,13 @@ alias y='echo y'
 # -------------------- final touches --------------------
 
 # source AWS specific functions and aliases
-[ -f $AWS_SHIT ] && source $AWS_SHIT
+[ -f "$AWS_SHIT" ] && source "$AWS_SHIT"
 
 # source Chef/Knife specific functions and aliases
-[ -f $CHEF_SHIT ] && source $CHEF_SHIT
+[ -f "$CHEF_SHIT" ] && source "$CHEF_SHIT"
 
 # source company specific functions and aliases
-[ -f $COMPANY_SHIT ] && source $COMPANY_SHIT
+[ -f "$COMPANY_SHIT" ] && source "$COMPANY_SHIT"
 
 # set bash prompt command (and bash prompt)
 export OLD_PROMPT_COMMAND=$PROMPT_COMMAND
