@@ -1,6 +1,10 @@
-#!bash - sourced by ~/.bashrc_aliases via $COMPANY_SHIT
-#
+#!/usr/bin/env bash
+
+# file: ~/.bash_aliases_ag - sourced by ~/.bashrc_aliases via $COMPANY_SHIT
+
 # these are functions/aliases specific to AG
+
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142
 
 CO_BA_FILE=".bash_aliases_$COMPANY"
 
@@ -23,25 +27,26 @@ function saem {
    aws sts get-caller-identity > /dev/null 2>&1
    _exit_code=$?
    [ $_exit_code -ne 0 ] && sae unset > /dev/null
-   sae $_arg > /dev/null
+   sae "$_arg" > /dev/null
    if [ -n "$_arg" ]; then
       if [ "$_arg" == "unset" ]; then
          echo "environment has been unset"
       else
-         [ ! -s $_AWS_STS_CREDS ] && rm -f $_AWS_STS_CREDS
+         [ ! -s "$_AWS_STS_CREDS" ] && rm -f "$_AWS_STS_CREDS"
          if [ -n "$_code" ]; then
-            source ~/repos/pataraco/scripts/aws/aws_sts_mfa.sh
+            source "$HOME/repos/pataraco/scripts/aws/aws_sts_mfa.sh"
             _exit_code=$?
-         elif [ -n "$AWS_STS_EXPIRES_TS" -o -s $_AWS_STS_CREDS ]; then
-            local _now_ts=$(date +%s)
-            _mfa_exp_time=$(jq -r .Credentials.Expiration $_AWS_STS_CREDS)
+         elif [ -n "$AWS_STS_EXPIRES_TS" ] || [ -s "$_AWS_STS_CREDS" ]; then
+            local _now_ts
+            _now_ts=$(date +%s)
+            _mfa_exp_time=$(jq -r .Credentials.Expiration "$_AWS_STS_CREDS")
             # _mfa_exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_mfa_exp_time +"%s")
-            _mfa_exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%S" ${_mfa_exp_time%+*} +"%s")
+            _mfa_exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%S" "${_mfa_exp_time%+*}" +"%s")
             # if [ $_mfa_exp_ts -lt $_now_ts ]; then
             # echo "debug: AWS_STS_EXPIRES_TS: $AWS_STS_EXPIRES_TS"
             [ -z "$AWS_STS_EXPIRES_TS" ] && AWS_STS_EXPIRES_TS=0
             # echo "debug: AWS_STS_EXPIRES_TS: $AWS_STS_EXPIRES_TS, _now_ts: $_now_ts, _mfa_exp_ts: $_mfa_exp_ts, AWS_SESSION_TOKEN: $AWS_SESSION_TOKEN"
-            if [ $AWS_STS_EXPIRES_TS -lt $_now_ts -o $_mfa_exp_ts -lt $_now_ts ]; then
+            if [ $AWS_STS_EXPIRES_TS -lt "$_now_ts" ] || [ "$_mfa_exp_ts" -lt "$_now_ts" ]; then
                # echo -en "Enter the 6-digit code from your MFA device: "
                source ~/repos/pataraco/scripts/aws/aws_sts_mfa.sh
                _exit_code=$?
@@ -67,11 +72,12 @@ function saem {
          # echo "debug: $_aws_mfa_results_cleaned"
          if [ $_exit_code -eq 0 ]; then
             # eval "$_aws_mfa_results_cleaned"
-            _mfa_exp_time=$(jq -r .Credentials.Expiration $_AWS_STS_CREDS)
+            _mfa_exp_time=$(jq -r .Credentials.Expiration "$_AWS_STS_CREDS")
             # _mfa_exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_mfa_exp_time +"%s")
             # export AWS_STS_EXPIRES_TS=$_mfa_exp_ts
             # export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_mfa_exp_time +"%s")
-            export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S" ${_mfa_exp_time%+*} +"%s")
+            export AWS_STS_EXPIRES_TS
+            AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S" "${_mfa_exp_time%+*}" +"%s")
             export AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN
             echo "environment has been set to --> $AWS_ENVIRONMENT ($_arg)"
             echo "MFA has been enabled for environment"
@@ -92,7 +98,7 @@ function saem {
       fi
    else
       echo -n "--- AWS Environment "
-      [ -n "$AWS_DEFAULT_PROFILE" -o \( -n "$AWS_ACCESS_KEY_ID" -a -n "$AWS_SECRET_ACCESS_KEY" \) ] && echo "Settings ---" || echo "(NOT set) ---"
+      [ -n "$AWS_DEFAULT_PROFILE" ] || { [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; } && echo "Settings ---" || echo "(NOT set) ---"
       echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
       echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
       # obfuscate the KEYs with some *'s
@@ -107,20 +113,20 @@ function showcof {
    # show a company specific function
    ALIASES_FILE="$HOME/$CO_BA_FILE"
    if [[ $1 ]]; then
-      grep -q "^function $1 " $ALIASES_FILE
-      if [ $? -eq 0 ]; then
-         sed -n '/^function '"$1"' /,/^}/p' $ALIASES_FILE
+      if grep -q "^function $1 " "$ALIASES_FILE"; then
+         sed -n '/^function '"$1"' /,/^}/p' "$ALIASES_FILE"
       else
          echo "function: '$1' - not found"
       fi
    else
+      local _func
       echo
       echo "which function do you want to see?"
-      grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scof\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+      grep "^function .* " "$ALIASES_FILE" | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scof\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
       echo -ne "enter function: "
-      read func
+      read -r _func
       echo
-      showcof $func
+      showcof "$_func"
    fi
 }
 
