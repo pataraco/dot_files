@@ -1,4 +1,6 @@
-# ~/.bash_logout: executed by bash(1) when login shell exits.
+#!/usr/bin/env bash
+
+# file: ~/.bash_logout: executed by bash(1) when login shell exits.
 
 #[ -n "$PS1" ] && echo "sourcing: .bash_logout"
 [ -n "$PS1" ] && echo -n ".bash_logout (begin)... "
