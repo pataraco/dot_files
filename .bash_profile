@@ -1,9 +1,13 @@
-#!bash -  ~/.bash_profile: executed by the command interpreter for login shells.
+#!/usr/bin/env bash
+
+# file: ~/.bash_profile: executed by the command interpreter for login shells.
+
 # This file is sourced by bash(1) instead of .profile
 # see /usr/share/doc/bash/examples/startup-files for examples.
 # the files are located in the bash-doc package.
 
-#[ -n "$PS1" ] && echo "sourcing: .bash_profile"
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142
+
 [ -n "$PS1" ] && echo -n ".bash_profile (begin)... "
 
 # set to use AWS related functions/aliases
@@ -31,7 +35,7 @@ fi
 
 # add arcanist to PATH
 arcanist_repo=$HOME/repos/phacility/arcanist
-if [ -d $arcanist_repo ]; then
+if [ -d "$arcanist_repo" ]; then
    export ARC_ROOT=$arcanist_repo
    arcanist_bin=$ARC_ROOT/bin
    [[ -d $arcanist_bin && ! $PATH =~ ^$arcanist_bin:|:$arcanist_bin:|:$arcanist_bin$ ]] && export PATH="$PATH:$arcanist_bin"
@@ -39,7 +43,7 @@ fi
 
 # add pyenv to PATH
 pyenv_repo=$HOME/repos/pyenv
-if [ -d $pyenv_repo ]; then
+if [ -d "$pyenv_repo" ]; then
    export PYENV_ROOT=$pyenv_repo
    pyenv_bin=$PYENV_ROOT/bin
    [[ -d $pyenv_bin && ! $PATH =~ ^$pyenv_bin:|:$pyenv_bin:|:$pyenv_bin$ ]] && export PATH="$pyenv_bin:$PATH"
@@ -86,7 +90,7 @@ export VIRTUAL_ENV_DISABLE_PROMPT=YES	# set to non-empty value to disable
 # set up pip list column output formating
 export PIP_FORMAT=columns
 # set up "vi" command line editing
-[ $(command -v nvim) ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
+[ "$(command -v nvim)" ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
 export EDITOR=$VIM_CMD 
 export VISUAL=$VIM_CMD 
 # export MANPAGER="col -bx | vim -c 'set ft=man nolist nonu ' -MR -"
@@ -119,25 +123,26 @@ SSH_ENV="$HOME/.ssh/environment"
 
 function start_ssh_agent {
     echo "Initializing new SSH agent..."
-    /usr/bin/ssh-agent | sed 's/^echo/#echo/' > $SSH_ENV
+    ssh-agent | sed 's/^echo/#echo/' > "$SSH_ENV"
     echo "succeeded"
-    chmod 600 $SSH_ENV
-    source $SSH_ENV > /dev/null
+    chmod 600 "$SSH_ENV"
+    source "$SSH_ENV" > /dev/null
     /usr/bin/ssh-add
 }
 
 # Source SSH settings, if applicable
 
 if [ -f "$SSH_ENV" ]; then
-    source $SSH_ENV > /dev/null
-    #ps -ef | grep "$SSH_AGENT_PID.*ssh-agent$" > /dev/null || start_ssh_agent
-    ps -u $USER | grep -q "$SSH_AGENT_PID.*ssh-agent$" || start_ssh_agent
+   source "$SSH_ENV" > /dev/null
+   #ps -ef | grep "$SSH_AGENT_PID.*ssh-agent$" > /dev/null || start_ssh_agent
+   # shellcheck disable=SC2009
+   ps -u "$USER" | grep -q "$SSH_AGENT_PID.*ssh-agent$" || start_ssh_agent
 else
     start_ssh_agent
 fi
 
 # add `pyenv init` to shell to enable shims and autcompletion
-[ $(command -v pyenv) ] && eval "$(pyenv init -)"
+[ "$(command -v pyenv)" ] && eval "$(pyenv init -)"
 # use `pipenv`
 # # add `pyenv virtualenv-init` to shell to enable shims and autcompletion
 # [ $(command -v pyenv) ] && eval "$(pyenv virtualenv-init -)"
