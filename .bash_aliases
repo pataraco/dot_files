@@ -294,17 +294,17 @@ function chkrepodiffs {
    # only works on https://github.com/pataraco/dot_files repo now
    # comparing those files against those in home directory
    cd ~/repos/pataraco/dot_files || return
-   local _verbose=$1
+   local _verbose="$1"
    if [ "$_verbose" == "-v" ]; then
       shift
    fi
-   local _files=$*
+   local _files="$*"
    local _file
    # shellcheck disable=SC2010
    [ -z "$_files" ] && _files=$(ls -1A | grep -v .git)
    for _file in $_files; do
       if [ -e "$_file" ] && [ -e "$HOME/$_file" ]; then
-         diff -q $_file ~/$_file
+         diff -q "$_file" "$HOME/$_file"
          if [ $? -eq 1 ]; then
             if [ "$_verbose" == "-v" ]; then
               read -rp "Hit [Enter] to continue" junk
@@ -315,27 +315,38 @@ function chkrepodiffs {
             echo "Files $_file and ~/$_file are the same"
          fi
       else
-         [ ! -e $_file ] && ls $_file
-         [ ! -e ~/$_file ] && ls ~/$_file
+         [ ! -e "$_file" ] && ls "$_file"
+         [ ! -e "$HOME/$_file" ] && ls "$HOME/$_file"
       fi
    done
    cd - > /dev/null || return
 }
 
-function chksums {
-   # Generate 4 kinds of different checksums for a file
+function checksums {
+   # Generate multiple kinds of different checksums for a file
+   local _file
+   local _check_sum_cmd_names="cksum md5sum shasum sum"
+   local _check_sum_cmd_name
+   local _check_sum_cmd
+   local _max_cmd_name_len=0
+   for _check_sum_cmd_name in $_check_sum_cmd_names; do
+      [ $_max_cmd_name_len -lt ${#_check_sum_cmd_name} ] \
+         && _max_cmd_name_len=${#_check_sum_cmd_name}
+   done
    if [ $# -eq 1 ]; then
-      file=$1
-      echo "File: $file"
-      echo "-------------"
-      echo -n "cksum : "
-      cksum $file | awk '{print $1}'
-      echo -n "md5sum: "
-      md5sum $file | awk '{print $1}'
-      echo -n "shasum: "
-      shasum $file | awk '{print $1}'
-      echo -n "sum   : "
-      sum $file
+      _file=$1
+      echo "File: $_file"
+      echo "----------------"
+      for _check_sum_cmd_name in $_check_sum_cmd_names; do
+         _check_sum_cmd=$(command -v "$_check_sum_cmd_name")
+         if [ -n "$_check_sum_cmd" ]; then
+            # echo -n "$_check_sum_cmd_name : "
+            printf "%-${_max_cmd_name_len}s : " "$_check_sum_cmd_name"
+            $_check_sum_cmd "$_file" | awk '{print $1}'
+         else
+            echo "$_check_sum_cmd_name : command not found"
+         fi
+      done
    else
       echo "you didn't specify a file to calculate the checksums for"
    fi
@@ -691,8 +702,9 @@ function gpw {
    # generate a password and copy to the clipboard
    DEFAULT_LENGTH=25
    REQ_CMDS="pwgen pbcopy"
+   local _cmd
    for _cmd in $REQ_CMDS; do
-      [ ! $(command -v $_cmd) ] && { echo "error: missing command '$_cmd'"; return 1; } 
+      [ ! "$(command -v "$_cmd")" ] && { echo "error: missing command '$_cmd'"; return 1; } 
    done
    local _pws=${1:-$DEFAULT_LENGTH}
    pwgen -y $_pws 1 | tr -d '\n' | pbcopy
