@@ -117,6 +117,8 @@ let maplocalleader = '\'   " used for alternate context - certain file types
 nnoremap <silent> <Space> :nohlsearch<Bar>:echo<CR>
 " Display the number of matches for the last search
 nnoremap <silent> <Leader># :%s:<C-R>/::gn<cr>
+" Put double quotes around the word
+nnoremap <silent> <Leader>" cE""<Esc>P
 " change word to ALL CAPS
 nnoremap <silent> <Leader>ac gUiw
 " change word to all lowercase
