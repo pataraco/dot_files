@@ -1,7 +1,12 @@
+#!/usr/bin/env bash
+
+# file: ~/.bashrc - sourced by ~/.bash_profile
+
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 
+# shellcheck disable=SC1090,SC1091
 
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
@@ -82,7 +87,7 @@ if [ "$color_prompt" = yes ]; then
       *)
          PS1='${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;32m\]\W\[\033[00m\]│\[\033[01;36m\]\$\[\033[00m\] ' ;;
     esac
-    srvr_env=`hostname -f | cut -d. -f4`
+    srvr_env=$(hostname -f | cut -d. -f4)
     case $srvr_env in
       r5internal)
          PS1='${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\u@\[\033[01;36m\]\h\[\033[00m\]:\[\033[01;32m\]\W\[\033[00m\]│\[\033[01;36m\]\$\[\033[00m\] ' ;;
@@ -109,11 +114,12 @@ esac
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    if [ -r "$HOME/.dircolors" ]; then
+       eval "$(dircolors -b ~/.dircolors)"
+    else
+       eval "$(dircolors -b)"
+    fi
     alias ls='ls --color=auto'
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
-
     alias grep='grep --color=auto'
     alias fgrep='fgrep --color=auto'
     alias egrep='egrep --color=auto'
@@ -140,6 +146,7 @@ fi
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 # sources /etc/bash.bashrc).
+# shellcheck disable=SC1091
 if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
@@ -173,6 +180,6 @@ fi
 
 # Serverless: tabtab source for packages
 # uninstall by removing these lines
-[ -f ~/.config/tabtab/__tabtab.bash ] && . ~/.config/tabtab/__tabtab.bash || true
+[ -f ~/.config/tabtab/__tabtab.bash ] && . ~/.config/tabtab/__tabtab.bash
 
 [ -n "$PS1" ] && echo -n ".bashrc (end). "
