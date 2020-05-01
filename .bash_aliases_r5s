@@ -821,10 +821,10 @@ function ksshu {
    if knife_env_set; then
       source_ssh_env
       server=$(knife node list -c "$KNIFERB" | \grep "$1")
-      nos=$(echo "$server" | wc -l)
+      nos=$(wc -l <<< "$server")
       if [ "$nos" -gt 1 ]; then
          echo "please be more specific:"
-         echo "$server" | grep "$1"
+         grep "$1" <<< "$server"
          return
       fi
       # shellcheck disable=SC2116,SC2086
