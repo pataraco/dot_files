@@ -4,7 +4,7 @@
 
 # these are functions/aliases specific to AWS
 
-# shellcheck disable=SC1090,SC2029,SC2034,SC2139,SC2142
+# shellcheck disable=SC1090,SC2029,SC2034,SC2139,SC2142,SC1117
 
 # -------------------- global variables --------------------
 
@@ -140,8 +140,8 @@ function awsasgcp {
    local _pc_cmd
    local _region
    _USAGE="usage: awsasgcp -r|--resume or -s|--suspend [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]"
-   _AWS_CMD=$(/usr/bin/which aws 2> /dev/null) || { echo "'aws' needed to run this function"; exit 3; }
-   _JQ_CMD=$(/usr/bin/which jq 2> /dev/null) || { echo "'jq' needed to run this function"; exit 3; }
+   _AWS_CMD=$(command -v aws 2> /dev/null) || { echo "'aws' needed to run this function"; exit 3; }
+   _JQ_CMD=$(command -v jq 2> /dev/null) || { echo "'jq' needed to run this function"; exit 3; }
    while true; do
       case "$1" in
           -r|--resume) _pc_cmd=resume-processes ; shift;;
@@ -171,7 +171,7 @@ function awsasgcp {
 function awsci {
    # reboot, start, stop or terminate an instance
    local _AWS_CMD
-   _AWS_CMD=$(which aws)
+   _AWS_CMD=$(command -v aws)
    [ -z "$_AWS_CMD" ] && { echo "error: aws command not found"; return 2; }
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _USAGE="usage: awsci [-r REGION] reboot|start|stop|terminate INSTANCE_ID|INSTANCE_NAME   # default region: $_DEFAULT_REGION"

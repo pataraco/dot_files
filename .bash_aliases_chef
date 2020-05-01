@@ -4,7 +4,7 @@
 
 # these are functions/aliases specific to Chef/Knife
 
-# shellcheck disable=SC1090,SC2034,SC2139,SC2142
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
 
 # -------------------- global variables --------------------
 

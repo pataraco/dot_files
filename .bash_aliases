@@ -2,7 +2,7 @@
 
 # file: ~/.bash_aliases - sourced by ~/.bashrc
 
-# shellcheck disable=SC1090,SC2034,SC2139,SC2142
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
 
 # -------------------- initial directives --------------------
 
@@ -1368,7 +1368,7 @@ alias u='uptime'
 alias ua='unalias'
 alias vba='echo "editing: $HOME/$MAIN_BA_FILE"; vi "$HOME/$MAIN_BA_FILE"; sba'
 # upgrade to neovim if available
-[ "$(command -v nvim)" ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
+[ "$(command -v nvim)" ] && VIM_CMD=$(command -v nvim) || VIM_CMD=$(command -v vim)
 # shellcheck disable=SC2139
 alias vi="$VIM_CMD"
 alias vid="$VIM_CMD -d"
@@ -1383,12 +1383,14 @@ alias viv="$VIM_CMD -O"
 alias vivd="$VIM_CMD -dO"
 alias viw="$VIM_CMD -R"
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
-if [ "$(uname -s)" == "Darwin" ]; then
-   alias which='(alias; declare -f) | /usr/bin/which'
-elif [ "$(uname -so)" == "Linux Android" ]; then
-   alias which='(alias; declare -f) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot'
-else
-   alias which='(alias; declare -f) | /usr/bin/which'
+if command -v which &> /dev/null; then
+   if [ "$(uname -s)" == "Darwin" ]; then
+      alias which='(alias; declare -f) | which'
+   elif [ "$(uname -so)" == "Linux Android" ]; then
+      alias which='(alias; declare -f) | which --tty-only --read-alias --read-functions --show-tilde --show-dot'
+   else
+      alias which='(alias; declare -f) | which'
+   fi
 fi
 alias wgft='echo "$(history -p \!\!) | grep"; $(history -p \!\!) | grep'
 alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less -FrX'

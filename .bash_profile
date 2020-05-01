@@ -6,7 +6,7 @@
 # see /usr/share/doc/bash/examples/startup-files for examples.
 # the files are located in the bash-doc package.
 
-# shellcheck disable=SC1090,SC2034,SC2139,SC2142
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
 
 [ -n "$PS1" ] && echo -n ".bash_profile (begin)... "
 
@@ -90,7 +90,11 @@ export VIRTUAL_ENV_DISABLE_PROMPT=YES	# set to non-empty value to disable
 # set up pip list column output formating
 export PIP_FORMAT=columns
 # set up "vi" command line editing
-[ "$(command -v nvim)" ] && VIM_CMD=$(which nvim) || VIM_CMD=$(which vim)
+if [ "$(command -v nvim)" ]; then
+   VIM_CMD=$(command -v nvim)
+else
+   VIM_CMD=$(command -v vim)
+fi
 export EDITOR=$VIM_CMD 
 export VISUAL=$VIM_CMD 
 # export MANPAGER="col -bx | vim -c 'set ft=man nolist nonu ' -MR -"
