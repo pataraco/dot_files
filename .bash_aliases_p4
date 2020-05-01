@@ -1,6 +1,10 @@
-#!bash - ~/.bash_aliases_p4 - sourced by ~/.bashrc_aliases
-#
+#!/usr/bin/env bash
+
+# file: ~/.bash_aliases_p4 - sourced by ~/.bashrc_aliases
+
 # these are functions/aliases specific to P4
+
+# shellcheck disable=SC2139
 
 # if interactive shell - display message
 [ -n "$PS1" ] && echo -n ".bash_aliases_p4 (begin)... "
@@ -8,8 +12,10 @@
 # set up for Helix Perforce
 export P4PORT=p4server:5050
 export P4CLIENT=p4_ws   # P4 workspace name
-export P4DIFF="$(which colordiff) -u"
-export P4EDITOR=$(which nvim)
+export P4DIFF
+P4DIFF="$(which colordiff) -u"
+export P4EDITOR
+P4EDITOR=$(which nvim)
 export P4IGNORE=$HOME/workspaces/p4_ws/.p4ignore
 export P4PAGER="less -FrX"
 
@@ -17,7 +23,6 @@ p4o () {
    p4o=$(p4 opened | grep "${1:-}" | cut -d '#' -f1 | cut -d '/' -f8-9)
    echo "$p4o"
 }
-
 
 alias adfsaml="~/scripts/python/samlapi_formauth_adfs3.praco.py"
 alias cd-qa="cd $HOME/workspaces/p4_ws/master"
