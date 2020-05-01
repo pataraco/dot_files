@@ -4,7 +4,7 @@
 
 # these are functions/aliases specific to P4
 
-# shellcheck disable=SC2139
+# shellcheck disable=SC2139,SC1117
 
 # if interactive shell - display message
 [ -n "$PS1" ] && echo -n ".bash_aliases_p4 (begin)... "
@@ -13,9 +13,9 @@
 export P4PORT=p4server:5050
 export P4CLIENT=p4_ws   # P4 workspace name
 export P4DIFF
-P4DIFF="$(which colordiff) -u"
+P4DIFF="$(command -v colordiff) -u"
 export P4EDITOR
-P4EDITOR=$(which nvim)
+P4EDITOR=$(command -v nvim)
 export P4IGNORE=$HOME/workspaces/p4_ws/.p4ignore
 export P4PAGER="less -FrX"
 

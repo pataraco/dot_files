@@ -2,6 +2,8 @@
 
 # file: ~/.bash_logout: executed by bash(1) when login shell exits.
 
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
+
 #[ -n "$PS1" ] && echo "sourcing: .bash_logout"
 [ -n "$PS1" ] && echo -n ".bash_logout (begin)... "
 
