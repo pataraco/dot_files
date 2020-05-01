@@ -691,6 +691,7 @@ function gdate {
 
 function gh {
    # grep bash history for a PATTERN
+   # shellcheck disable=SC1001
    if [[ $* =~ ^\^.* ]]; then
       pattern=$(echo "$*" | tr -d '^')
       #echo "debug: looking for: ^[0-9]*  $pattern"
