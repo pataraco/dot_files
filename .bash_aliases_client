@@ -1,6 +1,10 @@
-#!bash - ~/.bash_aliases_client - sourced by ~/.bashrc_aliases
-#
+#!/usr/bin/env bash
+
+# file: ~/.bash_aliases_client - sourced by ~/.bashrc_aliases
+
 # these are functions/aliases specific to CLIENT
+
+# shellcheck disable=SC2086,SC2139
 
 # if interactive shell - display message
 [ -n "$PS1" ] && echo -n ".bash_aliases_client (begin)... "
@@ -8,8 +12,10 @@
 # set up for Helix Perforce
 export P4PORT=perforce:5050
 export P4CLIENT=client
-export P4DIFF="$(which colordiff) -u"
-export P4EDITOR=$(which nvim)
+export P4DIFF
+P4DIFF="$(which colordiff) -u"
+export P4EDITOR
+P4EDITOR=$(which nvim)
 export P4IGNORE=$HOME/workspaces/client/.p4ignore
 export P4PAGER="less -FrX"
 
