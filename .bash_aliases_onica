@@ -1,6 +1,10 @@
-#!bash - sourced by ~/.bashrc_aliases via $COMPANY_SHIT
-#
+#!/usr/bin/env bash
+
+# file: ~/.bash_aliases_onica - sourced by ~/.bashrc_aliases via $COMPANY_SHIT
+
 # these are functions/aliases specific to Onica
+
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142
 
 CO_BA_FILE=".bash_aliases_$COMPANY"
 
@@ -8,7 +12,7 @@ CO_BA_FILE=".bash_aliases_$COMPANY"
 [ -n "$PS1" ] && echo -n "$CO_BA_FILE (begin)... "
 
 # set up shell for Onica Single Sign-on (onica-sso)
-[ $(command -v onica-sso) ] && eval "$(onica-sso shell-init bash)"
+[ "$(command -v onica-sso)" ] && eval "$(onica-sso shell-init bash)"
 
 # -------------------- define functions --------------------
 
@@ -22,8 +26,8 @@ function rde {
          s) export DEPLOY_ENVIRONMENT="staging";;
          p) export DEPLOY_ENVIRONMENT="prod";;
          P) export DEPLOY_ENVIRONMENT="production";;
-         *) export DEPLOY_ENVIRONMENT="$_env" ;;
-         u) unset  DEPLOY_ENVIRONMENT            ;;
+         u) unset  DEPLOY_ENVIRONMENT;;
+         *) export DEPLOY_ENVIRONMENT="$_env";;
       esac
    else
       echo "DEPLOY_ENVIRONMENT    = ${DEPLOY_ENVIRONMENT:-N/A}"
@@ -33,22 +37,21 @@ function rde {
 function showcof {	# TOOL
    # show a company specific function
    if [ -n "$COMPANY_SHIT" ]; then
-      ALIASES_FILE=$COMPANY_SHIT
+      local _ALIASES_FILE=$COMPANY_SHIT
       if [[ $1 ]]; then
-         grep -q "^function $1 " $ALIASES_FILE
-         if [ $? -eq 0 ]; then
-            sed -n '/^function '"$1"' /,/^}/p' $ALIASES_FILE
+         if grep -q "^function $1 " "$_ALIASES_FILE"; then
+            sed -n '/^function '"$1"' /,/^}/p' "$_ALIASES_FILE"
          else
             echo "function: '$1' - not found"
          fi
       else
          echo
          echo "which function do you want to see?"
-         grep "^function .* " $ALIASES_FILE | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scof\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+         grep "^function .* " "$_ALIASES_FILE" | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scof\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
          echo -ne "enter function: "
-         read func
+         read -r func
          echo
-         showcof $func
+         showcof "$func"
       fi
    else
       echo "company alias file not set (COMPANY_SHIT)"
@@ -57,13 +60,13 @@ function showcof {	# TOOL
 
 function sso-login { 
    # sso-login override until it gets updated to return correct return codes
-   _exports=$(onica-sso login $* 2>/dev/null)
+   _exports=$(onica-sso login "$@" 2>/dev/null)
    local _retcode=$?
    if [ $_retcode -eq 0 ]; then
-       eval $_exports
-       sso-title $1
+       eval "$_exports"
+       sso-title "$1"
    else
-       echo $_exports
+       echo "$_exports"
    fi
    unset _exports
    return $_retcode
@@ -105,20 +108,20 @@ function ssol {	# TOOL
       #local _acct_long_name=$(sso-list | grep "^$_acct_short_name " | cut -d ' ' -f3-)
       _acct_long_name=$(sso-list | grep -i "$_acct_short_name" | cut -d ' ' -f3-)
       if [ -n "$_acct_long_name" ]; then
-         local _number_matching=$(echo "$_acct_long_name" | wc -l | tr -d ' ')
-         if [ $_number_matching -gt 1 ]; then
+         local _number_matching
+         _number_matching=$(echo "$_acct_long_name" | wc -l | tr -d ' ')
+         if [ "$_number_matching" -gt 1 ]; then
             echo "more than 1 matching result - please be more specific:"
             sso-list | grep -i "$_acct_short_name"
             return
          fi
          _acct_short_name=$(sso-list | grep -i "$_acct_short_name" | cut -d ' ' -f1)
-         sso-login $_acct_short_name $_mfa_code
-         if [ $? -eq 0 ]; then
+         if sso-login "$_acct_short_name" "$_mfa_code"; then
             local _aws_env=$ONICA_SSO_ACCOUNT_NAME
             #local _aws_acct=$(aws sts get-caller-identity | jq -r .Account)
             local _aws_acct=$ONICA_SSO_ACCOUNT_ID
             export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
-            PS_PROJ="$PRED[$ONICA_SSO_ACCOUNT_KEY]$PNRM"
+            PS_PROJ="${PRED}[$ONICA_SSO_ACCOUNT_KEY]${PNRM}"
             echo -e "environment set to:\n$AWS_ENVIRONMENT ($_acct_short_name)"
          else
             echo -e "environment could not be set"
