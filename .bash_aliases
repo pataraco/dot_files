@@ -1213,7 +1213,7 @@ function zipstuff {
    local _CWD
    local _found_zip_files
    _CWD=$(pwd)
-   FILES="
+   local _FILES=(
       .*rc
       .ansible
       .aws
@@ -1229,32 +1229,40 @@ function zipstuff {
       .serverlessrc
       .ssh
       .tmux
-      automation
       Documents
+      automation
       notes
       projects
       scripts
-   "
+   )
    # for some reason '*.zip' does not work to exclude all *.zip files
    # like other exclude patterns e.g. '*.sh' to exclude all *.sh files
    # have to specify each sub directory with an extra '*/'
-   EXCLUDE_FILES='
+   local _EXCLUDE_FILES=(
       *.DS_Store
-      *.zip
-      */*.zip
       *.git*
       *.hg*
       *.terraform*
-   '
+      *.zip
+      scripts/*.zip
+   )
    cd || return
-   echo "ziping these files/directories to $_ZIP_FILE_NAME... "
+   echo -e "\nziping these files/directories:"
    echo -en "\n   "
-   # shellcheck disable=SC2001,SC2086
-   sed 's/[[:space:]]/, /g' <<< $FILES
+   # paste -sd ',' - <<< "$_FILES" | sed -E 's/(^, +|, +$)//g;s/, +/, /g'
+   # shellcheck disable=SC2001
+   echo "${_FILES[@]}" | sed 's/ /, /g'
+   echo -e "\nexcluding these files/directories:"
+   echo -en "\n   "
+   # shellcheck disable=SC2001
+   echo "${_EXCLUDE_FILES[@]}" | sed 's/ /, /g'
+   # paste -sd ',' - <<< "$_EXCLUDE_FILES" | sed -E 's/(^, +|, +$)//g;s/, +/, /g'
    # shellcheck disable=SC2086
    if
       _found_zip_files=$(
-         zip --show-files -ru "$_ZIP_FILE_NAME" $FILES -x $EXCLUDE_FILES |
+         zip \
+            --show-files -ru "$_ZIP_FILE_NAME" "${_FILES[@]}" \
+            -x "${_EXCLUDE_FILES[@]}" |
          grep "\.zip$"
       )
    then
@@ -1265,12 +1273,14 @@ function zipstuff {
       return
    else
       echo
+      local _files
+      local _exclude_files
       zip \
          --recurse-paths --update --encrypt \
-         "$_ZIP_FILE_NAME" $FILES \
-         --exclude $EXCLUDE_FILES
+         "$_ZIP_FILE_NAME" "${_FILES[@]}" \
+         --exclude "${_EXCLUDE_FILES[@]}"
    fi
-   echo "done"
+   echo "done - created file: '$_ZIP_FILE_NAME'"
    cd "$_CWD" || return
 }
 
