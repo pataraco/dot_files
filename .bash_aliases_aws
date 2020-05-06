@@ -1187,8 +1187,8 @@ function rac {
    local _COMMANDS_FILE=$HOME/.aws_commands.txt
    echo "$_COMMAND" >> "$_COMMANDS_FILE"
    sort "$_COMMANDS_FILE" > "$_COMMANDS_FILE.sorted"
-   cp -f "$_COMMANDS_FILE.sorted" "$_COMMANDS_FILE"
-   rm -f "$_COMMANDS_FILE.sorted"
+   \cp -f "$_COMMANDS_FILE.sorted" "$_COMMANDS_FILE"
+   \rm -f "$_COMMANDS_FILE.sorted"
    echo "added: '$_COMMAND'"
    echo "   to: $_COMMANDS_FILE"
 }
