@@ -18,7 +18,7 @@ export CHEF_SHIT=$HOME/.bash_aliases_chef
 
 # set company specific variable to create/use
 # company specific functions/aliases
-export COMPANY="ag"
+export COMPANY="N/A"
 export COMPANY_SHIT=$HOME/.bash_aliases_$COMPANY
 
 # the default umask is set in /etc/profile; for setting the umask
