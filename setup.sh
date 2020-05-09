@@ -1,19 +1,26 @@
 #!/bin/bash
-
-# setup the dot files files
-#   1. move existing dot files in $HOME to $HOME/.orig
-#   2. set up symlinks from $HOME to the files in the $SRC_REPO
-#      (excluding this script, the .git directory and the README file)
+#
+# Setup/Configure a MacBook
+#  - Install Homebrew and Packages
+#  - Links up the dot_files (bash and others) found herein
+#    (zsh not supported yet)
+#
+# NOTE: Make sure value for "SRC_REPO" is correct before running this script
+#       (the location where you've cloned/forked this repo)
+SRC_REPO="$HOME/repos/pataraco/dot_files"
+#
+#   1. Installs Homebrew
+#   2. Installs the Homebrew packages in the Brewfile
+#   3. Moves existing dot files in $HOME to $HOME/.orig
+#   4. Set up symlinks from $HOME to the files in the $SRC_REPO
+#      (excluding this script, the .git directory and the README file, etc.)
 #
 # some other manual steps
-# - MAC:
-#     install homebrew
-#     $ brew install git
+#
 # - set COMPANY environment variable in .bash_profile
 # - create .bash_aliases_${COMPANY} with complany specific functions/aliases
 
 # set up global variables
-SRC_REPO="$HOME/repos/pataraco/dot_files"
 ORIG_DIR="$HOME/.orig"
 
 # create a directory for original files if it doesn't exist
@@ -27,6 +34,15 @@ ORIG_DIR="$HOME/.orig"
 # change working directory to the repo root
 OWD=$(pwd)
 cd "$SRC_REPO" || exit
+
+# install Homebrew
+echo "Installing Homebrew"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" || exit
+
+# install packages specified in Brewfile
+# created with `brew bundle dump`
+echo "Installing packages specified in Brewfile"
+brew bundle || exit
 
 # get list of files to process and create symlinks
 # shellcheck disable=SC2010
