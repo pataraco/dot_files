@@ -597,7 +597,7 @@ function fdgr {
 
    echo -ne "finding ALL 'git' repos (dirs)... ${BNK}"
    local _REPOS_TO_CHECK="$(\
-      find "$HOME" \
+      find "$HOME/repos" \
          "${_excludes[@]}" \
          -type d \
          -name .git \
