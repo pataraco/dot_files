@@ -47,17 +47,35 @@ repo containing my important dot files
 
 ## Usage
 Just place in your home directory
-Or you can use the setup.sh script to create links (but I doubt you'll do that)
+Or you can use the setup.sh script to create links (but I doubt you'll do that).
+The `setup.sh` script will:
+0. Exit if not running on MacBook
+1. Set date/time format in menu bar    # (edit the script and change to your desired format)
+2. Set the login shell to '/bin/bash'  # (again, edit to your desired, e.g. '/bin/zsh'
+3. Install Homebrew and the packages listed in the Brewfile (replace with your own)
+4. Saves existing dot files to $HOME/.orig
+5. Creates symlinks to all dot files found
+
+In order to run it, you need to:
+```
+$ git --version  # if git not installed, should be prompted to install it
+$ git clone https://github.com/pataraco/dot_files.git
+$ vi setup.sh  # change path to repo, date/time format and login shell if desired
+$ bash setup.sh
+```
 
 ### "Show Aliases" and "Show Functions"
-Here are some useful aliases:
-* `a`  - list aliases
-* `f`  - list functions
+After sourcing the .bash_aliases file, you'll get these useful aliases:
+* `a`  - (list) aliases
+* `f`  - (list) functions
 * `sa` - show alias
 * `sf` - show function
 
 ## AWS CLI Functions
 Check out the sweet AWS CLI functions (they begin with "aws") in `.bash_aliases_aws`
+and can be listed/seen with the following aliases:
+* `af`  - (list) AWS functions
+* `saf` - show AWS function
 
 ## Have Fun!
 hope someone picks up some tricks from these!

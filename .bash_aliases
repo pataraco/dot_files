@@ -138,19 +138,19 @@ function bash_prompt {
       [[ "$_git_status" =~ ($'\n'|^)[ADMR] && ! "$_git_status" =~ ($'\n'|^).[ADMR\?] ]] && _git_ready_to_commit=true
       if $_git_ready_to_commit; then
          [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git ready to commit"
-         PS_GIT="$PNRM$PGRN${_git_branch}✔$PNRM"
+         PS_GIT="$PNRM${PGRN}✅ ${_git_branch}✔$PNRM"
          (( _git_branch_len++ ))
       elif $_git_has_mods_cached || $_git_has_dels_cached; then
          [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git has mods cached or has dels cached"
-         PS_GIT="$PNRM$PCYN${_git_branch}+$PNRM"
+         PS_GIT="$PNRM${PCYN}⚠️ ${_git_branch}+$PNRM"
          (( _git_branch_len++ ))
       elif $_git_has_mods || $_git_has_renames || $_git_has_adds || $_git_has_dels; then
          [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git has mods or adds or dels"
-         PS_GIT="$PNRM$PRED${_git_branch}*$PNRM"
+         PS_GIT="$PNRM${PRED}⛔️ ${_git_branch}*$PNRM"
          (( _git_branch_len++ ))
       elif $_git_has_untracked_files; then
          [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git has untracked files"
-         PS_GIT="$PNRM$PYLW${_git_branch}$PNRM"
+         PS_GIT="$PNRM${PYLW}⁉️ ${_git_branch}$PNRM"
       else
          [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git is ???"
          _git_status=$(git status -bs 2> /dev/null | grep -F "ahead")
@@ -158,10 +158,10 @@ function bash_prompt {
             [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git is ahead"
             local _gitahead
             _gitahead=$({ awk '{print $NF}' | cut -d']' -f1; } <<< "$_git_status")
-            PS_GIT="$PNRM$PMAG${_git_branch}>$_gitahead$PNRM"
+            PS_GIT="$PNRM${PMAG}🤙 ${_git_branch}>$_gitahead$PNRM"
             (( _git_branch_len += 1 + ${#_gitahead} ))
          else
-            PS_GIT="$PNRM$PNRM${_git_branch}$PNRM"
+            PS_GIT="$PNRM${PNRM}${_git_branch}$PNRM"
          fi
       fi
       if $_git_has_untracked_files; then

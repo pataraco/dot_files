@@ -23,6 +23,21 @@ SRC_REPO="$HOME/repos/pataraco/dot_files"
 # set up global variables
 ORIG_DIR="$HOME/.orig"
 
+# make sure running on MacBook
+if [ $(uname) != "Darwin" ]; then
+   echo "Kindof only supported on MacBooks"
+   exit
+fi
+
+# set date/time format in menu bar
+# EEE - day of the week, MMM - month, d - date
+# other fomats: "EEE MMM d h:mm:ss a" e.g.: "Sat Jun 3 5:03:23 pm"
+defaults write com.apple.menuextra.clock DateFormat -string "EEE MMM d HH:mm" \
+   && killall SystemUIServer
+
+# set login shell to /bin/bash
+chsh -s /bin/bash
+
 # create a directory for original files if it doesn't exist
 [ ! -d "$ORIG_DIR" ] \
    && {
@@ -30,6 +45,7 @@ ORIG_DIR="$HOME/.orig"
       mkdir "$ORIG_DIR"
       echo "done"
    }
+
 
 # change working directory to the repo root
 OWD=$(pwd)
