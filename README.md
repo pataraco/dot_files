@@ -50,17 +50,17 @@ Just place in your home directory
 Or you can use the setup.sh script to create links (but I doubt you'll do that).
 The `setup.sh` script will:
 0. Exit if not running on MacBook
-1. Set date/time format in menu bar    # (edit the script and change to your desired format)
-2. Set the login shell to '/bin/bash'  # (again, edit to your desired, e.g. '/bin/zsh'
-3. Install Homebrew and the packages listed in the Brewfile (replace with your own)
-4. Saves existing dot files to $HOME/.orig
-5. Creates symlinks to all dot files found
+1. Set date/time format in menu bar    __(edit the script and change to your desired format)__
+2. Set the login shell to `/bin/bash`  __(again, edit to your desired, e.g. '/bin/zsh')__
+3. Install `Homebrew` and the packages listed in the Brewfile __(replace with your own)__
+4. Saves existing dot files to `$HOME/.orig`
+5. Creates symlinks to all dot files found herein
 
 In order to run it, you need to:
 ```
-$ git --version  # if git not installed, should be prompted to install it
+$ git --version   # if git not installed, should be prompted to install it
 $ git clone https://github.com/pataraco/dot_files.git
-$ vi setup.sh  # change path to repo, date/time format and login shell if desired
+$ vi setup.sh     # make desired changes: e.g. repo path, date/time format, login shell
 $ bash setup.sh
 ```
 
