@@ -84,7 +84,26 @@ for file in $(ls -1d .[a-z]* | grep -wv .git); do
 done
 
 # notify user of any saved files and their location
-$files_saved && echo "original files saved to ${ORIG_DIR/$HOME/\$HOME}"
+$files_saved && echo "original dot files saved to ${ORIG_DIR/$HOME/\$HOME}"
+
+# set up & configure 'neovim' (with .vimrc)
+mkdir -p "$HOME/.config/nvim"
+ln -s "$HOME/.vimrc" "$HOME/.config/nvim/init.vim"
+curl -fLo "$HOME/.local/share/nvim/site/autoload/plug.vim" --create-dirs \
+   https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+vim +'PlugInstall --sync' +qa
+wget https://raw.githubusercontent.com/znake/znake-vim/master/colors/znake.vim \
+   -P "$HOME/.config/nvim/colors"
+
+# install & setup 'tmux'
+mkdir -p "$HOME/repos/tmux"
+cd "$HOME/repos/tmux" || exit
+git clone https://github.com/tmux/tmux.git
+cd tmux || exit
+sh autogen.sh
+./configure && make
+sudo cp tmux /usr/local/bin
+git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
 
 # restore current working directory location
 cd "$OWD" || exit
