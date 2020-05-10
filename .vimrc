@@ -2,17 +2,18 @@
 
 " my vimrc
 " --------
-"  Steps to use neovim (nvim)
-"  1. brew install neovim
-"  3. mkdir ~/.config/nvim
-"  3. ln -s ~/.vimrc ~/.config/nvim/init.vim
-"  4. curl -fLo ~/.local/share/nvim/site/autoload/plug.vim --create-dirs \
+"  Steps to use neovim (nvim) (or use github.com/pataraco/dot_files/setup.sh)
+"  1. brew install neovim  (should be installed via `brew bundle`)
+"  3. mkdir -p mkdir -p $HOME/.config/nvim
+"  3. ln -s $HOME/.vimrc $HOME/.config/nvim/init.vim
+"  4. curl -fLo $HOME/.local/share/nvim/site/autoload/plug.vim --create-dirs \
 "       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-"  5. vim: PlugInstall
+"  5. vim +'PlugInstall --sync' +qa
 "  6. Color scheme downloads
 "       e.g.: https://github.com/znake/znake-vim/blob/master/colors/znake.vim
-"       wget https://raw.githubusercontent.com/znake/znake-vim/master/colors/znake.vim
-"       save in: ~/.config/nvim/colors
+"             and save in: $HOME/.config/nvim/colors
+"     wget https://raw.githubusercontent.com/znake/znake-vim/master/colors/znake.vim
+"       -P $HOME/.config/nvim/colors
 
 " TODO {{{
 " - add "long-line" automatic fixing
