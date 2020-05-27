@@ -50,6 +50,7 @@ aws ec2 delete-key-pair [--region REGION] --key-name KEY_PAIR_NAME
 aws ec2 describe-addresses --output table
 aws ec2 describe-availability-zones
 aws ec2 describe-images --owners amazon --filters "Name=name,Values=*2012*English*SQL*2012*_Standard*" --query 'sort_by(Images, &CreationDate)[].[Name, CreationDate, ImageId]' --output table
+aws ec2 describe-images --owners amazon --filters "Name=name,Values=*amazon-eks*1.16*2020*" --query 'sort_by(Images, &CreationDate)[].[Name, CreationDate, ImageId]' --output table
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID
 aws ec2 describe-instance-status --region REGION --instance-id INST_ID | jq .InstanceStatuses[].Events
 aws ec2 describe-instances --filters Name=tag:Name,Values=INST_NAME Name=instance-state-name,Values=running
@@ -78,6 +79,8 @@ aws ec2 stop-instances --region REGION --instance-ids ID1 [ID2...]
 aws ec2 terminate-instances --region REGION --instance-ids ID1 [ID2...]
 aws ecr describe-images --repository-name REPO --region REGION
 aws ecr describe-repositories --region REGION
+eval $(aws ecr get-login --registry-ids $AWS_ACCT --region $REGION | sed 's/-e none //')  # aws (v1.11.13)
+aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $AWS_ACCT.dkr.ecr.$REGION.amazonaws.com  # aws (v2.0.10)
 aws eks update-kubeconfig --name EKS_CLUSTER_NAME [--kubeconfig /path/to/KUBE_CFG]
 aws elb describe-load-balancers --load-balancer-name ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName # get ELB DNS
 aws elb describe-load-balancers --region REGION [--load-balancer-names ELB_NAMES] --query "LoadBalancerDescriptions[].[LoadBalancerName,Instances[].InstanceId|join(', ',@)]" --output table
@@ -141,7 +144,8 @@ aws ssm put-parameter --name KEY_NAME --value PASSWD --type SecureString --overw
 aws sts get-caller-identity
 aws sts get-session-token --serial-number arn-of-the-mfa-device --token-code code-from-token
 aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --output text); echo $aws_acct  # get AWS account
-aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct  # get AWS account
+aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct               # get AWS account
+aws_acct=$(aws sts get-caller-identity --query Account --output text); echo $aws_acct  # get AWS account
 curl http://169.254.169.254/latest/meta-data/; echo
 curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance/; echo
 echo -e "protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get  # set up HTTPS access
