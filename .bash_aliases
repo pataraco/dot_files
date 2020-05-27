@@ -992,7 +992,7 @@ function soe {
 }
 
 function source_ssh_env {
-   # shource ~/.ssh/environment file for ssh-agent
+   # source ~/.ssh/environment file for ssh-agent
    local _SSH_ENV="$HOME/.ssh/environment"
    if [ -f "$_SSH_ENV" ]; then
       source "$_SSH_ENV" > /dev/null
@@ -1003,59 +1003,35 @@ function source_ssh_env {
    fi
 }
 
-function sse {
-   # ssh in to a server as user "ec2-user" and run optional command
-   local _this_function="sse"
-   local _user="ec2-user"
-   local _server
-   if [ "$1" != "" ]; then
-      _server=$1
+function _ssh {
+   # ssh in to a server as user given and run optional command(s)
+   # usage: _ssh <calling function> <user> <args>
+   local _calling_function=$1
+   local _user=$2
+   shift 2
+   local _USAGE="$_calling_function HOST [OPTIONS] [COMMANDS]"
+   if [[ "$1" =~ ^- ]]; then
+      echo "usage: $_USAGE"
+      return
+   fi
+   if [ $# -gt 0 ]; then
+      local _server=$1
       shift
-      if [ "$*" == "" ]; then
-         ssh -A "$_user@${_server}"
-      else
-         ssh -A "$_user@${_server}" "$*"
-      fi
+      eval ssh "$_user@${_server}" "$@"
    else
-      echo "USAGE: $_this_function HOST [COMMAND(S)]"
+      echo "usage: $_USAGE"
+      return
    fi
 }
 
-##function sshc {
-##   source_ssh_env
-##   if [ $# -ge 2 ]; then
-##      host=$1
-##      shift
-##      cmd="$*"
-##      host $host > /dev/null
-##      if [ $? -eq 0 ]; then
-##         #ssh ecisupp@$host ''"$cmd"'' 2> /dev/null
-##         ssh -q ecisupp@$host ''"$cmd"''
-##      else
-##         echo "unknown host: $host"
-##      fi
-##   else
-##      echo "you did not specify the 'host' and 'cmd'"
-##   fi
-##}
+function sse {
+   # ssh in to a server as user "ec2-user" and run optional command(s)
+   _ssh sse ec2-user "$@"
+}
 
 function ssu {
-   # ssh in to a server as user "ubuntu" and run optional command
-   local _this_function="ssu"
-   local _user="ubuntu"
-   local _server
-   if [ "$1" != "" ]; then
-      _server=$1
-      shift
-      if [ "$*" == "" ]; then
-         ssh "$_user@${_server}"
-      else
-         # shellcheck disable=SC2029
-         ssh "$_user@${_server}" "$*"
-      fi
-   else
-      echo "USAGE: $_this_function HOST [COMMAND(S)]"
-   fi
+   # ssh in to a server as user "ubuntu" and run optional command(s)
+   _ssh ssu ubuntu "$@"
 }
 
 function start_ssh_agent {
@@ -1100,37 +1076,38 @@ function tsend {
 }
 
 function vin {
-   # vim certain files by alias
-   NOTES_DIR="notes"
-   note_file=$1
-   if [ -n "$note_file" ]; then
-      case $note_file in
-         ansible) actual_note_file=Ansible_Notes.txt ;;
-             aws) actual_note_file=AWS_Notes.txt ;;
-           awsas) actual_note_file=AWS_AutoScaling_Notes.txt ;;
-            bash) actual_note_file=Bash_Notes.txt ;;
-            chef) actual_note_file=Chef_Notes.txt ;;
-          consul) actual_note_file=Consul_Notes.txt ;;
-          docker) actual_note_file=Docker_Notes.txt ;;
-              es) actual_note_file=ElasticSearch_Notes.txt ;;
-             git) actual_note_file=Git_Notes.txt ;;
-          gitlab) actual_note_file=GitLab_Notes.txt ;;
-         jenkins) actual_note_file=Jenkins_Notes.txt ;;
-             k8s) actual_note_file=Kubernetes_Notes.txt ;;
-            ldap) actual_note_file=LDAP_Notes.txt ;;
-           linux) actual_note_file=Linux_Notes.txt ;;
-        logstash) actual_note_file=Logstash_Notes.txt ;;
-              ps) actual_note_file=PowerShell_Notes.txt ;;
-          python) actual_note_file=Python_Notes.txt ;;
-           redis) actual_note_file=Redis_Notes.txt ;;
-             sql) actual_note_file=SQL_Notes.txt ;;
-              tf) actual_note_file=Terraform_Notes.txt ;;
-         virtual) actual_note_file=Virtual_Environments_Notes.txt ;;
-               *) echo "unknown alias - try again"; return 2 ;;
-      esac
-      eval vim "$REPO_DIR/pataraco/$NOTES_DIR/$actual_note_file"
+   # vim certain files by tag (Notes should have a "tags: " line somewhere)
+
+   local _NOTES_DIR="notes"
+   local _NOTES_REPO="$HOME/repos/pataraco/$_NOTES_DIR"
+   local _actual_note_file
+   local _all_tags_found=()
+   local _notes_tag=$1
+   if [ -n "$_notes_tag" ]; then
+      _actual_note_file=$(
+         grep '^tags: ' "$_NOTES_REPO"/* |
+         grep -iw "$_notes_tag" |
+         cut -d':' -f1
+      )
+      if [ -n "$_actual_note_file" ]; then
+         echo "found notes file to edit: $_actual_note_file"
+         eval vim "$_actual_note_file"
+      else
+         echo "unknown tag ($_notes_tag) - not found - please try again..."
+         # shellcheck disable=SC2207
+         _all_tags_found=($(grep -i '^tags: ' "$_NOTES_REPO"/* | cut -d':' -f3 | sed 's/,//g' | sort))
+         # read -r -a _all_tags_found <<< "$(grep -i '^tags: ' "$_NOTES_REPO"/* | cut -d':' -f3 | sed 's/,//g')"
+         if [ -n "${_all_tags_found[0]}" ]; then
+            echo
+            echo "found these tags:"
+            echo -e "\t${_all_tags_found[*]}"
+         else
+            echo "did not find ANY tags in the notes files in: $_NOTES_REPO"
+         fi
+         return 2
+      fi
    else
-      echo "you didn't specify a file (alias) to edit"
+      echo "you didn't specify a tag for a file to edit"
    fi
 }
 
