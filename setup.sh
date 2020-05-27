@@ -24,7 +24,7 @@ SRC_REPO="$HOME/repos/pataraco/dot_files"
 ORIG_DIR="$HOME/.orig"
 
 # make sure running on MacBook
-if [ $(uname) != "Darwin" ]; then
+if [ "$(uname)" != "Darwin" ]; then
    echo "Kindof only supported on MacBooks"
    exit
 fi
