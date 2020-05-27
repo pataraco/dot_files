@@ -157,9 +157,10 @@ PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/:$//')
 
 # Node Version Manager
 export NVM_DIR="$HOME/.nvm"
-# This loads nvm
-[ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"
-# This loads nvm bash_completion
-[ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && . "/usr/local/opt/nvm/etc/bash_completion.d/nvm"
+export NVM_SCRIPT="/usr/local/opt/nvm/nvm.sh"
+export NVM_COMPLETION="/usr/local/opt/nvm/etc/bash_completion.d/nvm"
+[ -s "$NVM_SCRIPT" ] && source "$NVM_SCRIPT"          # loads nvm
+[ -s "$NVM_COMPLETION" ] && source "$NVM_COMPLETION"  # loads nvm CLI completion
 
+# Output completion message
 [ -n "$PS1" ] && echo -n ".bash_profile (end). "
