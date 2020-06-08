@@ -55,6 +55,7 @@ brew "wget"
 brew "zlib"
 brew "aws/tap/aws-sam-cli"
 cask "java"
+cask "virtualbox"
 mas "LastPass", id: 926036361
 mas "PDF Reader", id: 615956269
 mas "PDF Reader Pro Lite", id: 919472673

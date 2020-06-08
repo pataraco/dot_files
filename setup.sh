@@ -22,6 +22,7 @@ SRC_REPO="$HOME/repos/pataraco/dot_files"
 
 # set up global variables
 ORIG_DIR="$HOME/.orig"
+DESIRED_SHELL="/bin/bash"
 
 # make sure running on MacBook
 if [ "$(uname)" != "Darwin" ]; then
@@ -36,7 +37,7 @@ defaults write com.apple.menuextra.clock DateFormat -string "EEE MMM d HH:mm" \
    && killall SystemUIServer
 
 # set login shell to /bin/bash
-chsh -s /bin/bash
+[ "$SHELL" != "$DESIRED_SHELL" ] && chsh -s "$DESIRED_SHELL"
 
 # create a directory for original files if it doesn't exist
 [ ! -d "$ORIG_DIR" ] \
@@ -52,13 +53,21 @@ OWD=$(pwd)
 cd "$SRC_REPO" || exit
 
 # install Homebrew
-echo "Installing Homebrew"
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" || exit
+if brew --version; then
+   echo "Homebrew already installed"
+else
+   echo "Installing Homebrew"
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" || exit
+fi
 
 # install packages specified in Brewfile
 # created with `brew bundle dump`
-echo "Installing packages specified in Brewfile"
-brew bundle || exit
+if brew bundle check; then
+   echo "Homebrew: Don't need to install any additonal packages"
+else
+   echo "Homebrew: Installing packages specified in Brewfile"
+   brew bundle
+fi
 
 # get list of files to process and create symlinks
 # shellcheck disable=SC2010
