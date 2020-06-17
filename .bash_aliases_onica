@@ -17,7 +17,7 @@ CO_BA_FILE=".bash_aliases_$COMPANY"
 # -------------------- define functions --------------------
 
 function rde {
-   # AWS Set Default Region
+   # runway: Set Deploy Environment
    local _env=$1
    if [ -n "$_env" ]; then
       case $_env in
@@ -34,7 +34,7 @@ function rde {
    fi
 }
 
-function showcof {	# TOOL
+function showcof {
    # show a company specific function
    if [ -n "$COMPANY_SHIT" ]; then
       local _ALIASES_FILE=$COMPANY_SHIT
@@ -72,7 +72,7 @@ function sso-login {
    return $_retcode
 }
 
-function ssol {	# TOOL
+function ssol {
    # wrapper for `sso-login`
    # usage: ssol ACCT_ABBRVTN|ACCT_SHORT_NAME [MFA_CODE]
    local _acct_short_name
