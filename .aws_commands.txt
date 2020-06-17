@@ -79,7 +79,6 @@ aws ec2 stop-instances --region REGION --instance-ids ID1 [ID2...]
 aws ec2 terminate-instances --region REGION --instance-ids ID1 [ID2...]
 aws ecr describe-images --repository-name REPO --region REGION
 aws ecr describe-repositories --region REGION
-eval $(aws ecr get-login --registry-ids $AWS_ACCT --region $REGION | sed 's/-e none //')  # aws (v1.11.13)
 aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $AWS_ACCT.dkr.ecr.$REGION.amazonaws.com  # aws (v2.0.10)
 aws eks update-kubeconfig --name EKS_CLUSTER_NAME [--kubeconfig /path/to/KUBE_CFG]
 aws elb describe-load-balancers --load-balancer-name ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName # get ELB DNS
@@ -111,6 +110,7 @@ aws iam update-login-profile --user-name USER_NAME --password PASSWORD --passwor
 aws lambda update-alias --function-name FUNCTION_NAME --name ALIAS_NAME [--function-version VERSION_NUMBER]
 aws lambda update-function-code --function-name FUNCTION_NAME --s3-bucket S3_BUCKET --s3-key S3_KEY --publish
 aws lambda update-function-configuration --function-name FUNCTION_NAME --timeout N --memory-size M
+aws rds describe-db-engine-versions --query DBEngineVersions[].[Engine,EngineVersion] --output table
 aws resourcegroupstaggingapi tag-resources --resource-arn-list $ARNs --tags $TAG_KEY=$TAG_VAL
 aws route53 create-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_ID --vpc VPCRegion=$REGION,VPCId=$VPC_ID
 aws route53 delete-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_ID --vpc VPCRegion=$REGION,VPCId=$VPC_ID
@@ -144,11 +144,12 @@ aws ssm put-parameter --name KEY_NAME --value PASSWD --type SecureString --overw
 aws sts get-caller-identity
 aws sts get-session-token --serial-number arn-of-the-mfa-device --token-code code-from-token
 aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --output text); echo $aws_acct  # get AWS account
-aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct               # get AWS account
 aws_acct=$(aws sts get-caller-identity --query Account --output text); echo $aws_acct  # get AWS account
+aws_acct=$(aws sts get-caller-identity | jq -r .Account); echo $aws_acct               # get AWS account
 curl http://169.254.169.254/latest/meta-data/; echo
 curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance/; echo
 echo -e "protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get  # set up HTTPS access
+eval $(aws ecr get-login --registry-ids $AWS_ACCT --region $REGION | sed 's/-e none //')  # aws (v1.11.13)
 for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling resume-processes --region REGION --auto-scaling-group-name $asgn; done"
 for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling suspend-processes --region REGION --auto-scaling-group-name $asgn; done"
 sam deploy --template-file SAM_TEMPLATE.yaml --stack-name STACK_NAME --capabilities CAPABILITY_IAM --tags Key1=Val1 Key2=Val2 --parameter-overrides Key1=Val1 Key2=Val2
