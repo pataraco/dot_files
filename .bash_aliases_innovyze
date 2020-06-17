@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+# file: ~/.bash_aliases_innovyze - sourced by ~/.bashrc_aliases via $COMPANY_SHIT
+
+# these are functions/aliases specific to Innovyze
+
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
+
+CO_BA_FILE=".bash_aliases_$COMPANY"
+
+# if interactive shell - display message
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE (begin)... "
+
+# -------------------- define functions --------------------
+
+function rde {
+   # runway: Set Deploy Environment
+   local _env=$1
+   if [ -n "$_env" ]; then
+      case $_env in
+         a) export DEPLOY_ENVIRONMENT="audit";;
+         b) export DEPLOY_ENVIRONMENT="sandbox";;
+         c) export DEPLOY_ENVIRONMENT="common";;
+         d) export DEPLOY_ENVIRONMENT="dev";;
+         i) export DEPLOY_ENVIRONMENT="int";;
+         o) export DEPLOY_ENVIRONMENT="devops";;
+         p) export DEPLOY_ENVIRONMENT="prod";;
+         P) export DEPLOY_ENVIRONMENT="production";;
+         q) export DEPLOY_ENVIRONMENT="qa";;
+         s) export DEPLOY_ENVIRONMENT="stg";;
+         S) export DEPLOY_ENVIRONMENT="staging";;
+         u) unset  DEPLOY_ENVIRONMENT;;
+         *) export DEPLOY_ENVIRONMENT="$_env";;
+      esac
+   fi
+   echo "DEPLOY_ENVIRONMENT = ${DEPLOY_ENVIRONMENT:-N/A}"
+}
+
+function showcof {
+   # show a company specific function
+   if [ -n "$COMPANY_SHIT" ]; then
+      local _ALIASES_FILE=$COMPANY_SHIT
+      if [[ $1 ]]; then
+         if grep -q "^function $1 " "$_ALIASES_FILE"; then
+            sed -n '/^function '"$1"' /,/^}/p' "$_ALIASES_FILE"
+         else
+            echo "function: '$1' - not found"
+         fi
+      else
+         echo
+         echo "which function do you want to see?"
+         grep "^function .* " "$_ALIASES_FILE" | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scof\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+         echo -ne "enter function: "
+         read -r func
+         echo
+         showcof "$func"
+      fi
+   else
+      echo "company alias file not set (COMPANY_SHIT)"
+   fi
+}
+
+# -------------------- define aliases --------------------
+
+# company common
+alias cf="grep '^function .* ' ~/$CO_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scof\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias scba='source ~/$CO_BA_FILE'
+alias scof=showcof
+alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
+# company specific
+alias cd-doi="cd $HOME/repos/$COMPANY/devops-infrastructure"
+
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE (end). "
