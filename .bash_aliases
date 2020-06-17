@@ -23,23 +23,23 @@ MAIN_BA_FILE=".bash_aliases"
 
 # some ansi colorization escape sequences
 [ "$(uname)" == "Darwin" ] && ESC="\033" || ESC="\e"
-export BLD="${ESC}[1m"    # bold
 export BLK="${ESC}[30m"   # black FG
-export RED="${ESC}[31m"   # red FG
-export GRN="${ESC}[32m"   # green FG
-export YLW="${ESC}[33m"   # yellow FG
 export BLU="${ESC}[34m"   # blue FG
-export MAG="${ESC}[35m"   # magenta FG
 export CYN="${ESC}[36m"   # cyan FG
+export GRN="${ESC}[32m"   # green FG
+export MAG="${ESC}[35m"   # magenta FG
+export RED="${ESC}[31m"   # red FG
 export WHT="${ESC}[37m"   # white FG (same as 38 & 39)
-export BBB="${ESC}[40m"   # black FG
-export RBG="${ESC}[41m"   # red BG
-export GBG="${ESC}[42m"   # green BG
-export YBG="${ESC}[43m"   # yellow BG
+export YLW="${ESC}[33m"   # yellow FG
+export BBB="${ESC}[40m"   # black BG
 export BBG="${ESC}[44m"   # blue BG
-export MBG="${ESC}[45m"   # magenta BG
 export CBG="${ESC}[46m"   # cyan BG
+export GBG="${ESC}[42m"   # green BG
+export MBG="${ESC}[45m"   # magenta BG
+export RBG="${ESC}[41m"   # red BG
 export WBG="${ESC}[47m"   # white BG
+export YBG="${ESC}[43m"   # yellow BG
+export BLD="${ESC}[1m"    # bold
 export BNK="${ESC}[5m"    # slow blink
 export D2B="${ESC}[1K"    # delete to BOL
 export D2E="${ESC}[K"     # delete to EOL
@@ -50,15 +50,23 @@ export SHC="${ESC}[?25h"  # show cursor
 export ULN="${ESC}[4m"    # underlined
 
 # for changing prompt colors
-PBLU='\[\e[1;34m\]'   # blue (bold)
-PCYN='\[\e[1;36m\]'   # cyan (bold)
-PGRN='\[\e[1;32m\]'   # green (bold)
-PGRY='\[\e[1;30m\]'   # grey (bold black)
-PMAG='\[\e[1;35m\]'   # magenta (bold)
-PNRM='\[\e[m\]'       # to make text normal
-PRED='\[\e[1;31m\]'   # red (bold)
-PWHT='\[\e[1;36m\]'   # white (bold)
-PYLW='\[\e[1;33m\]'   # yellow (bold)
+PBLK='\[\e[1;30m\]'  # black (bold)
+PBLU='\[\e[1;34m\]'  # blue (bold)
+PCYN='\[\e[1;36m\]'  # cyan (bold)
+PGRN='\[\e[1;32m\]'  # green (bold)
+PGRY='\[\e[1;30m\]'  # grey (bold black)
+PMAG='\[\e[1;35m\]'  # magenta (bold)
+PRED='\[\e[1;31m\]'  # red (bold)
+PWHT='\[\e[1;37m\]'  # white (bold)
+PYLW='\[\e[1;33m\]'  # yellow (bold)
+PBBG='\[\e[1;44m\]'  # blue BG (bold)
+PCBG='\[\e[1;46m\]'  # cyan BG (bold)
+PGBG='\[\e[1;42m\]'  # green BG (bold)
+PMBG='\[\e[1;45m\]'  # magenta BG (bold)
+PRBG='\[\e[1;41m\]'  # red BG (bold)
+PWBG='\[\e[1;47m\]'  # white BG (bold)
+PYBG='\[\e[1;43m\]'  # yellow BG (bold)
+PNRM='\[\e[m\]'      # to make text normal
 
 # set xterm defaults
 XTERM='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
@@ -95,6 +103,7 @@ function _tmux_send_keys_all_panes {
 
 function bash_prompt {
    # customize Bash Prompt
+   local _last_cmd_exit_status=$?
    local _versions_len=0
    if [ $PS_SHOW_CV -eq 1 ]; then  # get Chef version
       if [ -z "$CHEF_VERSION" ]; then
@@ -185,7 +194,19 @@ function bash_prompt {
       local _ps_path_chopped="..${_pwd:$_ps_path_start_pos:$_space_for_path}"
       PS_PATH="$PGRN${_ps_path_chopped}$PNRM"
    fi
-   PS_WHO="$PBLU\u@\h$PNRM"
+   # PS_WHO="$PBLU\u@\h$PNRM"
+   CMD_PASS_EMOJIS=(😀 😃 😄 😁 😆 😊 🙃 😋 😛 😝 😍 😜 🤗 😬 😎)
+   CMD_FAIL_EMOJIS=(😡 🤬 🤯 🤔 😵 😥 😰 🥵 😱 😭 😢 🤮 🤢 😤 💩)
+   PS_DELIM="-"
+   if [ $_last_cmd_exit_status -eq 0 ]; then
+      PS_EMOJI=${CMD_PASS_EMOJIS[$((RANDOM % ${#CMD_PASS_EMOJIS[*]}))]}
+      PS_WHO="${PS_EMOJI}${PS_DELIM}${PBLK}$(basename "$SHELL")${PNRM}${PS_DELIM}"
+      PS_COL=$PGRN
+   else
+      PS_EMOJI=${CMD_FAIL_EMOJIS[$((RANDOM % ${#CMD_FAIL_EMOJIS[*]}))]}
+      PS_WHO="${PS_EMOJI}${PS_DELIM}${PBLK}$(basename "$SHELL")${PNRM}${PS_DELIM}"
+      PS_COL=$PRED
+   fi
    if [ "$COMPANY" == "onica" ] && [ -n "$ONICA_SSO_ACCOUNT_KEY" ] && [ -n "$ONICA_SSO_EXPIRES_TS" ]; then
       local _now_ts
       _now_ts=$(date +%s)
@@ -245,9 +266,9 @@ function bash_prompt {
    # check for jobs running in the background
    if [ "$(jobs | wc -l | tr -d ' ')" -gt 1 ]; then
       # using "1" because the `git branch` above runs in the background
-      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO(\j)$PS_COL$ $PNRM"
+      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO(\j)${PS_COL}⌲$PNRM "
    else
-      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO$PS_COL$ $PNRM"
+      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO${PS_COL}⌲$PNRM "
    fi
 }
 
