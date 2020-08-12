@@ -80,6 +80,7 @@ aws ec2 terminate-instances --region REGION --instance-ids ID1 [ID2...]
 aws ecr describe-images --repository-name REPO --region REGION
 aws ecr describe-repositories --region REGION
 aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $AWS_ACCT.dkr.ecr.$REGION.amazonaws.com  # aws (v2.0.10)
+aws ecr get-login-password | docker login --username AWS --password-stdin AWS_ACCT.dkr.ecr.us-west-2.amazonaws.com/REPO
 aws eks update-kubeconfig --name EKS_CLUSTER_NAME [--kubeconfig /path/to/KUBE_CFG]
 aws elb describe-load-balancers --load-balancer-name ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName # get ELB DNS
 aws elb describe-load-balancers --region REGION [--load-balancer-names ELB_NAMES] --query "LoadBalancerDescriptions[].[LoadBalancerName,Instances[].InstanceId|join(', ',@)]" --output table
@@ -103,13 +104,16 @@ aws iam list-group-policies --group-name GROUP_NAME
 aws iam list-groups
 aws iam list-groups-for-user --user-name USER_NAME		# list all groups user is in
 aws iam list-policies
+aws iam list-roles --path-prefix /aws-reserved/sso.amazonaws.com --query Roles[].Arn | grep AWSReservedSSO_AWSAdministratorAccess
 aws iam list-ssh-public-keys
 aws iam list-users --query Users[*].[UserName,UserId] --output table
 aws iam put-role-policy --role-name ROLE_NAME --policy-name POLICY_NAME --policy-document file://PATH_TO/POLICY_DOC.json
 aws iam update-login-profile --user-name USER_NAME --password PASSWORD --password-reset-required
+aws kms list-aliases --query "Aliases[?AliasName=='alias/ALIAS_NAME'].AliasArn" --output text
 aws lambda update-alias --function-name FUNCTION_NAME --name ALIAS_NAME [--function-version VERSION_NUMBER]
 aws lambda update-function-code --function-name FUNCTION_NAME --s3-bucket S3_BUCKET --s3-key S3_KEY --publish
 aws lambda update-function-configuration --function-name FUNCTION_NAME --timeout N --memory-size M
+aws rds describe-db-engine-versions --filter "Name=engine,Values=ENGINE" --query DBEngineVersions[].[Engine,EngineVersion] --output table
 aws rds describe-db-engine-versions --query DBEngineVersions[].[Engine,EngineVersion] --output table
 aws resourcegroupstaggingapi tag-resources --resource-arn-list $ARNs --tags $TAG_KEY=$TAG_VAL
 aws route53 create-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_ID --vpc VPCRegion=$REGION,VPCId=$VPC_ID
@@ -139,7 +143,7 @@ aws sns subscribe --topic-arn ARN --protocol email --notification-endpoint END_P
 aws ssm delete-association --association-id $ASSOC_ID
 aws ssm delete-association --instance-id $INST_ID
 aws ssm get-parameter --name /aws/service/ami-windows-latest/Windows_Server-2012-R2_RTM-English-64Bit-Base
-aws ssm get-parameter --name /aws/service/ecs/optimized-ami/amazon-linux/recommended
+aws ssm get-parameter --name /aws/service/ecs/optimized-ami/amazon-linux/recommended --with-decryption
 aws ssm put-parameter --name KEY_NAME --value PASSWD --type SecureString --overwrite
 aws sts get-caller-identity
 aws sts get-session-token --serial-number arn-of-the-mfa-device --token-code code-from-token
