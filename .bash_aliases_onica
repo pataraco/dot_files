@@ -142,10 +142,10 @@ function ssol {
 # -------------------- define aliases --------------------
 
 # company common
-alias cf="grep '^function .* ' ~/$CO_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scof\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
-alias scba='source ~/$CO_BA_FILE'
+alias cof="grep '^function .* ' ~/$CO_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scof\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias scoba='source ~/$CO_BA_FILE'
 alias scof=showcof
-alias vcba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
+alias vcoba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 # company specific
 alias actss="source $HOME/envs/sentient-science/bin/activate"
 alias cd-a="cd $HOME/repos/projects/aecom"
