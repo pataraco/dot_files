@@ -85,9 +85,8 @@ function awsdr {
          unset)  unset AWS_DEFAULT_REGION            ;;
          *)     export AWS_DEFAULT_REGION="$_region" ;;
       esac
-   else
-      echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
    fi
+   echo "AWS_DEFAULT_REGION = ${AWS_DEFAULT_REGION:-N/A}"
 }
 
 function awssnsep {
@@ -1230,12 +1229,13 @@ function sae {
          # unset AWS_SESSION_TOKEN
          # unset AWS_SECURITY_TOKEN
          export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
-         _aws_env=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG" | sed 's/ *$//')
+         _aws_env=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6,$7,$8; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG" | sed 's/ *$//')
          _aws_acct=$(aws sts get-caller-identity --profile "$AWS_DEFAULT_PROFILE" | jq -r .Account)
          export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
-         AWS_ACCESS_KEY_ID=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
-         _sso_start_url=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/sso_start_url/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+         _sso_start_url=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/sso_start_url/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
          if [ -n "$_sso_start_url" ]; then
+            unset AWS_ACCESS_KEY_ID
+            unset AWS_SECRET_ACCESS_KEY
             _SSO_CLI_CACHE_DIR="$HOME/.aws/cli/cache"
             # shellcheck disable=SC2012
             _SSO_CLI_CACHE_FILE=$(ls -rt "$_SSO_CLI_CACHE_DIR" | tail -1)
@@ -1244,14 +1244,14 @@ function sae {
             # AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey "$_SSO_CLI_CACHE_DIR/$_SSO_CLI_CACHE_FILE")
             # AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken "$_SSO_CLI_CACHE_DIR/$_SSO_CLI_CACHE_FILE")
          else
-            AWS_ACCESS_KEY_ID=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
-            AWS_SECRET_ACCESS_KEY=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+            AWS_ACCESS_KEY_ID=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+            AWS_SECRET_ACCESS_KEY=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
          fi
-         AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+         AWS_DEFAULT_REGION=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
          # _environment used for PS_PROMPT (color)
-         _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+         _environment=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
          # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
-         DEPLOY_ENVIRONMENT=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/runway_deploy_environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+         DEPLOY_ENVIRONMENT=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/runway_deploy_environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
          echo "AWS environment set: $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
          [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
          [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
@@ -1294,6 +1294,24 @@ function sae {
    fi
 }
 
+function saefc {
+   # Set AWS environment from values in clipboard
+   local _PASTE_CMD="pbpaste"
+   local _SSO_EXPORTS="/tmp/.sso_exports"
+
+   # do regular sae() first if profile given
+   local _arg="$1"
+   if [ -n "$_arg" ]; then
+      sae "$_arg"
+   fi
+   if command -V $_PASTE_CMD &> /dev/null; then
+      $_PASTE_CMD > $_SSO_EXPORTS
+      source $_SSO_EXPORTS
+   else
+      echo "can't find $_PASTE_CMD: con't set AWS environment from clipboard"
+   fi
+}
+
 function sar {
    # aws sts assume-role from ~/.aws/config file
    local _arg="$1"
@@ -1326,7 +1344,7 @@ function sar {
          local _role_arn
          local _role_name
          local _aws_acct
-         _role_arn=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/role_arn/) {print $3; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG" | sed 's/ *$//')
+         _role_arn=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/role_arn/) {print $3; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG" | sed 's/ *$//')
          _role_name=$(cut -d'/' -f2- <<< "$_role_arn")
          _aws_acct=$(cut -d':' -f5 <<< "$_role_arn")
          if aws sts assume-role --role-arn "$_role_arn" --role-session-name "$_arg" --duration-seconds "$_STS_DURATION" > "$_AWS_STS_CREDS"; then
@@ -1337,11 +1355,11 @@ function sar {
             AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId "$_AWS_STS_CREDS")
             AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey "$_AWS_STS_CREDS")
             AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken "$_AWS_STS_CREDS")
-            AWS_DEFAULT_REGION=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
-            _environment=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+            AWS_DEFAULT_REGION=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+            _environment=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
             # local _aws_acct=$(aws sts get-caller-identity | jq -r .Account)
             local _aws_env
-            _aws_env=$(awk '$2~/'"$AWS_DEFAULT_PROFILE"']/ {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG" | sed 's/ *$//')
+            _aws_env=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6,$7,$8; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG" | sed 's/ *$//')
             export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
             local _exp_time
             _exp_time=$(jq -r .Credentials.Expiration "$_AWS_STS_CREDS")
