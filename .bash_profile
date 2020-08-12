@@ -86,7 +86,7 @@ fi
 # export ANSIBLE_LIBRARY=$HOME/cloud_automation/ansible/library
 
 # set up VirtualEnv enviroment variables
-export VIRTUAL_ENV_DISABLE_PROMPT=YES	# set to non-empty value to disable
+export VIRTUAL_ENV_DISABLE_PROMPT=YES  # set to non-empty value to disable
 # set up pip list column output formating
 export PIP_FORMAT=columns
 # set up "vi" command line editing
@@ -95,8 +95,8 @@ if [ "$(command -v nvim)" ]; then
 else
    VIM_CMD=$(command -v vim)
 fi
-export EDITOR=$VIM_CMD 
-export VISUAL=$VIM_CMD 
+export EDITOR=$VIM_CMD
+export VISUAL=$VIM_CMD
 # export MANPAGER="col -bx | vim -c 'set ft=man nolist nonu ' -MR -"
 # export MANPAGER="col -b | vim -c 'set ft=man ts=8 nomod nolist nonu noma' -"
 # use following for GNU
@@ -161,6 +161,10 @@ export NVM_SCRIPT="/usr/local/opt/nvm/nvm.sh"
 export NVM_COMPLETION="/usr/local/opt/nvm/etc/bash_completion.d/nvm"
 [ -s "$NVM_SCRIPT" ] && source "$NVM_SCRIPT"          # loads nvm
 [ -s "$NVM_COMPLETION" ] && source "$NVM_COMPLETION"  # loads nvm CLI completion
+
+# enable bash completion (brew install bash-completion)
+[[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] &&
+   source "/usr/local/etc/profile.d/bash_completion.sh"
 
 # Output completion message
 [ -n "$PS1" ] && echo -n ".bash_profile (end). "
