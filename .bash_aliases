@@ -196,7 +196,7 @@ function bash_prompt {
    fi
    # PS_WHO="$PBLU\u@\h$PNRM"
    CMD_PASS_EMOJIS=(😀 😃 😄 😁 😆 😊 🙃 😋 😛 😝 😍 😜 🤗 😬 😎)
-   CMD_FAIL_EMOJIS=(😡 🤬 🤯 🤔 😵 😥 😰 🥵 😱 😭 😢 🤮 🤢 😤 💩)
+   CMD_FAIL_EMOJIS=(😡 👿 🤔 😵 😥 😰 👎 😱 😭 😢 🖕 🤢 😤 💩 💀)
    PS_DELIM="-"
    if [ $_last_cmd_exit_status -eq 0 ]; then
       PS_EMOJI=${CMD_PASS_EMOJIS[$((RANDOM % ${#CMD_PASS_EMOJIS[*]}))]}
@@ -1310,6 +1310,7 @@ alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
 alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
 alias ghwt='sudo dmidecode | grep "Product Name"'
 alias grep="grep --color=auto"
+alias grp="grep --color=auto --exclude-dir node_modules --exclude-dir .terraform --exclude-dir .serverless"
 alias grpa="grep --color=always"
 alias guid='printf "%x\n" `date +%s`'
 alias gxtf="grep --color=auto --exclude-dir .terraform"
