@@ -73,18 +73,37 @@ function awsar {
 
 function awsdr {
    # AWS Set Default Region
+   local _area
+   local _country
    local _region=$1
    if [ -n "$_region" ]; then
-      case $_region in
-         uw1)   export AWS_DEFAULT_REGION="us-west-1";;
-         uw2)   export AWS_DEFAULT_REGION="us-west-2";;
-         ue1)   export AWS_DEFAULT_REGION="us-east-1";;
-         ue2)   export AWS_DEFAULT_REGION="us-east-2";;
-         ew1)   export AWS_DEFAULT_REGION="eu-west-1";;
-         ew2)   export AWS_DEFAULT_REGION="eu-west-2";;
-         unset)  unset AWS_DEFAULT_REGION            ;;
-         *)     export AWS_DEFAULT_REGION="$_region" ;;
-      esac
+      if [ "$(wc -c <<< "$_region")" -eq 4 ]; then
+         case ${_region:0:1} in
+            a) _country="ap";;
+            c) _country="ca";;
+            e) _country="eu";;
+            f) _country="af";;
+            m) _country="me";;
+            s) _country="sa";;
+            u) _country="us";;
+            *) echo "unknown country (${_region:0:1}): exiting..."; return;;
+         esac
+         case ${_region:1:1} in
+            c) _area="central";;
+            e) _area="east";;
+            n) _area="north";;
+            s) _area="south";;
+            w) _area="west";;
+            *) echo "unknown area (${_region:1:1}): exiting..."; return;;
+         esac
+         export AWS_DEFAULT_REGION="${_country}-${_area}-${_region:2:1}"
+      else
+         if [ "$_region" == "unset" ]; then
+            unset AWS_DEFAULT_REGION
+         else
+            export AWS_DEFAULT_REGION="$_region"
+         fi
+      fi
    fi
    echo "AWS_DEFAULT_REGION = ${AWS_DEFAULT_REGION:-N/A}"
 }
@@ -1134,8 +1153,10 @@ default display:
    # get the Hosted Zone Id
    [ -n "$AWS_DEBUG" ] && echo "debug: aws route53 list-hosted-zones-by-name --dns-name $_dns_name --max-items 1"
    if [ -z "$_hosted_zone_id" ]; then
-      _hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name "$_dns_name" | jq -r .HostedZones[].Id)
-      if [ "$(wc -l <<< "$_hosted_zone_id" | awk '{print $1}')" -gt 1 ]; then
+      # _hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name "$_dns_name" | jq -r .HostedZones[].Id)
+      _hosted_zone_id=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name=='${_dns_name}.'].Id" | jq -r .[])
+      # if [ "$(wc -l <<< "$_hosted_zone_id" | awk '{print $1}')" -gt 1 ]; then
+      if [ "$(wc -l <<< "$_hosted_zone_id")" -gt 1 ]; then
          echo "there is more than one hosted zone with the domain name: '$_dns_name'"
          aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + ") " + .Config.Comment' | sort | sed 's:\./hostedzone/: (:' | grep "$_dns_name" | awk '{print "  - "$0}'
          echo "please use the '-i' option and specify the desired Hosted Zone ID"
@@ -1440,7 +1461,7 @@ alias awsga="aws sts get-caller-identity --output text --query Account"
 alias awsgci="aws sts get-caller-identity"
 alias awsgr="aws sts get-caller-identity --output text --query Arn"
 alias awsgu="aws sts get-caller-identity --output text --query UserId"
-alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + \") \" + .Config.Comment' | sort | sed 's:\./hostedzone/: (:'"
+alias awsrlhz="aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + \") [\" + (if .Config.PrivateZone then \"private\" else \"public\" end) + \"] \" + .Config.Comment' | sort | sed 's:\./hostedzone/: (:'"
 alias af="grep '^function .* ' ~/$AWS_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`saf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
 # shellcheck disable=SC2154
 alias laan="for p in \$(grep '^\[profile' ~/.aws/config | awk '{print \$2}' | tr ']\n' ' '); do echo -en \"\$p: \"; echo \$(aws sts get-caller-identity --profile \$p | jq -r .Account); done"
