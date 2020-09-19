@@ -1310,7 +1310,7 @@ alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
 alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
 alias ghwt='sudo dmidecode | grep "Product Name"'
 alias grep="grep --color=auto"
-alias grp="grep --color=auto --exclude-dir node_modules --exclude-dir .terraform --exclude-dir .serverless"
+alias grp="grep --color=auto --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless"
 alias grpa="grep --color=always"
 alias guid='printf "%x\n" `date +%s`'
 alias gxtf="grep --color=auto --exclude-dir .terraform"
