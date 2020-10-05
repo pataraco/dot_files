@@ -572,13 +572,23 @@ function dj {
 # shellcheck disable=SC2155
 function fdgr {
    # find dirty git repos
+   local _REPOS_TO_CHECK
+   local _DEFAULT_FIND_DIR="$HOME/repos"
+   local _FIND_DIR
+   if [ -n "$1" ]; then
+      _FIND_DIR=$(sed 's:/$::' <<< $1)
+   else
+      _FIND_DIR=$_DEFAULT_FIND_DIR
+   fi
    local _EXCLUDE_DIRS="
       .aws-sam
       .cookiecutters
+      .git
       .jenkins
       .kube
       .local/share/nvim
       .pyenv-repository
+      .serverless
       .terraform
       .tmux/plugins
       Applications
@@ -617,8 +627,8 @@ function fdgr {
    # echo "debug: _excludes='${_excludes[*]}'"
 
    echo -ne "finding ALL 'git' repos (dirs)... ${BNK}"
-   local _REPOS_TO_CHECK="$(\
-      find "$HOME/repos" \
+   _REPOS_TO_CHECK="$(\
+      find "$_FIND_DIR" \
          "${_excludes[@]}" \
          -type d \
          -name .git \
@@ -637,6 +647,7 @@ function fdgr {
          echo -ne "${_repo/$HOME/~} [${GRN}CLEAN${NRM}]${D2E}\r"
          _last_status="CLEAN"
       fi
+      cd - > /dev/null || return
    done
    cd "$_orig_wd" || return
    [ "$_last_status" == "CLEAN" ] && echo -ne "${D2E}"
@@ -1092,7 +1103,7 @@ function tb {
 function tsend {
    # Send same command to all tmux panes
    tmux set-window-option synchronize-panes on
-   tmux send-keys "$@" Enter
+   tmux send-keys "$*" Enter
    tmux set-window-option synchronize-panes off
 }
 
@@ -1367,9 +1378,10 @@ alias sts="grep '= CFNType' \$HOME/repos/stacker/stacker/blueprints/variables/ty
 alias sw='stopwatch'
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'  # change window title
 alias ta='tmux attach -t'
-alias tf11='/usr/local/bin/terraform.0.11.14'
-alias tf12='/usr/local/bin/terraform'
-alias tmx='tmux new-session -s Raco -n MYSHTUFF'
+alias tf11='/usr/local/bin/terraform.0.11'
+alias tf12='/usr/local/bin/terraform.0.12'
+alias tf13='/usr/local/bin/terraform.0.13'
+alias tmx='tmux new-session -s Raco -n MYSHTUFF \; split-window -h \;  split-window -h \;  split-window -h \;  \; select-layout main-horizontal'
 alias tspo='tmux set-window-option synchronize-panes on'
 alias tspx='tmux set-window-option synchronize-panes off'
 alias tt='echo -ne "\033]0;$(whoami)@$(hostname)\007"'
