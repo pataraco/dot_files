@@ -95,6 +95,9 @@ map [ [c
 map du :silent diffupdate<CR>
 " turn line numbering on/off - instead: use <Leader>n (below)
 "map <C-n> :set number!<CR>
+" find next search and center
+map n nzz
+map N Nzz
 " yank to end of line
 map Y y$
 " turn off search highlight
