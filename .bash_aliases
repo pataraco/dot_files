@@ -1327,7 +1327,7 @@ alias guid='printf "%x\n" `date +%s`'
 alias gxtf="grep --color=auto --exclude-dir .terraform"
 alias h="history | tail -20"
 alias kaj='eval kill $(jobs -p)'
-alias kc='kubectl'
+alias kc='kubectl'; complete -F __start_kubectl kc # enable bash completion too
 alias kca='kubectl api-resources'
 alias kcc='kubectl config current-context'
 alias kcs='kubectl -n kube-system'
