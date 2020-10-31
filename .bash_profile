@@ -90,7 +90,7 @@ export VIRTUAL_ENV_DISABLE_PROMPT=YES  # set to non-empty value to disable
 # set up pip list column output formating
 export PIP_FORMAT=columns
 # set up "vi" command line editing
-if [ "$(command -v nvim)" ]; then
+if command -v nvim &> /dev/null; then
    VIM_CMD=$(command -v nvim)
 else
    VIM_CMD=$(command -v vim)
@@ -134,6 +134,10 @@ function start_ssh_agent {
     /usr/bin/ssh-add
 }
 
+# enable bash completion (brew install bash-completion)
+[[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] &&
+   source "/usr/local/etc/profile.d/bash_completion.sh"
+
 # Source SSH settings, if applicable
 
 if [ -f "$SSH_ENV" ]; then
@@ -146,7 +150,7 @@ else
 fi
 
 # add `pyenv init` to shell to enable shims and autcompletion
-[ "$(command -v pyenv)" ] && eval "$(pyenv init -)"
+command -v pyenv &> /dev/null && eval "$(pyenv init -)"
 # use `pipenv`
 # # add `pyenv virtualenv-init` to shell to enable shims and autcompletion
 # [ $(command -v pyenv) ] && eval "$(pyenv virtualenv-init -)"
@@ -162,9 +166,15 @@ export NVM_COMPLETION="/usr/local/opt/nvm/etc/bash_completion.d/nvm"
 [ -s "$NVM_SCRIPT" ] && source "$NVM_SCRIPT"          # loads nvm
 [ -s "$NVM_COMPLETION" ] && source "$NVM_COMPLETION"  # loads nvm CLI completion
 
-# enable bash completion (brew install bash-completion)
-[[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] &&
-   source "/usr/local/etc/profile.d/bash_completion.sh"
+# Enamble AWS CLI auto completion
+if command -v aws_completer &> /dev/null; then
+   complete -C $(command -v aws_completer) aws
+fi
+
+# Enamble kubectl auto completion
+if command -v kubectl &> /dev/null; then
+   source <(kubectl completion bash)
+fi
 
 # Output completion message
 [ -n "$PS1" ] && echo -n ".bash_profile (end). "
