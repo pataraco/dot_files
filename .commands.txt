@@ -1,3 +1,5 @@
+
+
 /etc/init.d/crond [start|stop]
 /etc/init.d/ntpd [start|stop]
 /etc/init.d/smb [start|stop]
@@ -47,6 +49,7 @@ curl -L -sD - -o /dev/null URL # display response headers
 curl -X GET -fsSL  # fail silently, be slient, show failures, re-do on redirect
 curl -X POST --data-urlencode "payload=$DATA" $SLACK_WEBHOOK
 curl -X POST -H 'Content-type: application/json' --data "$DATA" $SLACK_WEBHOOK
+curl -X POST -H 'Content-type: application/json' --data '{"user": "'"$EMAIL"'", "pass": "'"$PASSWD"'"}' $HARVI_LOGIN
 curl -s https://api.github.com/users/pataraco/repos|grep clone_url|awk '{print $2}'|tr -d '",'
 curl http://169.254.169.254/latest/meta-data/; echo    # AWS EC2 instance info
 curl http://ipecho.net/plain; echo                   # get my IP
@@ -123,6 +126,7 @@ hpasmcli -s "show server" | egrep "ML350|System"
 hplog -v | grep Critical
 hplog -v | perl -n -e 'if (/^\d\d\d\d\s/) { chomp; print "$_ "; $n=1; next; } if ($n) { print; $n=0; }' | grep -E 'Critical'
 hwclock [-w]
+keyring get -b artifacts_keyring.ArtifactsKeyringBackend https://pkgs.dev.azure.com/$ADO_COMPANY/$ADO_PROJECT/_packaging/$ADO_FEED/pypi/simple/ VssSessionToken
 kf openstack server delete game-neweden-1298-02 -y --purge
 kill -[15|6|9] PID				# nice|HUP|force
 knife cookbook show [COOKBOOK] [VERSION] [PART] [FILENAME]
