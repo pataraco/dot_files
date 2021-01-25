@@ -1310,6 +1310,7 @@ alias crt='~/scripts/chef_recipe_tree.sh'
 #alias cssh='cssh -o "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"'
 alias diff="colordiff -u"
 alias disp="tsend 'echo \$DISPLAY'"
+alias dus="du -sh * | sort -h"
 alias eaf="eval \"$(declare -F | sed -e 's/-f /-fx /')\""
 alias egrep="egrep --color=auto"
 alias egrpq="egrep --color=always"
@@ -1381,6 +1382,7 @@ alias ta='tmux attach -t'
 alias tf11='/usr/local/bin/terraform.0.11'
 alias tf12='/usr/local/bin/terraform.0.12'
 alias tf13='/usr/local/bin/terraform.0.13'
+alias tf14='/usr/local/bin/terraform.0.14'
 alias tmx='tmux new-session -s Raco -n MYSHTUFF \; split-window -h \;  split-window -h \;  split-window -h \;  \; select-layout main-horizontal'
 alias tspo='tmux set-window-option synchronize-panes on'
 alias tspx='tmux set-window-option synchronize-panes off'
