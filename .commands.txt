@@ -1,5 +1,3 @@
-
-
 /etc/init.d/crond [start|stop]
 /etc/init.d/ntpd [start|stop]
 /etc/init.d/smb [start|stop]
@@ -163,12 +161,13 @@ openssl pkcs12 -in PFX_FILE.pfx -out PRIVATE_KEY_FILE.key -nodes -nocerts
 openssl pkcs8 -in AWS_GENERATED.pem -inform PEM -outform DER -topk8 -nocrypt | openssl sha1 -c   # get fingerprint
 openssl rand -base64 24   # generate 32 char password
 openssl req -in DOMAIN_NAME.csr -noout -subject
+openssl genrsa -out PRIVATE_KEY 2048
 openssl req -in consult.firecrackerhealth.com.csr.orig -noout -subject
 openssl req -new -newkey rsa:2048 -nodes -keyout DOMAIN_NAME.key -out DOMAIN_NAME.csr
 openssl req -new -newkey rsa:2048 -nodes -sha256 -keyout DOMAIN_NAME.key -out DOMAIN_NAME.csr -config CSR_CONFIG
 openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout www.example.com.selfsigned.key -out www.example.com.selfsigned.crt -subj /CN=www.example.com -days 3650
 openssl rsa -in AWS_IMPORTED.pem -pubout -outform DER | openssl md5 -c                           # get fingerprint
-openssl rsa -in PRIVATE_KEY -pubout  # SSL: generate public from private key
+openssl rsa -pubout -in PRIVATE_KEY -out PUBLIC_KEY  # SSL: generate public from private key
 openssl s_client -connect $host:443 -servername $domain </dev/null 2>/dev/null| openssl x509 -noout -subject -dates -serial
 openssl s_client -connect clientapi-v01-sna01-prod.firefall.com:443 -servername firefall.com </dev/null 2>/dev/null | openssl x509 -noout -subject -dates -serial
 openssl x509 -in nimaws.com.crt -text
