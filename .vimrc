@@ -52,7 +52,7 @@
  set showmode                   " show command/edit mode in status line
  set smartcase                  " ...unless we type a capital
  set syntax=on                  " turn on syntax highlighting
- set wildmenu                   " enables a muenu at the bottom of the vim window
+ set wildmenu                   " enables a menu at the bottom of the vim window
  set wildmode=list:longest,full " set up wild modes
 " Settings }}}
 
