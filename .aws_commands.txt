@@ -111,6 +111,7 @@ aws iam list-users --query Users[*].[UserName,UserId] --output table
 aws iam put-role-policy --role-name ROLE_NAME --policy-name POLICY_NAME --policy-document file://PATH_TO/POLICY_DOC.json
 aws iam update-login-profile --user-name USER_NAME --password PASSWORD --password-reset-required
 aws kms list-aliases --query "Aliases[?AliasName=='alias/ALIAS_NAME'].AliasArn" --output text
+aws lambda invoke --function-name FUNCTION_NAME --payload fileb://payload.json /tmp/OUTPUT.log
 aws lambda update-alias --function-name FUNCTION_NAME --name ALIAS_NAME [--function-version VERSION_NUMBER]
 aws lambda update-function-code --function-name FUNCTION_NAME --s3-bucket S3_BUCKET --s3-key S3_KEY --publish
 aws lambda update-function-configuration --function-name FUNCTION_NAME --timeout N --memory-size M
