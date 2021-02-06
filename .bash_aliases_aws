@@ -1320,7 +1320,8 @@ function sae {
          # unset AWS_SECURITY_TOKEN
          export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
          _aws_env=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6,$7,$8; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG" | sed 's/ *$//')
-         _aws_acct=$(aws sts get-caller-identity --profile "$AWS_DEFAULT_PROFILE" | jq -r .Account)
+         # _aws_acct=$(aws sts get-caller-identity --profile "$AWS_DEFAULT_PROFILE" | jq -r .Account)
+         _aws_acct=$(aws sts get-caller-identity --query Account --output text)
          export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
          _sso_start_url=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/sso_start_url/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
          if [ -n "$_sso_start_url" ]; then
