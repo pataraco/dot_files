@@ -148,6 +148,10 @@ nnoremap <silent> <Leader>p "+p<CR>
 nnoremap <silent> <Leader>r :redraw!<CR>
 " sort current visually selected block
 vnoremap <silent> <Leader>sb :sort<CR>
+" enable spell checking (spell on)
+nnoremap <silent> <Leader>so :set spell<CR>
+" disable spell checking (spell off)
+nnoremap <silent> <Leader>sx :set nospell<CR>
 " source (re-load) .vimrc
 nnoremap <silent> <Leader>sv :source $MYVIMRC<CR>
 " highlight extra white space (trailing whitespace and tabs)
