@@ -1168,15 +1168,26 @@ function wutch {
    #   just remove all "out" files - they'll get quickly replaced
    #trap "rm -f $_TMP_WUTCH_OUT; return" SIGINT SIGTERM SIGHUP SIGKILL SIGQUIT
    rm -f /tmp/.wutch.out.*
+   rm -f /tmp/.wutch.cmd.*
+   local _TMP_WUTCH_CMD
    local _TMP_WUTCH_OUT
+   _TMP_WUTCH_CMD=$(mktemp /tmp/.wutch.cmd.XXX)
    _TMP_WUTCH_OUT=$(mktemp /tmp/.wutch.out.XXX)
    local _secs
    [ "$1" == "-n" ] && { _secs=$2; shift 2; } || _secs=2
    local _cmd="$*"
    local _hcmd="${_cmd:0:35}..."
    clear
+   echo "$_cmd" > "$_TMP_WUTCH_CMD"
    while true; do
-      /bin/bash -c "$_cmd" > "$_TMP_WUTCH_OUT"
+      # /bin/bash -c "$_cmd" > "$_TMP_WUTCH_OUT"
+      if [ "$(uname)" == "Darwin" ]; then
+         script -q "$_TMP_WUTCH_OUT" bash "$_TMP_WUTCH_CMD"
+      elif [ "$OS_NAME" == "Linux" ]; then
+         script -q -c "bash $_TMP_WUTCH_CMD" "$_TMP_WUTCH_OUT"
+      else
+         echo "Unknown 'script' command syntax for O.S.: $(uname)"
+      fi
       clear
       echo "Every ${_secs}.0s: $_hcmd: $(date)"
       echo "Command: '$_cmd'"
