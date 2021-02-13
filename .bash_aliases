@@ -19,10 +19,10 @@ PS_SHOW_PV=0
 MAIN_BA_FILE=".bash_aliases"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$MAIN_BA_FILE (begin)... "
+[[ -n "$PS1" ]] && echo -n "$MAIN_BA_FILE (begin)... "
 
 # some ansi colorization escape sequences
-[ "$(uname)" == "Darwin" ] && ESC="\033" || ESC="\e"
+[[ "$(uname)" == "Darwin" ]] && ESC="\033" || ESC="\e"
 export BLK="${ESC}[30m"   # black FG
 export BLU="${ESC}[34m"   # blue FG
 export CYN="${ESC}[36m"   # cyan FG
@@ -85,7 +85,7 @@ set -o vi
 # show 3 directories of CWD in prompt
 export PROMPT_DIRTRIM=3
 # some bind settings
-bind Space:magic-space
+[[ "$0" == "bash" ]] && bind Space:magic-space
 
 # # change grep color to light yelow highlighting with black fg
 # export GREP_COLOR="5;43;30"
@@ -105,23 +105,23 @@ function bash_prompt {
    # customize Bash Prompt
    local _last_cmd_exit_status=$?
    local _versions_len=0
-   if [ $PS_SHOW_CV -eq 1 ]; then  # get Chef version
-      if [ -z "$CHEF_VERSION" ]; then
+   if [[ $PS_SHOW_CV -eq 1 ]]; then  # get Chef version
+      if [[ -z "$CHEF_VERSION" ]]; then
          export CHEF_VERSION
          CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
       fi
       PS_CHF="${PYLW}C$CHEF_VERSION$PNRM|"
       (( _versions_len += ${#CHEF_VERSION} + 2 ))
    fi
-   if [ $PS_SHOW_AV -eq 1 ]; then  # get Ansible version
-      if [ -z "$ANSIBLE_VERSION" ]; then
+   if [[ $PS_SHOW_AV -eq 1 ]]; then  # get Ansible version
+      if [[ -z "$ANSIBLE_VERSION" ]]; then
          export ANSIBLE_VERSION
          ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
       fi
       PS_ANS="${PCYN}A$ANSIBLE_VERSION$PNRM|"
       (( _versions_len += ${#ANSIBLE_VERSION} + 2 ))
    fi
-   if [ $PS_SHOW_PV -eq 1 ]; then  # get Python version
+   if [[ $PS_SHOW_PV -eq 1 ]]; then  # get Python version
       export PYTHON_VERSION
       PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
       PS_PY="${PMAG}P$PYTHON_VERSION$PNRM|"
@@ -146,25 +146,25 @@ function bash_prompt {
       [[ "$_git_status" =~ ($'\n'|^)\?\? ]] && _git_has_untracked_files=true
       [[ "$_git_status" =~ ($'\n'|^)[ADMR] && ! "$_git_status" =~ ($'\n'|^).[ADMR\?] ]] && _git_ready_to_commit=true
       if $_git_ready_to_commit; then
-         [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git ready to commit"
+         [[ -n "$PS_DEBUG" ]] && echo "debug: status='$_git_status' git ready to commit"
          PS_GIT="$PNRM${PGRN}✅ ${_git_branch}✔$PNRM"
          (( _git_branch_len++ ))
       elif $_git_has_mods_cached || $_git_has_dels_cached; then
-         [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git has mods cached or has dels cached"
+         [[ -n "$PS_DEBUG" ]] && echo "debug: status='$_git_status' git has mods cached or has dels cached"
          PS_GIT="$PNRM${PCYN}⚠️ ${_git_branch}+$PNRM"
          (( _git_branch_len++ ))
       elif $_git_has_mods || $_git_has_renames || $_git_has_adds || $_git_has_dels; then
-         [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git has mods or adds or dels"
+         [[ -n "$PS_DEBUG" ]] && echo "debug: status='$_git_status' git has mods or adds or dels"
          PS_GIT="$PNRM${PRED}⛔️ ${_git_branch}*$PNRM"
          (( _git_branch_len++ ))
       elif $_git_has_untracked_files; then
-         [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git has untracked files"
+         [[ -n "$PS_DEBUG" ]] && echo "debug: status='$_git_status' git has untracked files"
          PS_GIT="$PNRM${PYLW}⁉️ ${_git_branch}$PNRM"
       else
-         [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git is ???"
+         [[ -n "$PS_DEBUG" ]] && echo "debug: status='$_git_status' git is ???"
          _git_status=$(git status -bs 2> /dev/null | grep -F "ahead")
          if [[ "$_git_status" =~ \[ahead.*\] ]]; then
-            [ -n "$PS_DEBUG" ] && echo "debug: status='$_git_status' git is ahead"
+            [[ -n "$PS_DEBUG" ]] && echo "debug: status='$_git_status' git is ahead"
             local _gitahead
             _gitahead=$({ awk '{print $NF}' | cut -d']' -f1; } <<< "$_git_status")
             PS_GIT="$PNRM${PMAG}🤙 ${_git_branch}>$_gitahead$PNRM"
@@ -179,14 +179,14 @@ function bash_prompt {
       fi
       PS_GIT="$PS_GIT|"
    else   # NOT in a git repo
-      [ -n "$PS_DEBUG" ] && echo "debug: not a git repo"
+      [[ -n "$PS_DEBUG" ]] && echo "debug: not a git repo"
       PS_GIT=""
       _git_branch_len=0
    fi
    # customize path depending on width/space available
    local _space_for_path=$((COLUMNS - _versions_len - _git_branch_len))
    local _pwd=${PWD/$HOME/'~'}
-   if [  ${#_pwd} -lt $_space_for_path ]; then
+   if [[  ${#_pwd} -lt $_space_for_path ]]; then
       PS_PATH="$PGRN\w$PNRM"
    else
       (( _space_for_path -= 2 ))
@@ -198,7 +198,7 @@ function bash_prompt {
    CMD_PASS_EMOJIS=(😀 😃 😄 😁 😆 😊 🙃 😋 😛 😝 😍 😜 🤗 😬 😎)
    CMD_FAIL_EMOJIS=(😡 👿 🤔 😵 😥 😰 👎 😱 😭 😢 🖕 🤢 😤 💩 💀)
    PS_DELIM="-"
-   if [ $_last_cmd_exit_status -eq 0 ]; then
+   if [[ $_last_cmd_exit_status -eq 0 ]]; then
       PS_EMOJI=${CMD_PASS_EMOJIS[$((RANDOM % ${#CMD_PASS_EMOJIS[*]}))]}
       PS_WHO="${PS_EMOJI}${PS_DELIM}${PBLK}$(basename "$SHELL")${PNRM}${PS_DELIM}"
       PS_COL=$PGRN
@@ -207,13 +207,13 @@ function bash_prompt {
       PS_WHO="${PS_EMOJI}${PS_DELIM}${PBLK}$(basename "$SHELL")${PNRM}${PS_DELIM}"
       PS_COL=$PRED
    fi
-   if [ "$COMPANY" == "onica" ] && [ -n "$ONICA_SSO_ACCOUNT_KEY" ] && [ -n "$ONICA_SSO_EXPIRES_TS" ]; then
+   if [[ "$COMPANY" == "onica" ]] && [[ -n "$ONICA_SSO_ACCOUNT_KEY" ]] && [[ -n "$ONICA_SSO_EXPIRES_TS" ]]; then
       local _now_ts
       _now_ts=$(date +%s)
-      if [ "$ONICA_SSO_EXPIRES_TS" -gt "$_now_ts" ]; then
+      if [[ "$ONICA_SSO_EXPIRES_TS" -gt "$_now_ts" ]]; then
          # set the window title
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007"
-         if [ $((ONICA_SSO_EXPIRES_TS - _now_ts)) -lt 900 ]; then
+         if [[ $((ONICA_SSO_EXPIRES_TS - _now_ts)) -lt 900 ]]; then
             PS_AWS="[$PYLW$ONICA_SSO_ACCOUNT_KEY$PNRM]"
             PS_COL=$PYLW
          else
@@ -226,20 +226,20 @@ function bash_prompt {
          PS_AWS="[$PGRY$ONICA_SSO_ACCOUNT_KEY$PNRM]"
          PS_COL=$PGRY
       fi
-   elif [ "$COMPANY" == "ag" ] && [ -n "$AWS_SESSION_TOKEN" ] && [ -n "$AWS_DEFAULT_PROFILE" ] && [ -n "$AWS_STS_EXPIRES_TS" ]; then
+   elif [[ "$COMPANY" == "ag" ]] && [[ -n "$AWS_SESSION_TOKEN" ]] && [[ -n "$AWS_DEFAULT_PROFILE" ]] && [[ -n "$AWS_STS_EXPIRES_TS" ]]; then
       local _now_ts
       _now_ts=$(date +%s)
       # local _exp_time=$(jq -r .Credentials.Expiration ~/.aws/${AWS_DEFAULT_PROFILE}_mfa_credentials)
       # local _exp_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
       local _exp_ts=$AWS_STS_EXPIRES_TS
-      if [ "$_exp_ts" -gt "$_now_ts" ]; then
+      if [[ "$_exp_ts" -gt "$_now_ts" ]]; then
          # TODO: disabling sts lookup until i can come up with a faster solution
          if echo aws sts get-caller-identity &> /dev/null; then
             # set the window title
             local _tminus
             _tminus=$(date -jf "%s" $((_exp_ts - _now_ts)) +"(T-%H:%M:%S)")
             echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007"
-            if [ $((_exp_ts - _now_ts)) -lt 900 ]; then
+            if [[ $((_exp_ts - _now_ts)) -lt 900 ]]; then
                PS_AWS="[${PYLW}${AWS_DEFAULT_PROFILE}${PNRM}]"
                PS_COL=$PYLW
             fi
@@ -262,9 +262,9 @@ function bash_prompt {
       echo -ne "\033]0;$(whoami)@$(hostname)\007"
    fi
    # check for pyenv virtual environment
-   [ -n "$VIRTUAL_ENV" ] && PS_PROJ="($PCYN$(basename "$VIRTUAL_ENV")$PNRM)" || PS_PROJ=""
+   [[ -n "$VIRTUAL_ENV" ]] && PS_PROJ="($PCYN$(basename "$VIRTUAL_ENV")$PNRM)" || PS_PROJ=""
    # check for jobs running in the background
-   if [ "$(jobs | wc -l | tr -d ' ')" -gt 1 ]; then
+   if [[ "$(jobs | wc -l | tr -d ' ')" -gt 1 ]]; then
       # using "1" because the `git branch` above runs in the background
       PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO(\j)${PS_COL}⌲$PNRM "
    else
@@ -297,11 +297,11 @@ function cgcai {
    CORRECT_NAME=$2  # CORRECT_NAME="Your Correct Name"
    CORRECT_EMAIL=$3 # CORRECT_EMAIL="your-correct-email@example.com"
    git filter-branch --env-filter '
-      if [ "$GIT_COMMITTER_EMAIL" = "'"$OLD_EMAIL"'" ]; then
+      if [[ "$GIT_COMMITTER_EMAIL" = "'"$OLD_EMAIL"'" ]]; then
          export GIT_COMMITTER_NAME="'"$CORRECT_NAME"'"
          export GIT_COMMITTER_EMAIL="'"$CORRECT_EMAIL"'"
       fi
-      if [ "$GIT_AUTHOR_EMAIL" = "'"$OLD_EMAIL"'" ]; then
+      if [[ "$GIT_AUTHOR_EMAIL" = "'"$OLD_EMAIL"'" ]]; then
          export GIT_AUTHOR_NAME="'"$CORRECT_NAME"'"
          export GIT_AUTHOR_EMAIL="'"$CORRECT_EMAIL"'"
       fi
@@ -316,18 +316,18 @@ function chkrepodiffs {
    # comparing those files against those in home directory
    cd ~/repos/pataraco/dot_files || return
    local _verbose="$1"
-   if [ "$_verbose" == "-v" ]; then
+   if [[ "$_verbose" == "-v" ]]; then
       shift
    fi
    local _files="$*"
    local _file
    # shellcheck disable=SC2010
-   [ -z "$_files" ] && _files=$(ls -1A | grep -v .git)
+   [[ -z "$_files" ]] && _files=$(ls -1A | grep -v .git)
    for _file in $_files; do
-      if [ -e "$_file" ] && [ -e "$HOME/$_file" ]; then
+      if [[ -e "$_file" ]] && [[ -e "$HOME/$_file" ]]; then
          diff -q "$_file" "$HOME/$_file"
-         if [ $? -eq 1 ]; then
-            if [ "$_verbose" == "-v" ]; then
+         if [[ $? -eq 1 ]]; then
+            if [[ "$_verbose" == "-v" ]]; then
               read -rp "Hit [Enter] to continue" junk
               diff "$_file" "$HOME/$_file" | \less -rX
               echo
@@ -336,8 +336,8 @@ function chkrepodiffs {
             echo "Files $_file and ~/$_file are the same"
          fi
       else
-         [ ! -e "$_file" ] && ls "$_file"
-         [ ! -e "$HOME/$_file" ] && ls "$HOME/$_file"
+         [[ ! -e "$_file" ]] && ls "$_file"
+         [[ ! -e "$HOME/$_file" ]] && ls "$HOME/$_file"
       fi
    done
    cd - > /dev/null || return
@@ -351,16 +351,16 @@ function checksums {
    local _check_sum_cmd
    local _max_cmd_name_len=0
    for _check_sum_cmd_name in $_check_sum_cmd_names; do
-      [ $_max_cmd_name_len -lt ${#_check_sum_cmd_name} ] \
+      [[ $_max_cmd_name_len -lt ${#_check_sum_cmd_name} ]] \
          && _max_cmd_name_len=${#_check_sum_cmd_name}
    done
-   if [ $# -eq 1 ]; then
+   if [[ $# -eq 1 ]]; then
       _file=$1
       echo "File: $_file"
       echo "----------------"
       for _check_sum_cmd_name in $_check_sum_cmd_names; do
          _check_sum_cmd=$(command -v "$_check_sum_cmd_name")
-         if [ -n "$_check_sum_cmd" ]; then
+         if [[ -n "$_check_sum_cmd" ]]; then
             # echo -n "$_check_sum_cmd_name : "
             printf "%-${_max_cmd_name_len}s : " "$_check_sum_cmd_name"
             $_check_sum_cmd "$_file" | awk '{print $1}'
@@ -374,9 +374,9 @@ function checksums {
 }
 
 function cktj {
-   # convert a key file so that it can be used in a 
+   # convert a key file so that it can be used in a
    # json entry (i.e. change \n -> "\n")
-   if [ -n "$1" ]; then
+   if [[ -n "$1" ]]; then
       tr '\n' '_' < "$1" | sed 's/_/\\n/g'
       echo
    else
@@ -418,7 +418,7 @@ function compare_lines {
    echo -e "$_line2diffs"
 }
 
-# This is commented out because it was for a previous place of 
+# This is commented out because it was for a previous place of
 # employment using Informix
 # TODO: update for mysql and uncomment
 ##function dbgrep {
@@ -437,14 +437,14 @@ function compare_lines {
 ##   USAGE="dbgrep [-w] -t|c|i|a PATTERN"
 ##
 ##   echo "$NOT_VALID_HOSTS" | grep -w $HOSTNAME >/dev/null 2>&1
-##   if [ $? -eq 0 ]; then
+##   if [[ $? -eq 0 ]]; then
 ##      echo "can't run this on any of these hosts: '$NOT_VALID_HOSTS'"
 ##      return
 ##   fi
 ##   grepopt="-i"
 ##   searchtype="containing"
-##   if [ $# -eq 3 ]; then
-##      if [ $1 = "-w" ]; then
+##   if [[ $# -eq 3 ]]; then
+##      if [[ $1 = "-w" ]]; then
 ##         grepopt="-iw"
 ##         searchtype="matching"
 ##         shift
@@ -453,7 +453,7 @@ function compare_lines {
 ##         return
 ##      fi
 ##   fi
-##   if [ $# -eq 2 ]; then
+##   if [[ $# -eq 2 ]]; then
 ##      option=$1
 ##      pattern=$2
 ##      case $option in
@@ -463,7 +463,7 @@ function compare_lines {
 ##               echo $table | grep $grepopt "$pattern"
 ##            done
 ##            echo "======"
-##            if [ "$searchtype" = "matching" ]; then
+##            if [[ "$searchtype" = "matching" ]]; then
 ##               echo "select tabname from systables where tabname='$pattern'"|dbaccess dev
 ##            else
 ##               echo "select tabname from systables where tabname like '%$pattern%'"|dbaccess dev
@@ -479,7 +479,7 @@ function compare_lines {
 ##            echo "info about table name(s) $searchtype '$pattern':"
 ##            for table in `echo "info tables"|dbaccess dev 2>/dev/null|grep $grepopt "$pattern"`; do
 ##               echo $table | grep $grepopt "$pattern" >/dev/null 2>&1
-##               if [ $? -eq 0 ]; then
+##               if [[ $? -eq 0 ]]; then
 ##                  echo "table: $table"
 ##                  echo "info columns for $table"|dbaccess dev 2>/dev/null
 ##                  echo "	-------"
@@ -490,7 +490,7 @@ function compare_lines {
 ##            echo "table name(s) with column(s) $searchtype '$pattern':"
 ##            for table in `echo "info tables"|dbaccess dev 2>/dev/null`; do
 ##               columns=`echo "info columns for $table"|dbaccess dev 2>/dev/null|awk '{print $1}'|grep $grepopt "$pattern"`
-##               if [ $? = 0 ]; then
+##               if [[ $? = 0 ]]; then
 ##                  for column in $columns; do
 ##                     printf "%-20s: %s\n" $table $column
 ##                  done
@@ -530,15 +530,15 @@ function decimal_to_baseN {
    # convert a decimal number to any base
    local _DIGITS
    IFS=" " read -r -a _DIGITS <<< "$(echo {0..9} {a..z})"
-   if [ $# -eq 2 ]; then
+   if [[ $# -eq 2 ]]; then
       local _base="$1"
-      if [ "$_base" -lt 2 ] || [ "$_base" -gt 36 ]; then
+      if [[ "$_base" -lt 2 ]] || [[ "$_base" -gt 36 ]]; then
          echo "base must be between 2 and 36"
          return 2
       fi
       shift
       local _decimal="$*"
-      if [ "$_base" -le 16 ]; then
+      if [[ "$_base" -le 16 ]]; then
          echo "obase=$_base; $_decimal" | bc | tr '[:upper:]' '[:lower:]'
       else
          for i in $(bc <<< "obase=$_base; $_decimal"); do
@@ -555,8 +555,8 @@ function dj {
    # either add a daily journal entry provided on the command line or edit it
    DAILY_JOURNAL_DIR="$HOME/notes"
    DAILY_JOURNAL_FILE="$DAILY_JOURNAL_DIR/Daily_Journal.txt"
-   [ ! -d "$DAILY_JOURNAL_DIR" ] && mkdir "$DAILY_JOURNAL_DIR"
-   if [ $# -ne 0 ]; then
+   [[ ! -d "$DAILY_JOURNAL_DIR" ]] && mkdir "$DAILY_JOURNAL_DIR"
+   if [[ $# -ne 0 ]]; then
       case $1 in
          cat) cat "$DAILY_JOURNAL_FILE" ;;
          help) echo "usage: dj [cat|help|last|tail|LOG_ENTRY]" ;;
@@ -575,7 +575,7 @@ function fdgr {
    local _REPOS_TO_CHECK
    local _DEFAULT_FIND_DIR="$HOME/repos"
    local _FIND_DIR
-   if [ -n "$1" ]; then
+   if [[ -n "$1" ]]; then
       _FIND_DIR=$(sed 's:/$::' <<< $1)
    else
       _FIND_DIR=$_DEFAULT_FIND_DIR
@@ -640,7 +640,7 @@ function fdgr {
       _repo=${_dir//\%/ }
       cd "$_repo" || return
       _gitstatus=$(git status --porcelain 2> /dev/null)
-      if [ -n "$_gitstatus" ]; then
+      if [[ -n "$_gitstatus" ]]; then
          echo -e "${_repo/$HOME/~} [${RED}DIRTY${NRM}]${D2E}"
          _last_status="DIRTY"
       else
@@ -650,14 +650,14 @@ function fdgr {
       cd - > /dev/null || return
    done
    cd "$_orig_wd" || return
-   [ "$_last_status" == "CLEAN" ] && echo -ne "${D2E}"
+   [[ "$_last_status" == "CLEAN" ]] && echo -ne "${D2E}"
    echo -ne "${SHC}"
 }
 
 function gdate {
    # convert hex date value to date
    # see the 'guid' alias to create a hex date value
-   if [ "$(uname)" == "Darwin" ]; then
+   if [[ "$(uname)" == "Darwin" ]]; then
       date -jf "%s" "$(printf "%d\n" 0x"$1")"
    else
       date --date=@"$(printf "%d\n" 0x"$1")"
@@ -669,10 +669,10 @@ function gdate {
 ## JUMP_SERVERS="jump1 jump2 stcgxyjmp01"
 ## USAGE="usage: getramsz [server] [server2] [server3]..."
 ##   echo "$JUMP_SERVERS" | grep -w $HOSTNAME >/dev/null 2>&1
-##   if [ $? -eq 0 -a $# -gt 0 ]; then
+##   if [[ $? -eq 0 -a $# -gt 0 ]]; then
 ##      servers="$*"
 ##      remote=true
-##   elif [ $# -eq 0 ]; then
+##   elif [[ $# -eq 0 ]]; then
 ##      servers=$HOSTNAME
 ##      remote=false
 ##   else
@@ -681,10 +681,10 @@ function gdate {
 ##   fi
 ##   for server in $servers; do
 ##      host $server > /dev/null
-##      if [ $? -eq 0 ]; then
+##      if [[ $? -eq 0 ]]; then
 ##         total_mem=0
 ##         echo -n "$server: RAM installed: 'hpasmcli' calculating... "
-##         if [ "$remote" = "true" ]; then
+##         if [[ "$remote" = "true" ]]; then
 ##            #for dimm_size in `ssh ecisupp@$server 'hpasmcli -s "show dimm" | grep Size' 2>/dev/null | awk '{print $2}'`; do
 ##            for dimm_size in `ssh -q ecisupp@$server 'hpasmcli -s "show dimm" | grep Size' 2>/dev/null | awk '{print $2}'`; do
 ##               total_mem=`expr $total_mem + $dimm_size`
@@ -694,21 +694,21 @@ function gdate {
 ##               total_mem=`expr $total_mem + $dimm_size`
 ##            done
 ##         fi
-##         if [ $total_mem -eq 0 ]; then
+##         if [[ $total_mem -eq 0 ]]; then
 ##            hpasmcli_val="( ERROR )"
 ##         else
 ##            total_mem_gb=`expr $total_mem / 1024`
 ##            hpasmcli_val=`printf "[ %2d GB ]" $total_mem_gb`
 ##         fi
 ##         echo -ne "\r$server: RAM installed: 'hpasmcli' $hpasmcli_val... 'free' calculating... "
-##         if [ "$remote" = "true" ]; then
+##         if [[ "$remote" = "true" ]]; then
 ##            #free_size=`ssh ecisupp@$server 'free | grep Mem' 2>/dev/null | awk '{print $2}'`
 ##            free_size=`ssh -q ecisupp@$server 'free | grep Mem' 2>/dev/null | awk '{print $2}'`
 ##         else
 ##            free_size=`free | grep Mem 2>/dev/null | awk '{print $2}'`
 ##         fi
-##         [ -z "$free_size" ] && free_size=0
-##         if [ $free_size -eq 0 ]; then
+##         [[ -z "$free_size" ]] && free_size=0
+##         if [[ $free_size -eq 0 ]]; then
 ##            free_val="( ERROR )"
 ##         else
 ##            free_mem_gb=`expr $free_size / 1024 / 1024 + 1`
@@ -723,8 +723,7 @@ function gdate {
 
 function gh {
    # grep bash history for a PATTERN
-   # shellcheck disable=SC1001
-   if [[ $* =~ ^\^.* ]]; then
+   if [[ "$*" =~ ^\^.* ]]; then
       pattern=$(echo "$*" | tr -d '^')
       #echo "debug: looking for: ^[0-9]*  $pattern"
       history | grep "^[ 0-9]*  $pattern" | grep --color=always "$pattern"
@@ -745,7 +744,7 @@ function gpw {
    REQ_CMDS="pwgen pbcopy"
    local _cmd
    for _cmd in $REQ_CMDS; do
-      [ ! "$(command -v "$_cmd")" ] && { echo "error: missing command '$_cmd'"; return 1; } 
+      [[ ! "$(command -v "$_cmd")" ]] && { echo "error: missing command '$_cmd'"; return 1; }
    done
    local _pws=${1:-$DEFAULT_LENGTH}
    pwgen -y "$_pws" 1 | tr -d '\n' | pbcopy
@@ -753,7 +752,7 @@ function gpw {
 
 function j2y {
    # convert JSON to YAML (from either STDIN or by specifying a file
-   if [ -n "$1" ]; then
+   if [[ -n "$1" ]]; then
       python -c 'import json, sys, yaml; yaml.safe_dump(json.load(sys.stdin), sys.stdout)' < "$1"
    else
       python -c 'import json, sys, yaml; yaml.safe_dump(json.load(sys.stdin), sys.stdout)'
@@ -764,9 +763,9 @@ function lgr {
    # list GitHub Repos for a user
    local _DEFAULT_USER="pataraco"
    local _GIT_URL_OPT=$1
-   [ "$_GIT_URL_OPT" == "-g" ] && shift
+   [[ "$_GIT_URL_OPT" == "-g" ]] && shift
    local _USER=${1:-$_DEFAULT_USER}
-   if [ "$_GIT_URL_OPT" == "-g" ]; then
+   if [[ "$_GIT_URL_OPT" == "-g" ]]; then
       curl -s "https://api.github.com/users/$_USER/repos" | \
          grep clone_url | \
          awk '{print $2}' | \
@@ -794,7 +793,7 @@ function listcrts {
    local _DEFAULT_OPENSSL_OPTS="-subject -dates -issuer"
    local _cbs _cb
    local _cert_bundle=$1
-   if [ "${_cert_bundle: -3}" == "crt" ]; then
+   if [[ "${_cert_bundle: -3}" == "crt" ]]; then
       shift
    else
       unset _cert_bundle
@@ -806,7 +805,7 @@ function listcrts {
    _openssl_opts=${_openssl_opts:=$_DEFAULT_OPENSSL_OPTS}
    _openssl_opts="$_openssl_opts -noout"
    # echo "debug: opts: '$_openssl_opts'"
-   if [ -z "$_cert_bundle" ]; then
+   if [[ -z "$_cert_bundle" ]]; then
       if ls ./*.crt > /dev/null 2>&1; then
          echo "certificate(s) found"
          _cbs=$(ls ./*.crt)
@@ -854,13 +853,13 @@ function listcrts2 {
    # another way to list all info in a crt bundle
    # usage: listcrts2 FILE
    local _n_cert _c
-   [ -z "$1" ] && echo "no cert file specified"
+   [[ -z "$1" ]] && echo "no cert file specified"
    for _c; do
       echo
       echo "Certificate: $_c"
-      [ ! -f "$_c" ] && { echo " X - Certificate not found"; continue; }
+      [[ ! -f "$_c" ]] && { echo " X - Certificate not found"; continue; }
       _n_cert=$(grep -hc "BEGIN CERTIFICATE" "$_c")
-      [ "$_n_cert" -lt 1 ] && { echo " X - Not valid certificate"; continue; }
+      [[ "$_n_cert" -lt 1 ]] && { echo " X - Not valid certificate"; continue; }
       for n in $(seq 1 "$_n_cert");do
          awk -v n="$n" '/BEGIN CERT/ { n -= 1;} n == 0 { print }' "$_c" | \
             openssl x509 -noout -text | sed -n \
@@ -893,7 +892,7 @@ function pag {
 
 function pbc {
    # enhance `pbcopy`
-   if [ -n "$1" ]; then
+   if [[ -n "$1" ]]; then
       pbcopy < "$1"
    else
       eval "$(history -p \!\!)" | pbcopy
@@ -937,19 +936,19 @@ function rf {
 function s3e {
    # set s3cfg (s3tools.org) environment
    local _S3CFG_CFG="$HOME/.s3cfg/config"
-   [ ! -e "$_S3CFG_CFG" ] && { echo "error: s3cfg config file does not exist: $_S3CFG_CFG"; return 1; }
+   [[ ! -e "$_S3CFG_CFG" ]] && { echo "error: s3cfg config file does not exist: $_S3CFG_CFG"; return 1; }
    local _S3CFG_PROFILES
    _S3CFG_PROFILES=$(grep '^\[profile' "$_S3CFG_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
    local _VALID_ARGS
    _VALID_ARGS=$(tr ' ' ':' <<< "${_S3CFG_PROFILES}unset")
    local _environment
    local _arg="$1"
-   if [ -n "$_arg" ]; then
-      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+   if [[ -n "$_arg" ]]; then
+      if [[ ! "$_VALID_ARGS" =~ (^|:)$_arg(:|$) ]]; then
          echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_S3CFG_PROFILES"
          return 2
       fi
-      if [ "$_arg" == "unset" ]; then
+      if [[ "$_arg" == "unset" ]]; then
          unset S3CFG
          echo "s3cfg environment has been unset"
       else
@@ -957,11 +956,11 @@ function s3e {
          S3CFG=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_S3CFG_CFG")
          _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_S3CFG_CFG")
          echo "s3cfg environment has been set to --> $_environment ($S3CFG)"
-         [ -z "$S3CFG" ] && unset S3CFG
+         [[ -z "$S3CFG" ]] && unset S3CFG
       fi
    else
       echo -n "--- S3CFG Environment "
-      [ -n "$S3CFG" ] && echo "Settings ---" || echo "(NOT set) ---"
+      [[ -n "$S3CFG" ]] && echo "Settings ---" || echo "(NOT set) ---"
       echo "S3CFG   = ${S3CFG:-N/A}"
    fi
 }
@@ -990,19 +989,19 @@ function soe {
    # set OpenStack (www.openstack.org) environment
    # (sets/sources OSRC to a config e.g. "$HOME/.openstack/os_rc.prod.sh")
    local _OS_CFG=$HOME/.openstack/config
-   [ ! -e "$_OS_CFG" ] && { echo "error: openwtack config file does not exist: $_OS_CFG"; return 1; }
+   [[ ! -e "$_OS_CFG" ]] && { echo "error: openwtack config file does not exist: $_OS_CFG"; return 1; }
    local _OS_PROFILES
    _OS_PROFILES=$(grep '^\[profile' "$_OS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
    local _VALID_ARGS
    _VALID_ARGS=$(echo "${_OS_PROFILES}unset" | tr ' ' ':')
    local _environment
    local _arg="$1"
-   if [ -n "$_arg" ]; then
-      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+   if [[ -n "$_arg" ]]; then
+      if [[ ! "$_VALID_ARGS" =~ (^|:)$_arg(:|$) ]]; then
          echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_OS_PROFILES"
          return 2
       fi
-      if [ "$_arg" == "unset" ]; then
+      if [[ "$_arg" == "unset" ]]; then
          unset OSRC
          echo "s3cfg environment has been unset"
       else
@@ -1010,7 +1009,7 @@ function soe {
          OSRC=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_OS_CFG")
          _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_OS_CFG")
          echo "s3cfg environment has been set to --> $_environment ($OSRC)"
-         if [ -n "$OSRC" ]; then
+         if [[ -n "$OSRC" ]]; then
             source "$OSRC"
          else
             unset OSRC
@@ -1018,7 +1017,7 @@ function soe {
       fi
    else
       echo -n "--- OpenStack Environment "
-      [ -n "$OSRC" ] && echo "Settings ---" || echo "(NOT set) ---"
+      [[ -n "$OSRC" ]] && echo "Settings ---" || echo "(NOT set) ---"
       echo "OSRC   = ${OSRC:-N/A}"
    fi
 }
@@ -1026,7 +1025,7 @@ function soe {
 function source_ssh_env {
    # source ~/.ssh/environment file for ssh-agent
    local _SSH_ENV="$HOME/.ssh/environment"
-   if [ -f "$_SSH_ENV" ]; then
+   if [[ -f "$_SSH_ENV" ]]; then
       source "$_SSH_ENV" > /dev/null
       # shellcheck disable=SC2009
       ps -u "$USER" | grep -q "$SSH_AGENT_PID.*ssh-agent$" || start_ssh_agent
@@ -1046,7 +1045,7 @@ function _ssh {
       echo "usage: $_USAGE"
       return
    fi
-   if [ $# -gt 0 ]; then
+   if [[ $# -gt 0 ]]; then
       local _server=$1
       shift
       eval ssh "$_user@${_server}" "$@"
@@ -1084,13 +1083,13 @@ function stopwatch {
    stty -echoctl # don't echo "^C" when [Ctrl-C] is entered
    local _started _start_secs _current _current_secs _delta
    _started=$(date +'%d-%b-%Y %T')
-   [ "$(uname)" != "Darwin" ] && _start_secs=$(date +%s -d "$_started") || _start_secs=$(date -jf '%d-%b-%Y %T' "$_started" +'%s')
+   [[ "$(uname)" != "Darwin" ]] && _start_secs=$(date +%s -d "$_started") || _start_secs=$(date -jf '%d-%b-%Y %T' "$_started" +'%s')
    echo
    while true; do
       _current=$(date +'%d-%b-%Y %T')
-      [ "$(uname)" != "Darwin" ] && _current_secs=$(date +%s -d "$_current") || _current_secs=$(date -jf '%d-%b-%Y %T' "$_current" +'%s')
+      [[ "$(uname)" != "Darwin" ]] && _current_secs=$(date +%s -d "$_current") || _current_secs=$(date -jf '%d-%b-%Y %T' "$_current" +'%s')
       # TODO: almost works for Darwin, need to figure out proper delta
-      [ "$(uname)" != "Darwin" ] && _delta=$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs") || _delta=$(date -jf '%s' "0 $((_current_secs - _start_secs))" +'%T')
+      [[ "$(uname)" != "Darwin" ]] && _delta=$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs") || _delta=$(date -jf '%s' "0 $((_current_secs - _start_secs))" +'%T')
       echo -ne "  Start: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$_delta${NRM}\r"
    done
 }
@@ -1115,13 +1114,13 @@ function vin {
    local _actual_note_file
    local _all_tags_found=()
    local _notes_tag=$1
-   if [ -n "$_notes_tag" ]; then
+   if [[ -n "$_notes_tag" ]]; then
       _actual_note_file=$(
          grep '^tags: ' "$_NOTES_REPO"/* |
          grep -iw "$_notes_tag" |
          cut -d':' -f1
       )
-      if [ -n "$_actual_note_file" ]; then
+      if [[ -n "$_actual_note_file" ]]; then
          echo "found notes file to edit: $_actual_note_file"
          eval vim "$_actual_note_file"
       else
@@ -1129,7 +1128,7 @@ function vin {
          # shellcheck disable=SC2207
          _all_tags_found=($(grep -i '^tags: ' "$_NOTES_REPO"/* | cut -d':' -f3 | sed 's/,//g' | sort))
          # read -r -a _all_tags_found <<< "$(grep -i '^tags: ' "$_NOTES_REPO"/* | cut -d':' -f3 | sed 's/,//g')"
-         if [ -n "${_all_tags_found[0]}" ]; then
+         if [[ -n "${_all_tags_found[0]}" ]]; then
             echo
             echo "found these tags:"
             echo -e "\t${_all_tags_found[*]}"
@@ -1174,16 +1173,16 @@ function wutch {
    _TMP_WUTCH_CMD=$(mktemp /tmp/.wutch.cmd.XXX)
    _TMP_WUTCH_OUT=$(mktemp /tmp/.wutch.out.XXX)
    local _secs
-   [ "$1" == "-n" ] && { _secs=$2; shift 2; } || _secs=2
+   [[ "$1" == "-n" ]] && { _secs=$2; shift 2; } || _secs=2
    local _cmd="$*"
    local _hcmd="${_cmd:0:35}..."
    clear
    echo "$_cmd" > "$_TMP_WUTCH_CMD"
    while true; do
       # /bin/bash -c "$_cmd" > "$_TMP_WUTCH_OUT"
-      if [ "$(uname)" == "Darwin" ]; then
+      if [[ "$(uname)" == "Darwin" ]]; then
          script -q "$_TMP_WUTCH_OUT" bash "$_TMP_WUTCH_CMD"
-      elif [ "$OS_NAME" == "Linux" ]; then
+      elif [[ "$OS_NAME" == "Linux" ]]; then
          script -q -c "bash $_TMP_WUTCH_CMD" "$_TMP_WUTCH_OUT"
       else
          echo "Unknown 'script' command syntax for O.S.: $(uname)"
@@ -1200,7 +1199,7 @@ function wutch {
 
 function xsse {
    # ssh in to a server in a seperate xterm window as user: "ec2-user"
-   if [ -n "$1" ]; then
+   if [[ -n "$1" ]]; then
       local _server=$1
       $XTERM -e 'eval /usr/bin/ssh -q ec2-user@'"$_server"'' &
    else
@@ -1210,7 +1209,7 @@ function xsse {
 
 function xssh {
    # ssh in to a server in a seperate xterm window
-   if [ -n "$1" ]; then
+   if [[ -n "$1" ]]; then
       local _server=$1
       $XTERM -e 'eval /usr/bin/ssh -q '"$_server"'' &
    else
@@ -1220,7 +1219,7 @@ function xssh {
 
 function y2j {
    # convert YAML to JSON (from either STDIN or by specifying a file
-   if [ -n "$1" ]; then
+   if [[ -n "$1" ]]; then
       python -c 'import json, sys, yaml; [json.dump(f, sys.stdout, indent=4) for f in yaml.load_all(sys.stdin, Loader=yaml.FullLoader)]' < "$1" | jq .
    else
       python -c 'import json, sys, yaml; [json.dump(f, sys.stdout, indent=4) for f in yaml.load_all(sys.stdin, Loader=yaml.FullLoader)]' | jq .
@@ -1339,13 +1338,14 @@ alias guid='printf "%x\n" `date +%s`'
 alias gxtf="grep --color=auto --exclude-dir .terraform"
 alias h="history | tail -20"
 alias kaj='eval kill $(jobs -p)'
-alias kc='kubectl'; complete -F __start_kubectl kc # enable bash completion too
+alias kc='kubectl'
+[[ "$0" == "bash" ]] && complete -F __start_kubectl kc  # enable kc completion
 alias kca='kubectl api-resources'
 alias kcc='kubectl config current-context'
 alias kcs='kubectl -n kube-system'
 alias kct='kubectl -n testing'
 alias kcw='kubectl -o wide'
-if [ "$(uname -s)" == "Darwin" ]; then
+if [[ "$(uname -s)" == "Darwin" ]]; then
    alias l.='ls -dGh .*'
    alias la='ls -aGh'
    alias ll='ls -lGh'
@@ -1403,7 +1403,7 @@ alias u='uptime'
 alias ua='unalias'
 alias vba='echo "editing: $HOME/$MAIN_BA_FILE"; vi "$HOME/$MAIN_BA_FILE"; sba'
 # upgrade to neovim if available
-[ "$(command -v nvim)" ] && VIM_CMD=$(command -v nvim) || VIM_CMD=$(command -v vim)
+[[ $(command -v nvim) ]] && VIM_CMD=$(command -v nvim) || VIM_CMD=$(command -v vim)
 # shellcheck disable=SC2139
 alias vi="$VIM_CMD"
 alias vid="$VIM_CMD -d"
@@ -1419,9 +1419,9 @@ alias vivd="$VIM_CMD -dO"
 alias viw="$VIM_CMD -R"
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
 if command -v which &> /dev/null; then
-   if [ "$(uname -s)" == "Darwin" ]; then
+   if [[ "$(uname -s)" == "Darwin" ]]; then
       alias which='(alias; declare -f) | which'
-   elif [ "$(uname -so)" == "Linux Android" ]; then
+   elif [[ "$(uname -so)" == "Linux Android" ]]; then
       alias which='(alias; declare -f) | which --tty-only --read-alias --read-functions --show-tilde --show-dot'
    else
       alias which='(alias; declare -f) | which'
@@ -1435,16 +1435,16 @@ alias y='echo y'
 # -------------------- final touches --------------------
 
 # source AWS specific functions and aliases
-[ -f "$AWS_SHIT" ] && source "$AWS_SHIT"
+[[ "$AWS_SHIT" ]] && source "$AWS_SHIT"
 
 # source Chef/Knife specific functions and aliases
-[ -f "$CHEF_SHIT" ] && source "$CHEF_SHIT"
+[[ "$CHEF_SHIT" ]] && source "$CHEF_SHIT"
 
 # source company specific functions and aliases
-[ -f "$COMPANY_SHIT" ] && source "$COMPANY_SHIT"
+[[ "$COMPANY_SHIT" ]] && source "$COMPANY_SHIT"
 
 # set bash prompt command (and bash prompt)
 export OLD_PROMPT_COMMAND=$PROMPT_COMMAND
 export PROMPT_COMMAND="bash_prompt"
 
-[ -n "$PS1" ] && echo -n "$MAIN_BA_FILE (end). "
+[[ "$PS1" ]] && echo -n "$MAIN_BA_FILE (end). "
