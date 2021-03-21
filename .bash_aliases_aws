@@ -476,6 +476,7 @@ awsdi [OPTIONS]
   +at          - show All Tags (keys only)
   +az          - show Availability Zone
   +ip          - show Private IP
+  +IP          - show Instance Profile (ARN)
   +it          - show Instance Type
   +k           - show Key Pair name
   +lt          - show Launch Time
@@ -514,6 +515,7 @@ default display:
          +at) _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"; shift;;
          +az) _more_qs="$_more_qs${_more_qs:+,}Placement.AvailabilityZone"                       ; shift;;
          +ip) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
+         +IP) _more_qs="$_more_qs${_more_qs:+,}IamInstanceProfile.Arn"                           ; shift;;
          +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
           +k) _more_qs="$_more_qs${_more_qs:+,}KeyName"                                          ; shift;;
          +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
@@ -977,7 +979,7 @@ function awsdvol {
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DV_CMD="aws ec2 describe-volumes"
    local _USAGE="usage: \
-awsdi [OPTIONS]
+awsdvol [OPTIONS]
   -n  NAME     - filter results by this Volume Name
   -s  STATE    - filter by State (e.g. creating, avail, in-use, del, error etc.)
   -t  KEY=VAL  - filter results by this tag (key=val)
@@ -1051,7 +1053,7 @@ function awsdvpc {
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _AWS_EC2_DV_CMD="aws ec2 describe-vpcs"
    local _USAGE="usage: \
-awsdi [OPTIONS]
+awsdvpc [OPTIONS]
   -n  NAME     - filter results by this VPC Name
   -c  CIDR     - filter results by this CIDR block
   -d  BOOL     - filter rebults by default VPCs (true|false)
@@ -1297,7 +1299,7 @@ function sae {
    _AWS_PROFILES=$(grep '^\[profile' "$_AWS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
    _VALID_ARGS=$(echo "${_AWS_PROFILES}unset" | tr ' ' ':')
    if [ -n "$_arg" ]; then
-      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+      if [[ ! $_VALID_ARGS =~ (^|:)$_arg(:|$) ]]; then
          echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
          return 2
       fi
@@ -1325,8 +1327,9 @@ function sae {
          export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
          _sso_start_url=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/sso_start_url/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
          if [ -n "$_sso_start_url" ]; then
-            unset AWS_ACCESS_KEY_ID
-            unset AWS_SECRET_ACCESS_KEY
+            # TODO: doesn't work - gotta figure this out!
+            # unset AWS_ACCESS_KEY_ID
+            # unset AWS_SECRET_ACCESS_KEY
             _SSO_CLI_CACHE_DIR="$HOME/.aws/cli/cache"
             # shellcheck disable=SC2012
             _SSO_CLI_CACHE_FILE=$(ls -rt "$_SSO_CLI_CACHE_DIR" | tail -1)
@@ -1343,7 +1346,6 @@ function sae {
          _environment=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
          # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
          DEPLOY_ENVIRONMENT=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/runway_deploy_environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
-         echo "AWS environment set: $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
          [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
          [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
          [ -z "$AWS_DEFAULT_REGION" ] && unset AWS_DEFAULT_REGION
@@ -1352,6 +1354,7 @@ function sae {
          [ -z "$AWS_SECURITY_TOKEN" ] && unset AWS_SECURITY_TOKEN
          [ -z "$AWS_SESSION_TOKEN" ] && unset AWS_SESSION_TOKEN
          [ -z "$DEPLOY_ENVIRONMENT" ] && unset DEPLOY_ENVIRONMENT
+         echo "AWS environment set: $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
       fi
       if [ "$COLOR_PROMPT" == "yes" ]; then
          case $_environment in
@@ -1392,12 +1395,12 @@ function saefc {
 
    # do regular sae() first if profile given
    local _arg="$1"
-   if [ -n "$_arg" ]; then
-      sae "$_arg"
-   fi
    if command -V $_PASTE_CMD &> /dev/null; then
       $_PASTE_CMD > $_SSO_EXPORTS
       source $_SSO_EXPORTS
+      if [ -n "$_arg" ]; then
+         sae "$_arg"
+      fi
    else
       echo "can't find $_PASTE_CMD: con't set AWS environment from clipboard"
    fi
@@ -1416,7 +1419,7 @@ function sar {
    _VALID_ARGS=$(echo "${_AWS_PROFILES}unset" | tr ' ' ':')
    _AWS_STS_CREDS=$HOME/.aws/${_arg}_mfa_credentials
    if [ -n "$_arg" ]; then
-      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+      if [[ ! $_VALID_ARGS =~ (^|:)$_arg(:|$) ]]; then
          echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
          return 2
       fi

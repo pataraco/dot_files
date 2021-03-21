@@ -13,6 +13,40 @@ CO_BA_FILE=".bash_aliases_$COMPANY"
 
 # -------------------- define functions --------------------
 
+function getazrepocloneurl {
+   # Get an Azure Repos Repo's clone SSH URL
+   az repos list --query "[?contains(name,'$1')].sshUrl" -o tsv
+}
+
+function mstid {
+   # Parse MS Teams URI link to channel and generate MS Teams ID, e.g.:
+   #  given a MS Teams URI:
+   #    https://teams.microsoft.com/l/channel/19%3a12345abcdef67890qwerty0812xx%40thread.tacv2/example-channel-?groupId=12345-abcd-1968-qwerty&tenantId=zxcvwert-2345
+   #  generate this ID (and `pbcopy` it):
+   #    19:12345abcdef67890qwerty0812xx@thread.tacv2
+
+   if [[ -n "$1" ]]; then
+      MS_TEAMS_URI=$1
+   else
+      if command -v pbpaste &> /dev/null; then
+         read -r MS_TEAMS_URI <<< "$(pbpaste)"
+         read -r ms_teams_id <<< "$(cut -d'/' -f6 <<< "$MS_TEAMS_URI" | sed 's/%3a/:/;s/%40/@/')"
+         echo -n "MS Teams ID: $ms_teams_id"
+         if command -v pbcopy &> /dev/null; then
+            if pbcopy &> /dev/null <<< "$ms_teams_id"; then
+               echo " (copied to clipboard)"
+            else
+               echo
+            fi
+         else
+            echo
+         fi
+      else
+         echo "Usage: ${FUNCNAME} MS_TEAMS_URI"
+      fi
+   fi
+}
+
 function rde {
    # runway: Set Deploy Environment
    local _env=$1
@@ -64,6 +98,7 @@ function showcof {
 
 # company common
 alias cof="grep '^function .* ' ~/$CO_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scof\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias gitnewrel='set -x; git push origin :release 2>/dev/null; git branch -D release 2>/dev/null; git checkout develop && git fetch -p origin && git merge origin/develop; git checkout -b release; git push origin release; set +x'
 alias scoba='source ~/$CO_BA_FILE'
 alias scof=showcof
 alias vcoba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
