@@ -1386,6 +1386,7 @@ alias sdl="export DISPLAY=localhost:10.0"
 alias sf='showf'
 alias shit='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 alias sing="\$HOME/scripts/tools/sing.sh"
+alias sp='source "$HOME/.bash_profile"'
 alias sts="grep '= CFNType' \$HOME/repos/stacker/stacker/blueprints/variables/types.py | awk '{print \$1}'"
 alias sw='stopwatch'
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'  # change window title
