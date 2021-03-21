@@ -1,9 +1,10 @@
-
 aws acm describe-certificate --region REGION --certificate-arn ARN
 aws acm import-certificate --certificate file://WWW.pem.crt --private-key file://WWW.pem.key --certificate-chain file://WWW.chain.pem.crt
 aws acm list-certificates --region REGION
 aws acm request-certificate --region REGION --domain-name HOST.DOMAIN --domain-validation-options DomainName=HOST.DOMAIN,ValidationDomain=DOMAIN
 aws acm resend-validation-email --region REGION --certificate-arn ARN --domain HOST.DOMAIN --validation-domain DOMAIN
+aws apigateway create-base-path-mapping --rest-api-id ID --domain-name DOMAIN --stage STAGE --base-path PATH
+aws apigatewayv2 create-api-mapping --api-id ID --domain-name DOMAIN --stage STAGE --api-mapping-key PATH
 aws autoscaling create-auto-scaling-group --auto-scaling-group-name ASG_NAME --launch-configuration-name LC_NAME --min-size MIN --max-size MAX --desired-capacity DESIRED --availability-zones AZ1 AZ2 --tags ResourceId=ASG_NAME,ResourceType=auto-scaling-group,Key=KEY,Value=VAL,PropagateAtLaunch=true|false
 aws autoscaling create-launch-configuration --launch-configuration-name LC_NAME --image-id AMI --key-name KEY_PAIR --security-groups SG --user-data file://PATH_TO/FILE --instance-type TYPE --iam-instance-profile PROFILE
 aws autoscaling delete-auto-scaling-group --auto-scaling-group-name ASG_NAME --force-delete
@@ -134,6 +135,7 @@ aws s3 rm s3://S3_BUCKET/KEY --recursive --profile PROFILE  # CAUTION!!!!
 aws s3 sync --exclude "**/.git/*" --exclude "**/node_modules/*" --exclude "**/.terraform/*" SOME_DIR s3://S3_BUCKET/KEY/SOME_DIR
 aws s3 sync --profile AWS_PROFILE --exclude \* --include DIR_NAME\* s3://BUCKET_SRC/path/to/files/ s3://BUCKET_DEST/path/to/files/
 aws s3 sync --profile AWS_PROFILE s3://BUCKET_SRC/ /BUCKET_DEST/dir/
+aws s3api list-buckets --query Owner.ID --output text  # canonical ID
 aws ses --region REGION get-identity-verification-attributes --identities EMAIL_ADDR
 aws ses --region REGION list-identities [--identity-type EmailAddress|Domain]
 aws ses --region REGION verify-email-identity --email-address EMAIL_ADDR
