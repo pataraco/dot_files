@@ -70,6 +70,29 @@ function rde {
    echo "DEPLOY_ENVIRONMENT = ${DEPLOY_ENVIRONMENT:-N/A}"
 }
 
+function set_pip_extra_index_url {
+   # runway: Set Deploy Environment
+   local _ado_company=$1
+   local _ado_project=$2
+   local _ado_feed=$3
+   local _ado_token
+   [[ -z "$_ado_company" ]] && [[ -n "$ADO_COMPANY" ]] && _ado_company=$ADO_COMPANY
+   [[ -z "$_ado_project" ]] && [[ -n "$ADO_PROJECT" ]] && _ado_project=$ADO_PROJECT
+   [[ -z "$_ado_feed" ]] && [[ -n "$ADO_FEED" ]] && _ado_feed=$ADO_FEED
+   [[ -z "$_ado_company" ]] && read -rp "ADO company?: " _ado_company
+   [[ -z "$_ado_project" ]] && read -rp "ADO group?: " _ado_project
+   [[ -z "$_ado_feed" ]] && read -rp "ADO feed?: " _ado_feed
+   if [[ -n "$_ado_company" ]] && [[ -n "$_ado_project" ]] && [[ -n "$_ado_feed" ]]; then
+      _ado_token=$(keyring -b artifacts_keyring.ArtifactsKeyringBackend get "https://pkgs.dev.azure.com/$_ado_company/$_ado_project/_packaging/$_ado_feed/pypi/simple/" VssSessionToken 2> /dev/null)
+   fi
+   if [ -n "$_ado_token" ]; then
+      export PIP_EXTRA_INDEX_URL="https://rwh:$_ado_token@pkgs.dev.azure.com/$_ado_company/$_ado_project/_packaging/$_ado_feed/pypi/simple"
+   else
+      echo "could not get ADO token"
+   fi
+   echo "PIP_EXTRA_INDEX_URL = ${PIP_EXTRA_INDEX_URL:-N/A}"
+}
+
 function showcof {
    # show a company specific function
    if [ -n "$COMPANY_SHIT" ]; then
