@@ -10,9 +10,9 @@
 echo -ne "\033]0;$(whoami)@$(hostname)\007"
 
 # show Ansible, Chef or Python versions in prompt
-PS_SHOW_AV=0
-PS_SHOW_CV=0
-PS_SHOW_PV=0
+PS_SHOW_AV=0  # Ansible
+PS_SHOW_CV=0  # Chef
+PS_SHOW_PV=1  # Python
 
 # -------------------- global variables --------------------
 
@@ -50,10 +50,11 @@ export SHC="${ESC}[?25h"  # show cursor
 export ULN="${ESC}[4m"    # underlined
 
 # for changing prompt colors
-PBLK='\[\e[1;30m\]'  # black (bold)
+PBLK='\[\e[30m\]'  # black (normal)
 PBLU='\[\e[1;34m\]'  # blue (bold)
 PCYN='\[\e[1;36m\]'  # cyan (bold)
 PGRN='\[\e[1;32m\]'  # green (bold)
+PNGRN='\[\e[32m\]'   # green (normal)
 PGRY='\[\e[1;30m\]'  # grey (bold black)
 PMAG='\[\e[1;35m\]'  # magenta (bold)
 PRED='\[\e[1;31m\]'  # red (bold)
@@ -65,7 +66,7 @@ PGBG='\[\e[1;42m\]'  # green BG (bold)
 PMBG='\[\e[1;45m\]'  # magenta BG (bold)
 PRBG='\[\e[1;41m\]'  # red BG (bold)
 PWBG='\[\e[1;47m\]'  # white BG (bold)
-PYBG='\[\e[1;43m\]'  # yellow BG (bold)
+PYBG='\[\e[43m\]'    # yellow BG (normal)
 PNRM='\[\e[m\]'      # to make text normal
 
 # set xterm defaults
@@ -124,7 +125,8 @@ function bash_prompt {
    if [[ $PS_SHOW_PV -eq 1 ]]; then  # get Python version
       export PYTHON_VERSION
       PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
-      PS_PY="${PMAG}P$PYTHON_VERSION$PNRM|"
+      # PS_PY="${PMAG}P$PYTHON_VERSION$PNRM|"
+      PS_PY="${PNGRN}🐍$PYTHON_VERSION$PNRM|"
       (( _versions_len += ${#PYTHON_VERSION} + 2 ))
    fi
    local _git_branch _git_branch_len _git_status
@@ -200,31 +202,24 @@ function bash_prompt {
    PS_DELIM="-"
    if [[ $_last_cmd_exit_status -eq 0 ]]; then
       PS_EMOJI=${CMD_PASS_EMOJIS[$((RANDOM % ${#CMD_PASS_EMOJIS[*]}))]}
-      PS_WHO="${PS_EMOJI}${PS_DELIM}${PBLK}$(basename "$SHELL")${PNRM}${PS_DELIM}"
+      PS_WHO="${PS_EMOJI}${PS_DELIM}${PGRY}$(basename "$SHELL")${PNRM}${PS_DELIM}"
       PS_COL=$PGRN
    else
       PS_EMOJI=${CMD_FAIL_EMOJIS[$((RANDOM % ${#CMD_FAIL_EMOJIS[*]}))]}
-      PS_WHO="${PS_EMOJI}${PS_DELIM}${PBLK}$(basename "$SHELL")${PNRM}${PS_DELIM}"
+      PS_WHO="${PS_EMOJI}${PS_DELIM}${PGRY}$(basename "$SHELL")${PNRM}${PS_DELIM}"
       PS_COL=$PRED
    fi
    if [[ "$COMPANY" == "onica" ]] && [[ -n "$ONICA_SSO_ACCOUNT_KEY" ]] && [[ -n "$ONICA_SSO_EXPIRES_TS" ]]; then
       local _now_ts
       _now_ts=$(date +%s)
       if [[ "$ONICA_SSO_EXPIRES_TS" -gt "$_now_ts" ]]; then
-         # set the window title
-         echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007"
+         echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007" # set the window title
          if [[ $((ONICA_SSO_EXPIRES_TS - _now_ts)) -lt 900 ]]; then
-            PS_AWS="[$PYLW$ONICA_SSO_ACCOUNT_KEY$PNRM]"
-            PS_COL=$PYLW
-         else
-            PS_AWS="[$PRED$ONICA_SSO_ACCOUNT_KEY$PNRM]"
-            PS_COL=$PRED
+            PS_AWS="⚠️ [${PWHT}${AWS_DEFAULT_PROFILE}${PNRM}]"
          fi
       else
-         # set the window title
-         echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY](EXPIRED)\007"
-         PS_AWS="[$PGRY$ONICA_SSO_ACCOUNT_KEY$PNRM]"
-         PS_COL=$PGRY
+         echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY](EXPIRED)\007" # set the window title
+         PS_AWS="🛑[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
       fi
    elif [[ "$COMPANY" == "ag" ]] && [[ -n "$AWS_SESSION_TOKEN" ]] && [[ -n "$AWS_DEFAULT_PROFILE" ]] && [[ -n "$AWS_STS_EXPIRES_TS" ]]; then
       local _now_ts
@@ -235,31 +230,38 @@ function bash_prompt {
       if [[ "$_exp_ts" -gt "$_now_ts" ]]; then
          # TODO: disabling sts lookup until i can come up with a faster solution
          if echo aws sts get-caller-identity &> /dev/null; then
-            # set the window title
             local _tminus
-            _tminus=$(date -jf "%s" $((_exp_ts - _now_ts)) +"(T-%H:%M:%S)")
-            echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007"
+            _tminus="(T-$(secs_to_hms $((_exp_ts - _now_ts))))"
+            echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007" # set the window title
             if [[ $((_exp_ts - _now_ts)) -lt 900 ]]; then
-               PS_AWS="[${PYLW}${AWS_DEFAULT_PROFILE}${PNRM}]"
-               PS_COL=$PYLW
+               PS_AWS="⚠️ [${PWHT}${AWS_DEFAULT_PROFILE}${PNRM}]"
             fi
          else
             export AWS_STS_EXPIRES_TS=$_now_ts
             rm -f "$HOME/.aws/${AWS_DEFAULT_PROFILE}_mfa_credentials"
-            # set the window title
-            echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007"
-            PS_AWS="[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
-            PS_COL=$PGRY
+            echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007" # set the window title
+            PS_AWS="🛑[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
          fi
       else
-         # set the window title
-         echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007"
-         PS_AWS="[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
-         PS_COL=$PGRY
+         echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007" # set the window title
+         PS_AWS="🛑[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
+      fi
+   elif [[ -n "$AWS_STS_EXPIRES_TS" ]]; then
+      local _now_ts
+      _now_ts=$(date +%s)
+      local _exp_ts=$AWS_STS_EXPIRES_TS
+      if [[ "$_exp_ts" -gt "$_now_ts" ]]; then
+         _tminus="(T-$(secs_to_hms $((_exp_ts - _now_ts))))"
+         echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007" # set the window title
+         if [[ $((_exp_ts - _now_ts)) -lt 900 ]]; then
+            PS_AWS="⚠️ [${PWHT}${AWS_DEFAULT_PROFILE}${PNRM}]"
+         fi
+      else
+         echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007" # set the window title
+         PS_AWS="🛑[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
       fi
    else
-      # set the window title
-      echo -ne "\033]0;$(whoami)@$(hostname)\007"
+      echo -ne "\033]0;$(whoami)@$(hostname)\007" # set the window title
    fi
    # check for pyenv virtual environment
    [[ -n "$VIRTUAL_ENV" ]] && PS_PROJ="($PCYN$(basename "$VIRTUAL_ENV")$PNRM)" || PS_PROJ=""
@@ -965,6 +967,15 @@ function s3e {
    fi
 }
 
+function secs_to_hms() {
+   # convert seconds to H:M:S
+   local _h _m _s
+   ((_h=${1}/3600))
+   ((_m=(${1}%3600)/60))
+   ((_s=${1}%60))
+   printf "%02d:%02d:%02d\n" $_h $_m $_s
+}
+
 function showf {
    # show a function defined in in this file
    ALIASES_FILE="$HOME/$MAIN_BA_FILE"
@@ -1319,23 +1330,22 @@ alias cp='cp -i'
 alias crt='~/scripts/chef_recipe_tree.sh'
 #alias cssh='cssh -o "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"'
 alias diff="colordiff -u"
+alias dff="colordiff -U0"
 alias disp="tsend 'echo \$DISPLAY'"
 alias dus="du -sh * | sort -h"
 alias eaf="eval \"$(declare -F | sed -e 's/-f /-fx /')\""
-alias egrep="egrep --color=auto"
-alias egrpq="egrep --color=always"
+alias egrep="grep -E --color=auto --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
+alias egrepa="grep -E --color=always --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
 alias f="grep '^function .* ' ~/$MAIN_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
-alias fgrep="fgrep --color=auto"
-alias fgrpa="fgrep --color=always"
+alias fgrep="grep -F --color=auto --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
+alias fgrepa="grep -F --color=always --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
 alias fuck='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
 alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
 alias ghwt='sudo dmidecode | grep "Product Name"'
-alias grep="grep --color=auto"
-alias grp="grep --color=auto --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
-alias grpa="grep --color=always"
+alias grep="grep --color=auto --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
+alias grepa="grep --color=always --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
 alias guid='printf "%x\n" `date +%s`'
-alias gxtf="grep --color=auto --exclude-dir .terraform"
 alias h="history | tail -20"
 alias kaj='eval kill $(jobs -p)'
 alias kc='kubectl'
@@ -1391,6 +1401,7 @@ alias sts="grep '= CFNType' \$HOME/repos/stacker/stacker/blueprints/variables/ty
 alias sw='stopwatch'
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'  # change window title
 alias ta='tmux attach -t'
+alias tf='terraform'
 alias tf11='/usr/local/bin/terraform.0.11'
 alias tf12='/usr/local/bin/terraform.0.12'
 alias tf13='/usr/local/bin/terraform.0.13'

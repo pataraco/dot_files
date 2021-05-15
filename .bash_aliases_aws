@@ -15,6 +15,81 @@ AWS_BA_FILE=".bash_aliases_aws"
 
 # -------------------- define functions --------------------
 
+function _get_aws_profile_setting {
+   # returns value of specified setting from a profile in AWS config
+   # usage: _get_aws_profile_setting profile setting
+   local _AWS_CFG=$HOME/.aws/config
+   local _PROFILE=$1
+   local _SETTING=$2
+   local _def
+   local _val
+   _def=$(awk -v adp="${_PROFILE}]" -v key="$_SETTING" '$2==adp {pfound="true"; next}; (pfound=="true" && $1==key) {print $0; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+   _val=$(cut -d'=' -f2 <<< "$_def" | cut -c 2-)
+   [[ -n "$_val" ]] && echo "$_val"
+}
+
+function _set_aws_prompt_colors {
+   # sets AWS environment related prompt attribute colors depending on env
+   local _ENV=$1
+   if [ "$COLOR_PROMPT" == "yes" ]; then
+      case $_ENV in
+         dev)
+            PS_COL="$PCYN"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+         devops)
+            PS_COL="$PBBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+         mine)
+            PS_COL="$PGBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+         mixed)
+            PS_COL="$PYLW"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+         prod)
+            PS_COL="$PRBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+         qa)
+            PS_COL="$PMBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+         test)
+            PS_COL="$PCYN"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+         *)
+            PS_COL="$PNRM"; PS_AWS="$PNRM" ;;
+      esac
+   fi
+}
+
+function _show_aws_environment {
+   # show AWS environment [variables]
+   echo -n "--- AWS Environment "
+   [ -n "$AWS_DEFAULT_PROFILE" ] || { [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; } && echo "Settings ---" || echo "(NOT set) ---"
+   echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
+   echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
+   # obfuscate the KEYs with some *'s
+   echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HO-QT-V3-8]:*:g'
+   echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[d-np-zF-HO-QU-V4-9+]:*:g'
+   echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
+}
+
+function _unset_aws_environment {
+   # unsets AWS environment related variables
+   unset AWS_ACCESS_KEY_ID
+   unset AWS_DEFAULT_PROFILE
+   unset AWS_DEFAULT_REGION
+   unset AWS_ENVIRONMENT
+   unset AWS_SECRET_ACCESS_KEY
+   unset AWS_SECURITY_TOKEN
+   unset AWS_SESSION_TOKEN
+   unset AWS_STS_EXPIRES_TS
+   echo "AWS environment has been unset"
+}
+
+function _verify_aws_profile {
+   # verify profile exists in AWS configs
+   local _AWS_CFG=$HOME/.aws/config
+   local _PROFILE=$1
+   local _AWS_PROFILES=$(grep '^\[profile' "$_AWS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
+   local _VALID_PROFILES=$(echo "${_AWS_PROFILES}unset" | tr ' ' ':')
+   if [[ ! $_VALID_PROFILES =~ (^|:)$_PROFILE(:|$) ]]; then
+      echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
+      return 2
+   fi
+}
+
 function assh {
    # ssh to an IP found by 'aws ec2 describe-instances'
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
@@ -1289,30 +1364,16 @@ function sae {
    local _AWS_CFG=$HOME/.aws/config
    local _SSO_CLI_CACHE_DIR
    local _SSO_CLI_CACHE_FILE
-   local _AWS_PROFILES
-   local _VALID_ARGS
-   local _arg="$1"
+   local _PROFILE="$1"
    local _aws_acct
    local _aws_env
    local _environment
    local _sso_start_url
-   _AWS_PROFILES=$(grep '^\[profile' "$_AWS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
-   _VALID_ARGS=$(echo "${_AWS_PROFILES}unset" | tr ' ' ':')
-   if [ -n "$_arg" ]; then
-      if [[ ! $_VALID_ARGS =~ (^|:)$_arg(:|$) ]]; then
-         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
-         return 2
-      fi
+   if [ -n "$_PROFILE" ]; then
+      _verify_aws_profile "$_PROFILE" || return $?
       [ "$COMPANY" == "onica" ] && ssol unset > /dev/null 2>&1
-      if [ "$_arg" == "unset" ]; then
-         unset AWS_ACCESS_KEY_ID
-         unset AWS_DEFAULT_PROFILE
-         unset AWS_DEFAULT_REGION
-         unset AWS_ENVIRONMENT
-         unset AWS_SECRET_ACCESS_KEY
-         unset AWS_SECURITY_TOKEN
-         unset AWS_SESSION_TOKEN
-         echo "AWS environment has been unset"
+      if [ "$_PROFILE" == "unset" ]; then
+         _unset_aws_environment
       else
          export AWS_ACCESS_KEY_ID
          export AWS_SECRET_ACCESS_KEY
@@ -1320,12 +1381,12 @@ function sae {
          export DEPLOY_ENVIRONMENT
          # unset AWS_SESSION_TOKEN
          # unset AWS_SECURITY_TOKEN
-         export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
-         _aws_env=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6,$7,$8; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG" | sed 's/ *$//')
+         export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
+         _aws_env=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
          # _aws_acct=$(aws sts get-caller-identity --profile "$AWS_DEFAULT_PROFILE" | jq -r .Account)
          _aws_acct=$(aws sts get-caller-identity --query Account --output text)
          export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
-         _sso_start_url=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/sso_start_url/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+         _sso_start_url=$(_get_aws_profile_setting "$_PROFILE" sso_start_url)
          if [ -n "$_sso_start_url" ]; then
             # TODO: doesn't work - gotta figure this out!
             # unset AWS_ACCESS_KEY_ID
@@ -1338,14 +1399,15 @@ function sae {
             # AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey "$_SSO_CLI_CACHE_DIR/$_SSO_CLI_CACHE_FILE")
             # AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken "$_SSO_CLI_CACHE_DIR/$_SSO_CLI_CACHE_FILE")
          else
-            AWS_ACCESS_KEY_ID=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/aws_access_key_id/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
-            AWS_SECRET_ACCESS_KEY=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/aws_secret_access_key/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+            AWS_ACCESS_KEY_ID=$(_get_aws_profile_setting "$_PROFILE" aws_access_key_id)
+            AWS_SECRET_ACCESS_KEY=$(_get_aws_profile_setting "$_PROFILE" aws_secret_access_key)
          fi
-         AWS_DEFAULT_REGION=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+         AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" region)
+         [[ -z "$AWS_DEFAULT_REGION" ]] && AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" sso_region)
          # _environment used for PS_PROMPT (color)
-         _environment=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+         _environment=$(_get_aws_profile_setting "$_PROFILE" environment)
          # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
-         DEPLOY_ENVIRONMENT=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/runway_deploy_environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+         DEPLOY_ENVIRONMENT=$(_get_aws_profile_setting "$_PROFILE" runway_deploy_environment)
          [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
          [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
          [ -z "$AWS_DEFAULT_REGION" ] && unset AWS_DEFAULT_REGION
@@ -1356,35 +1418,9 @@ function sae {
          [ -z "$DEPLOY_ENVIRONMENT" ] && unset DEPLOY_ENVIRONMENT
          echo "AWS environment set: $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
       fi
-      if [ "$COLOR_PROMPT" == "yes" ]; then
-         case $_environment in
-            dev)
-               PS_COL="$PCYN"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
-            devops)
-               PS_COL="$PBBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
-            mine)
-               PS_COL="$PGBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
-            mixed)
-               PS_COL="$PYLW"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
-            prod)
-               PS_COL="$PRBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
-            qa)
-               PS_COL="$PMBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
-            test)
-               PS_COL="$PCYN"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
-            *)
-               PS_COL="$PNRM"; PS_AWS="$PNRM" ;;
-         esac
-      fi
+      _set_aws_prompt_colors "$_environment"
    else
-      echo -n "--- AWS Environment "
-      [ -n "$AWS_DEFAULT_PROFILE" ] || { [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; } && echo "Settings ---" || echo "(NOT set) ---"
-      echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
-      echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
-      # obfuscate the KEYs with some *'s
-      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HO-QT-V3-8]:*:g'
-      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[d-np-zF-HO-QU-V4-9+]:*:g'
-      echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
+      _show_aws_environment
    fi
 }
 
@@ -1394,54 +1430,111 @@ function saefc {
    local _SSO_EXPORTS="/tmp/.sso_exports"
 
    # do regular sae() first if profile given
-   local _arg="$1"
+   local _PROFILE="$1"
    if command -V $_PASTE_CMD &> /dev/null; then
       $_PASTE_CMD > $_SSO_EXPORTS
       source $_SSO_EXPORTS
-      if [ -n "$_arg" ]; then
-         sae "$_arg"
+      if [ -n "$_PROFILE" ]; then
+         sae "$_PROFILE"
       fi
    else
       echo "can't find $_PASTE_CMD: con't set AWS environment from clipboard"
    fi
 }
 
+function saesso {
+   # Set AWS environment using SSO and assuming the role in .aws/configs
+   local _PROFILE="$1"
+   local _SSO_EXPORTS="/tmp/.sso_exports"
+   local _SSO_CACHE_DIR="$HOME/.aws/sso/cache"
+   local _aws_acct_desc
+   local _current_time_ts
+   local _environment
+   local _sso_access_token
+   local _sso_account_id
+   local _sso_cache_file
+   local _sso_exp_time
+   local _sso_exp_time_ts
+   local _sso_role_creds
+   local _sso_role_name
+
+   if [[ -n "$_PROFILE" ]]; then
+      if [[ "$_PROFILE" == "console" ]]; then # WIP - not ready
+         # ---------------
+         echo "this feature not ready" # WIP: remove when ready
+         return                        # WIP: remove when ready
+         # ---------------
+         local _aws_signin_url
+         _aws_signin_url="https://signin.aws.amazon.com/federation?"
+          open -n -a "Google Chrome" --args "--new-window" "$_aws_signin_url"
+      fi
+      _verify_aws_profile "$_PROFILE" || return $?
+      if [ "$_PROFILE" == "unset" ]; then
+         _unset_aws_environment
+      else
+         _sso_cache_file=$(grep -l 'accessToken' "$_SSO_CACHE_DIR"/*)
+         _sso_exp_time=$(jq -r .expiresAt "$_sso_cache_file" 2> /dev/null)
+         _sso_exp_time_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "$_sso_exp_time" +"%s" 2> /dev/null)
+         _current_time_ts=$(date +"%s")
+         if [[ -z "$_sso_cache_file" ]] || [[ -n "$_sso_exp_time" ]] && [[ $_current_time_ts -ge $_sso_exp_time_ts ]]; then
+            echo "no SSO creds found and/or expired, running 'aws sso login'..."
+            aws sso login
+            _sso_cache_file=$(grep -l 'accessToken' "$_SSO_CACHE_DIR"/*)
+         fi
+         # need region for 'aws sso get-role-credentials'
+         export AWS_DEFAULT_REGION
+         AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" sso_region)
+         _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
+         _sso_account_id=$(_get_aws_profile_setting "$_PROFILE" sso_account_id)
+         _sso_role_name=$(_get_aws_profile_setting "$_PROFILE" sso_role_name)
+         _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2> /dev/null)
+         export AWS_ACCESS_KEY_ID
+         export AWS_SECRET_ACCESS_KEY
+         export AWS_SESSION_TOKEN
+         export AWS_STS_EXPIRES_TS
+         # this AWS_STS_EXPIRES_TS def (w/cut) only works til: Sat Nov 20 09:46:39 PST 2286
+         AWS_ACCESS_KEY_ID=$(jq -r .roleCredentials.accessKeyId <<< "$_sso_role_creds")
+         AWS_SECRET_ACCESS_KEY=$(jq -r .roleCredentials.secretAccessKey <<< "$_sso_role_creds")
+         AWS_SESSION_TOKEN=$(jq -r .roleCredentials.sessionToken <<< "$_sso_role_creds")
+         AWS_STS_EXPIRES_TS=$(jq -r .roleCredentials.expiration <<< "$_sso_role_creds" | cut -c -10)
+         export AWS_DEFAULT_PROFILE=$_PROFILE  # for `aws` CLI (instead of using --profile)
+         _aws_acct_desc=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
+         export AWS_ENVIRONMENT="$_aws_acct_desc [$_sso_account_id]"
+         # _environment used for PS_PROMPT (color)
+         _environment=$(_get_aws_profile_setting "$_PROFILE" environment)
+         # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
+         export DEPLOY_ENVIRONMENT
+         DEPLOY_ENVIRONMENT=$(_get_aws_profile_setting "$_PROFILE" runway_deploy_environment)
+         echo "AWS environment set (IAM Role assumed): $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE) [$_sso_role_name]"
+      fi
+      _set_aws_prompt_colors "$_environment"
+   else
+      _show_aws_environment
+   fi
+}
+
 function sar {
    # aws sts assume-role from ~/.aws/config file
-   local _arg="$1"
+   local _PROFILE="$1"
    local _AWS_CFG=$HOME/.aws/config
-   local _AWS_PROFILES
    local _AWS_STS_CREDS
    local _STS_DURATION=3600
-   local _VALID_ARGS
    local _environment
-   _AWS_PROFILES=$(grep '^\[profile' "$_AWS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
-   _VALID_ARGS=$(echo "${_AWS_PROFILES}unset" | tr ' ' ':')
-   _AWS_STS_CREDS=$HOME/.aws/${_arg}_mfa_credentials
-   if [ -n "$_arg" ]; then
-      if [[ ! $_VALID_ARGS =~ (^|:)$_arg(:|$) ]]; then
-         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
-         return 2
-      fi
-      if [ "$_arg" == "unset" ]; then
-         unset AWS_ACCESS_KEY_ID
-         unset AWS_DEFAULT_PROFILE
-         unset AWS_DEFAULT_REGION
-         unset AWS_ENVIRONMENT
-         unset AWS_SECRET_ACCESS_KEY
-         unset AWS_SECURITY_TOKEN
-         unset AWS_SESSION_TOKEN
-         echo "AWS environment has been unset"
+   _AWS_STS_CREDS=$HOME/.aws/${_PROFILE}_mfa_credentials
+   if [ -n "$_PROFILE" ]; then
+      _verify_aws_profile "$_PROFILE" || return $?
+      if [ "$_PROFILE" == "unset" ]; then
+         _unset_aws_environment
       else
          unset AWS_SECURITY_TOKEN
-         export AWS_DEFAULT_PROFILE=$_arg # for `aws` CLI (instead of using --profile)
+         export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
          local _role_arn
          local _role_name
          local _aws_acct
-         _role_arn=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/role_arn/) {print $3; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG" | sed 's/ *$//')
+         _role_arn=$(_get_aws_profile_setting "$_PROFILE" role_arn)
          _role_name=$(cut -d'/' -f2- <<< "$_role_arn")
          _aws_acct=$(cut -d':' -f5 <<< "$_role_arn")
-         if aws sts assume-role --role-arn "$_role_arn" --role-session-name "$_arg" --duration-seconds "$_STS_DURATION" > "$_AWS_STS_CREDS"; then
+         if aws sts assume-role --role-arn "$_role_arn" --role-session-name "$_PROFILE" --duration-seconds "$_STS_DURATION" > "$_AWS_STS_CREDS"; then
             export AWS_ACCESS_KEY_ID
             export AWS_SECRET_ACCESS_KEY
             export AWS_SESSION_TOKEN
@@ -1449,11 +1542,12 @@ function sar {
             AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId "$_AWS_STS_CREDS")
             AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey "$_AWS_STS_CREDS")
             AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken "$_AWS_STS_CREDS")
-            AWS_DEFAULT_REGION=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/region/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
-            _environment=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+            AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" region)
+            [[ -z "$AWS_DEFAULT_REGION" ]] && AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" sso_region)
+            _environment=$(_get_aws_profile_setting "$_PROFILE" environment)
             # local _aws_acct=$(aws sts get-caller-identity | jq -r .Account)
             local _aws_env
-            _aws_env=$(awk -v adp="${AWS_DEFAULT_PROFILE}]" '$2==adp {pfound="true"; next}; (pfound=="true" && $1~/aws_account_desc/) {print $3,$4,$5,$6,$7,$8; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG" | sed 's/ *$//')
+            _aws_env=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
             export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
             local _exp_time
             _exp_time=$(jq -r .Credentials.Expiration "$_AWS_STS_CREDS")
@@ -1466,33 +1560,11 @@ function sar {
             [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
             [ -z "$AWS_SECRET_ACCESS_KEY" ] && unset AWS_SECRET_ACCESS_KEY
             [ -z "$AWS_DEFAULT_REGION" ] && unset AWS_DEFAULT_REGION
-            if [ "$COLOR_PROMPT" == "yes" ]; then
-               case $_environment in
-                  dev)	# cyan prompt
-                     PS_COL="$PCYN"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM" ;;
-                  test)	# magenta prompt
-                     PS_COL="$PMAG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM" ;;
-                  mixed)	# yellow prompt
-                     PS_COL="$PYLW"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM" ;;
-                  prod)	# red prompt
-                     PS_COL="$PRED"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM" ;;
-                  mine)	# green prompt
-                     PS_COL="$PGRN"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM" ;;
-                  *)		# cyan prompt
-                     PS_COL="$PCYN"; PS_AWS="$PNRM" ;;
-               esac
-            fi
+            _set_aws_prompt_colors "$_environment"
          fi
       fi
    else
-      echo -n "--- AWS Environment "
-      [ -n "$AWS_DEFAULT_PROFILE" ] || { [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; } && echo "Settings ---" || echo "(NOT set) ---"
-      echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
-      echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
-      # obfuscate the KEYs with some *'s
-      echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HO-QT-V3-8]:*:g'
-      echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[d-np-zF-HO-QU-V4-9+]:*:g'
-      echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
+      _show_aws_environment
    fi
 }
 
