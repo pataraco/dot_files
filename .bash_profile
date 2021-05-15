@@ -41,14 +41,6 @@ if [ -d "$arcanist_repo" ]; then
    [[ -d $arcanist_bin && ! $PATH =~ ^$arcanist_bin:|:$arcanist_bin:|:$arcanist_bin$ ]] && export PATH="$PATH:$arcanist_bin"
 fi
 
-# add pyenv to PATH
-pyenv_repo=$HOME/repos/pyenv
-if [ -d "$pyenv_repo" ]; then
-   export PYENV_ROOT=$pyenv_repo
-   pyenv_bin=$PYENV_ROOT/bin
-   [[ -d $pyenv_bin && ! $PATH =~ ^$pyenv_bin:|:$pyenv_bin:|:$pyenv_bin$ ]] && export PATH="$pyenv_bin:$PATH"
-fi
-
 # add Python 2.7 and .local/bin to PATH
 python27_bin="${HOME}/Library/Python/2.7/bin"
 [[ -d $python27_bin && ! $PATH =~ ^$python27_bin:|:$python27_bin:|:$python27_bin$ ]] && export PATH="$python27_bin:$PATH"
@@ -149,16 +141,6 @@ else
     start_ssh_agent
 fi
 
-# add `pyenv init` to shell to enable shims and autcompletion
-command -v pyenv &> /dev/null && eval "$(pyenv init -)"
-# use `pipenv`
-# # add `pyenv virtualenv-init` to shell to enable shims and autcompletion
-# [ $(command -v pyenv) ] && eval "$(pyenv virtualenv-init -)"
-
-# remove duplicate entries in the PATH (both work - take your pick)
-# PATH=$(perl -e 'print join(":", grep { not $seen{$_}++ } split(/:/, $ENV{PATH}))')
-PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/:$//')
-
 # Node Version Manager
 export NVM_DIR="$HOME/.nvm"
 export NVM_SCRIPT="/usr/local/opt/nvm/nvm.sh"
@@ -168,7 +150,7 @@ export NVM_COMPLETION="/usr/local/opt/nvm/etc/bash_completion.d/nvm"
 
 # Enamble AWS CLI auto completion
 if command -v aws_completer &> /dev/null; then
-   complete -C $(command -v aws_completer) aws
+   complete -C "$(command -v aws_completer)" aws
 fi
 
 # Enamble kubectl auto completion
@@ -190,6 +172,26 @@ else
 fi
 unset __conda_setup
 # <<< conda initialize <<<
+
+# add $HOME/repos/pyenv to beginning of PATH (if it exists)
+pyenv_repo=$HOME/repos/pyenv
+if [ -d "$pyenv_repo" ]; then
+   export PYENV_ROOT=$pyenv_repo
+   pyenv_bin=$PYENV_ROOT/bin
+   [[ -d $pyenv_bin && ! $PATH =~ ^$pyenv_bin:|:$pyenv_bin:|:$pyenv_bin$ ]] && export PATH="$pyenv_bin:$PATH"
+fi
+
+# add `pyenv init` to shell to enable shims and autcompletion
+# adds $HOME/.pyenv/shims to beginning of PATH
+command -v pyenv &> /dev/null && eval "$(pyenv init -)"
+# use `pipenv`
+# # add `pyenv virtualenv-init` to shell to enable shims and autcompletion
+# # adds pyenv-virtualenv shims to beginning of PATH
+# [ $(command -v pyenv) ] && eval "$(pyenv virtualenv-init -)"
+
+# remove duplicate entries in the PATH (both work - take your pick)
+# PATH=$(perl -e 'print join(":", grep { not $seen{$_}++ } split(/:/, $ENV{PATH}))')
+PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/:$//')
 
 # Output completion message
 [ -n "$PS1" ] && echo -n ".bash_profile (end). "
