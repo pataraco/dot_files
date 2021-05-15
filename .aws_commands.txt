@@ -1,3 +1,4 @@
+
 aws acm describe-certificate --region REGION --certificate-arn ARN
 aws acm import-certificate --certificate file://WWW.pem.crt --private-key file://WWW.pem.key --certificate-chain file://WWW.chain.pem.crt
 aws acm list-certificates --region REGION
@@ -135,7 +136,9 @@ aws s3 rm s3://S3_BUCKET/KEY --recursive --profile PROFILE  # CAUTION!!!!
 aws s3 sync --exclude "**/.git/*" --exclude "**/node_modules/*" --exclude "**/.terraform/*" SOME_DIR s3://S3_BUCKET/KEY/SOME_DIR
 aws s3 sync --profile AWS_PROFILE --exclude \* --include DIR_NAME\* s3://BUCKET_SRC/path/to/files/ s3://BUCKET_DEST/path/to/files/
 aws s3 sync --profile AWS_PROFILE s3://BUCKET_SRC/ /BUCKET_DEST/dir/
+aws s3api get-bucket-notification-configuration --bucket BUCKET
 aws s3api list-buckets --query Owner.ID --output text  # canonical ID
+aws secretsmanager get-secret-value --secret-id NAME --query SecretString --output text | jq .
 aws ses --region REGION get-identity-verification-attributes --identities EMAIL_ADDR
 aws ses --region REGION list-identities [--identity-type EmailAddress|Domain]
 aws ses --region REGION verify-email-identity --email-address EMAIL_ADDR
