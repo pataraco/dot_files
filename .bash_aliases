@@ -104,7 +104,22 @@ function _tmux_send_keys_all_panes {
 
 function bash_prompt {
    # customize Bash Prompt
+   # show status of last command
    local _last_cmd_exit_status=$?
+   # PS_WHO="$PBLU\u@\h$PNRM"  # show emojis, not me, i know who i am
+   CMD_PASS_EMOJIS=(😀 😃 😄 😁 😆 😊 🙃 😋 😛 😝 😍 😜 🤗 😬 😎)
+   CMD_FAIL_EMOJIS=(😡 👿 🤔 😵 😥 😰 👎 😱 😭 😢 🖕 🤢 😤 💩 💀)
+   PS_DELIM="-"
+   if [[ $_last_cmd_exit_status -eq 0 ]]; then
+      PS_EMOJI=${CMD_PASS_EMOJIS[$((RANDOM % ${#CMD_PASS_EMOJIS[*]}))]}
+      PS_WHO="${PS_EMOJI}${PS_DELIM}${PGRY}$(basename "$SHELL")${PNRM}${PS_DELIM}"
+      PS_COL=$PGRN
+   else
+      PS_EMOJI=${CMD_FAIL_EMOJIS[$((RANDOM % ${#CMD_FAIL_EMOJIS[*]}))]}
+      PS_WHO="${PS_EMOJI}${PS_DELIM}${PGRY}$(basename "$SHELL")${PNRM}${PS_DELIM}"
+      PS_COL=$PRED
+   fi
+   # conditional show tools' versions
    local _versions_len=0
    if [[ $PS_SHOW_CV -eq 1 ]]; then  # get Chef version
       if [[ -z "$CHEF_VERSION" ]]; then
@@ -129,14 +144,14 @@ function bash_prompt {
       PS_PY="${PNGRN}🐍$PYTHON_VERSION$PNRM|"
       (( _versions_len += ${#PYTHON_VERSION} + 2 ))
    fi
+   # get/show git info (if in a git repo)
    local _git_branch _git_branch_len _git_status
    local _git_has_mods=false        _git_has_mods_cached=false
    local _git_has_adds=false        _git_has_renames=false
    local _git_has_dels=false        _git_has_dels_cached=false
    local _git_ready_to_commit=false _git_has_untracked_files=false
-   # get git info
-   if git branch &> /dev/null; then   # in a git repo
-      _git_branch=$(git rev-parse --quiet --abbrev-ref HEAD 2>/dev/null)
+   if _git_branch=$(git rev-parse --quiet --abbrev-ref HEAD 2>/dev/null); then
+      # in a git repo
       _git_branch_len=$(( ${#_git_branch} + 1 ))
       _git_status=$(git status --porcelain 2> /dev/null)
       [[ "$_git_status" =~ ($'\n'|^).M ]] && _git_has_mods=true
@@ -196,19 +211,7 @@ function bash_prompt {
       local _ps_path_chopped="..${_pwd:$_ps_path_start_pos:$_space_for_path}"
       PS_PATH="$PGRN${_ps_path_chopped}$PNRM"
    fi
-   # PS_WHO="$PBLU\u@\h$PNRM"
-   CMD_PASS_EMOJIS=(😀 😃 😄 😁 😆 😊 🙃 😋 😛 😝 😍 😜 🤗 😬 😎)
-   CMD_FAIL_EMOJIS=(😡 👿 🤔 😵 😥 😰 👎 😱 😭 😢 🖕 🤢 😤 💩 💀)
-   PS_DELIM="-"
-   if [[ $_last_cmd_exit_status -eq 0 ]]; then
-      PS_EMOJI=${CMD_PASS_EMOJIS[$((RANDOM % ${#CMD_PASS_EMOJIS[*]}))]}
-      PS_WHO="${PS_EMOJI}${PS_DELIM}${PGRY}$(basename "$SHELL")${PNRM}${PS_DELIM}"
-      PS_COL=$PGRN
-   else
-      PS_EMOJI=${CMD_FAIL_EMOJIS[$((RANDOM % ${#CMD_FAIL_EMOJIS[*]}))]}
-      PS_WHO="${PS_EMOJI}${PS_DELIM}${PGRY}$(basename "$SHELL")${PNRM}${PS_DELIM}"
-      PS_COL=$PRED
-   fi
+   # show/adjust colors of AWS profile prompt depending on expiration time left
    if [[ "$COMPANY" == "onica" ]] && [[ -n "$ONICA_SSO_ACCOUNT_KEY" ]] && [[ -n "$ONICA_SSO_EXPIRES_TS" ]]; then
       local _now_ts
       _now_ts=$(date +%s)
@@ -263,9 +266,9 @@ function bash_prompt {
    else
       echo -ne "\033]0;$(whoami)@$(hostname)\007" # set the window title
    fi
-   # check for pyenv virtual environment
+   # check for/show pyenv virtual environment
    [[ -n "$VIRTUAL_ENV" ]] && PS_PROJ="($PCYN$(basename "$VIRTUAL_ENV")$PNRM)" || PS_PROJ=""
-   # check for jobs running in the background
+   # check for/show jobs running in the background
    if [[ "$(jobs | wc -l | tr -d ' ')" -gt 1 ]]; then
       # using "1" because the `git branch` above runs in the background
       PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO(\j)${PS_COL}⌲$PNRM "
@@ -1115,6 +1118,30 @@ function tsend {
    tmux set-window-option synchronize-panes on
    tmux send-keys "$*" Enter
    tmux set-window-option synchronize-panes off
+}
+
+function urlencode {
+    # urlencode <string>
+    local _old_lc_collate=$LC_COLLATE
+    LC_COLLATE=C
+    local length="${#1}"
+    for (( i = 0; i < length; i++ )); do
+        local c="${1:$i:1}"
+        case $c in
+            [a-zA-Z0-9.~_-]) printf '%s' "$c" ;;
+            *) printf '%%%02X' "'$c" ;;
+        esac
+    done
+    LC_COLLATE=$_old_lc_collate
+}
+
+function urldecode {
+    # urldecode <string>
+    local url_encoded="${1//+/ }"
+    printf '%b' "${url_encoded//%/\\x}"
+    # following code also works
+    # : "${*//+/ }"
+    # echo -e "${_//%/\\x}"
 }
 
 function vin {
