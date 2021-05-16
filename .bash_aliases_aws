@@ -82,8 +82,8 @@ function _verify_aws_profile {
    # verify profile exists in AWS configs
    local _AWS_CFG=$HOME/.aws/config
    local _PROFILE=$1
-   local _AWS_PROFILES=$(grep '^\[profile' "$_AWS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
-   local _VALID_PROFILES=$(echo "${_AWS_PROFILES}unset" | tr ' ' ':')
+   local _AWS_PROFILES=$(\grep '^\[profile' "$_AWS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
+   local _VALID_PROFILES=$(tr ' ' ':' <<< "${_AWS_PROFILES}unset")
    if [[ ! $_VALID_PROFILES =~ (^|:)$_PROFILE(:|$) ]]; then
       echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
       return 2
@@ -1445,9 +1445,11 @@ function saefc {
 function saesso {
    # Set AWS environment using SSO and assuming the role in .aws/configs
    local _PROFILE="$1"
-   local _SSO_EXPORTS="/tmp/.sso_exports"
+   local _CONSOLE_DEST="$2"
+   local _CONSOLE_LOGIN_SCRIPT="$HOME/repos/pataraco/scripts/aws/aws_sso_console_login.py"
    local _SSO_CACHE_DIR="$HOME/.aws/sso/cache"
    local _aws_acct_desc
+   local _aws_signin_url
    local _current_time_ts
    local _environment
    local _sso_access_token
@@ -1460,34 +1462,60 @@ function saesso {
 
    if [[ -n "$_PROFILE" ]]; then
       if [[ "$_PROFILE" == "console" ]]; then # WIP - not ready
-         # ---------------
-         echo "this feature not ready" # WIP: remove when ready
-         return                        # WIP: remove when ready
-         # ---------------
-         local _aws_signin_url
-         _aws_signin_url="https://signin.aws.amazon.com/federation?"
-          open -n -a "Google Chrome" --args "--new-window" "$_aws_signin_url"
+         if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_SESSION_TOKEN" ]]; then
+            echo "can't log in to console - AWS environment not set up"
+            return
+         fi
+         if [[ -x "$_CONSOLE_LOGIN_SCRIPT" ]]; then
+            _aws_signin_url=$($_CONSOLE_LOGIN_SCRIPT)
+         else
+            echo "can't log in to console - console login script doesn't exist: $_CONSOLE_LOGIN_SCRIPT"
+            return
+         fi
+         if [[ -n "$_aws_signin_url" ]]; then
+            case $_CONSOLE_DEST in
+               eb) _CONSOLE_DEST="elasticbeanstalk" ;;
+               secrets) _CONSOLE_DEST="secretsmanager" ;;
+               ddb) _CONSOLE_DEST="dynamodb" ;;
+               ssm) _CONSOLE_DEST="systems-manager/parameters" ;;
+            esac
+            open -n -a "Google Chrome" --args "--new-window" "--profile-directory=${AWS_DEFAULT_PROFILE}" "${_aws_signin_url}${_CONSOLE_DEST}"
+         else
+            echo "can't log in to console - could not generate signin URL"
+            return 3
+         fi
+         return
       fi
       _verify_aws_profile "$_PROFILE" || return $?
       if [ "$_PROFILE" == "unset" ]; then
          _unset_aws_environment
       else
-         _sso_cache_file=$(grep -l 'accessToken' "$_SSO_CACHE_DIR"/*)
+         _sso_cache_file=$(\grep -l 'accessToken' "$_SSO_CACHE_DIR"/*)
          _sso_exp_time=$(jq -r .expiresAt "$_sso_cache_file" 2> /dev/null)
          _sso_exp_time_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "$_sso_exp_time" +"%s" 2> /dev/null)
          _current_time_ts=$(date +"%s")
          if [[ -z "$_sso_cache_file" ]] || [[ -n "$_sso_exp_time" ]] && [[ $_current_time_ts -ge $_sso_exp_time_ts ]]; then
             echo "no SSO creds found and/or expired, running 'aws sso login'..."
             aws sso login
-            _sso_cache_file=$(grep -l 'accessToken' "$_SSO_CACHE_DIR"/*)
+            _sso_cache_file=$(\grep -l 'accessToken' "$_SSO_CACHE_DIR"/*)
          fi
          # need region for 'aws sso get-role-credentials'
          export AWS_DEFAULT_REGION
          AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" sso_region)
-         _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
          _sso_account_id=$(_get_aws_profile_setting "$_PROFILE" sso_account_id)
          _sso_role_name=$(_get_aws_profile_setting "$_PROFILE" sso_role_name)
-         _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2> /dev/null)
+         _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
+         if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2> /dev/null); then
+            echo "SSO creds are expired, running 'aws sso login'..."
+            aws sso login
+            _sso_cache_file=$(\grep -l 'accessToken' "$_SSO_CACHE_DIR"/*)
+            _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
+            if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2> /dev/null); then
+               echo "can't get SSO role Credentials"
+               _unset_aws_environment
+               return 3
+            fi
+         fi
          export AWS_ACCESS_KEY_ID
          export AWS_SECRET_ACCESS_KEY
          export AWS_SESSION_TOKEN
