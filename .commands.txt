@@ -159,6 +159,7 @@ nova boot --flavor m1.large --image 64470276-fec7-4b6c-84e5-7556b76f07d3 --secur
 nova force-delete 458795c7-a296-4476-954d-8a0c2382b051
 nova reset-state 458795c7-a296-4476-954d-8a0c2382b051
 ntpdate ntphost1.star
+open -n -a "Google Chrome" --args "--new-window" "--profile-directory=$PROFILE" "$URL"
 openssl ciphers -v 'ALL:eNULL'
 openssl enc -d -in ENCRYPTED_FILE -out DECRYPTED_FILE -pass file:/path/to/key -aes-256-cbc
 openssl enc -e -in DECRYPTED_FILE -out ENCRYPTED_FILE -pass file:/path/to/key -aes-256-cbc
