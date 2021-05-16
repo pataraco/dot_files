@@ -1474,10 +1474,11 @@ function saesso {
          fi
          if [[ -n "$_aws_signin_url" ]]; then
             case $_CONSOLE_DEST in
+               ddb) _CONSOLE_DEST="dynamodb" ;;
                eb) _CONSOLE_DEST="elasticbeanstalk" ;;
                secrets) _CONSOLE_DEST="secretsmanager" ;;
-               ddb) _CONSOLE_DEST="dynamodb" ;;
                ssm) _CONSOLE_DEST="systems-manager/parameters" ;;
+               sso) _CONSOLE_DEST="singlesignon" ;;
             esac
             open -n -a "Google Chrome" --args "--new-window" "--profile-directory=${AWS_DEFAULT_PROFILE}" "${_aws_signin_url}${_CONSOLE_DEST}"
          else
