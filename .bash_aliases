@@ -1108,6 +1108,53 @@ function stopwatch {
    done
 }
 
+function tf {
+   if [[ -z "$TERRAFORM_VERSION" ]]; then
+      echo "terraform version not set, please use 'tfe version=VERSION'"
+   else
+      $TERRAFORM_VERSION "$@"
+   fi
+}
+
+function tfe {
+   # set/show terraform environment
+   # usage:
+   #    tfe                  show terraform environment
+   #    tfe KEY=VAL          set terraform environmetn variable "TF_VAR_<KEY>=<VAL>"
+   #    tfe versions         show available terraform versions
+   #    tfe version=VERSION  set terraform version  "TERRAFORM_VERSION=<VERSION>"
+   #                         (use the alias "tf" to use the desired terraform version)
+   local _cmd=$1
+   local _key _val
+   local _version _versions
+   if [[ "$_cmd" == "versions" ]]; then
+      # get versions in /usr/local/bin
+      _versions=$(basename /usr/local/bin/terraform* | grep -v '^terraform\(\.[0-9]\+\)\{0,2\}$' | sed 's/^terraform.//g') 
+      # add versions saved by runway
+      _versions="$_versions $(basename $(ls -d $HOME/.tfenv/versions/*))"
+      for _version in $_versions; do echo $_version; done | sort -u
+   elif [[ "$_cmd" =~ version=.* ]]; then
+      _version=${_cmd##*=}
+      if [[ -x "/usr/local/bin/terraform.$_version" ]]; then
+         export TERRAFORM_VERSION="/usr/local/bin/terraform.$_version"
+      elif [[ -x "$HOME/.tfenv/versions/$_version/terraform" ]]; then
+         export TERRAFORM_VERSION="$HOME/.tfenv/versions/$_version/terraform"
+      else
+         echo "cannot find desired version ($_version) in '/usr/local/bin' nor '$HOME/.tfenv/versions'"
+         echo "these are the available versions:"
+         tfe versions
+      fi
+   elif [[ "$_cmd" =~ .*=.* ]]; then
+      _key=${_cmd%%=*}
+      _val=${_cmd##*=}
+      export "TF_VAR_$_key=$_val"
+   else
+      tf --version | head -1
+      echo "Path: ${TERRAFORM_VERSION:-Not set}"
+      env | \grep '^TF_VAR_'
+   fi
+}
+
 function tb {
    # set xterm title to custom value
    echo -ne "\033]0; $* \007"
@@ -1428,7 +1475,7 @@ alias sts="grep '= CFNType' \$HOME/repos/stacker/stacker/blueprints/variables/ty
 alias sw='stopwatch'
 #alias tt='echo -ne "\e]62;`whoami`@`hostname`\a"'  # change window title
 alias ta='tmux attach -t'
-alias tf='terraform'
+alias tf1='/usr/local/bin/terraform.1'
 alias tf11='/usr/local/bin/terraform.0.11'
 alias tf12='/usr/local/bin/terraform.0.12'
 alias tf13='/usr/local/bin/terraform.0.13'
@@ -1450,10 +1497,12 @@ alias vidh="$VIM_CMD -do"
 alias vidv="$VIM_CMD -dO"
 alias view="$VIM_CMD -R"
 alias vih="$VIM_CMD -o"
+alias vihaf='_f() { "$VIM_CMD" +/"$1" -o $(grep -lr "$1" .); }; _f'
 alias vihd="$VIM_CMD -do"
 alias vim="$VIM_CMD"
 alias vit="$VIM_CMD -p"
 alias viv="$VIM_CMD -O"
+alias vivaf='_f() { "$VIM_CMD" +/"$1" -O $(grep -lr "$1" .); }; _f'
 alias vivd="$VIM_CMD -dO"
 alias viw="$VIM_CMD -R"
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
