@@ -1491,14 +1491,28 @@ function saesso {
       if [ "$_PROFILE" == "unset" ]; then
          _unset_aws_environment
       else
-         _sso_cache_file=$(\grep -l 'accessToken' "$_SSO_CACHE_DIR"/*)
+         for _sso_cache_file in $(ls -1t "$_SSO_CACHE_DIR"); do
+            if \grep -qo 'accessToken' "$_SSO_CACHE_DIR/$_sso_cache_file"; then
+               _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
+               break
+            else
+               unset _sso_cache_file
+            fi
+         done
+         if [[ -z "$_sso_cache_file" ]]; then
+            echo "no SSO creds found, running 'aws sso login --profile $_PROFILE'..."
+            aws sso login --profile "$_PROFILE"
+            _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
+            _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
+         fi
          _sso_exp_time=$(jq -r .expiresAt "$_sso_cache_file" 2> /dev/null)
          _sso_exp_time_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "$_sso_exp_time" +"%s" 2> /dev/null)
          _current_time_ts=$(date +"%s")
-         if [[ -z "$_sso_cache_file" ]] || [[ -n "$_sso_exp_time" ]] && [[ $_current_time_ts -ge $_sso_exp_time_ts ]]; then
-            echo "no SSO creds found and/or expired, running 'aws sso login'..."
-            aws sso login
-            _sso_cache_file=$(\grep -l 'accessToken' "$_SSO_CACHE_DIR"/*)
+         if [[ -x "$_sso_exp_time" ]] || [[ $_current_time_ts -ge $_sso_exp_time_ts ]]; then
+            echo "no expiration time found or expired, running 'aws sso login --profile $_PROFILE'..."
+            aws sso login --profile "$_PROFILE"
+            _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
+            _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
          fi
          # need region for 'aws sso get-role-credentials'
          export AWS_DEFAULT_REGION
@@ -1507,9 +1521,10 @@ function saesso {
          _sso_role_name=$(_get_aws_profile_setting "$_PROFILE" sso_role_name)
          _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
          if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2> /dev/null); then
-            echo "SSO creds are expired, running 'aws sso login'..."
-            aws sso login
-            _sso_cache_file=$(\grep -l 'accessToken' "$_SSO_CACHE_DIR"/*)
+            echo "SSO creds are expired, running 'aws sso login --profile $_PROFILE'..."
+            aws sso login --profile "$_PROFILE"
+            _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
+            _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
             _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
             if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2> /dev/null); then
                echo "can't get SSO role Credentials"
