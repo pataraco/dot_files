@@ -16,6 +16,7 @@ aws cloudformation delete-stack --stack-name CF_STACK_NAME
 aws cloudformation deploy --template-file TEMPLATE.yaml --stack-name STACK_NAME --capabilities CAPABILITY_IAM
 aws cloudformation describe-stacks --stack-name CF_STACK_NAME
 aws cloudformation get-template --stack-name STACK_NAME | jq -r .TemplateBody
+aws cloudformation list-stacks | jq .StackSummaries[].StackName
 aws cloudformation package --template-file TEMPLATE.yaml --output-template-file SAM_TEMPLATE.yaml --s3-bucket BUCKET --s3-prefix KEY
 aws cloudformation update-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE
 aws cloudformation wait stack-create-complete --stack-name CF_STACK_NAME
@@ -85,6 +86,7 @@ aws ecr describe-repositories --region REGION
 aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $AWS_ACCT.dkr.ecr.$REGION.amazonaws.com  # aws (v2.0.10)
 aws ecr get-login-password | docker login --username AWS --password-stdin AWS_ACCT.dkr.ecr.us-west-2.amazonaws.com/REPO
 aws eks update-kubeconfig --name EKS_CLUSTER_NAME [--kubeconfig /path/to/KUBE_CFG]
+aws elasticbeanstalk list-available-solution-stacks
 aws elb describe-load-balancers --load-balancer-name ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName # get ELB DNS
 aws elb describe-load-balancers --region REGION [--load-balancer-names ELB_NAMES] --query "LoadBalancerDescriptions[].[LoadBalancerName,Instances[].InstanceId|join(', ',@)]" --output table
 aws elb set-load-balancer-listener-ssl-certificate --load-balancer-name LB_NAME --load-balancer-port PROT --ssl-certificate-id CERT_ARN
@@ -117,6 +119,7 @@ aws lambda invoke --function-name FUNCTION_NAME --payload fileb://payload.json /
 aws lambda update-alias --function-name FUNCTION_NAME --name ALIAS_NAME [--function-version VERSION_NUMBER]
 aws lambda update-function-code --function-name FUNCTION_NAME --s3-bucket S3_BUCKET --s3-key S3_KEY --publish
 aws lambda update-function-configuration --function-name FUNCTION_NAME --timeout N --memory-size M
+aws logs delete-log-group --log-group-name NAME
 aws logs describe-log-groups --query "logGroups[?starts_with(logGroupName,'/aws/api-gateway')].logGroupName" --output text
 aws rds describe-db-engine-versions --filter "Name=engine,Values=ENGINE" --query DBEngineVersions[].[Engine,EngineVersion] --output table
 aws rds describe-db-engine-versions --query DBEngineVersions[].[Engine,EngineVersion] --output table
