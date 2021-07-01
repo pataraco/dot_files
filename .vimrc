@@ -119,6 +119,8 @@ let mapleader      = ' '   " type this char first then additional defined below
 let maplocalleader = '\'   " used for alternate context - certain file types
 " Press Space to turn off highlighting and clear any message already displayed.
 nnoremap <silent> <Space> :nohlsearch<Bar>:echo<CR>
+" set split windows to equal sizes
+nnoremap <silent> <Leader>= <C-W>=<CR>
 " Display the number of matches for the last search
 nnoremap <silent> <Leader># :%s:<C-R>/::gn<cr>
 " Put double quotes around the word
