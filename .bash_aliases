@@ -1414,6 +1414,7 @@ alias f="grep '^function .* ' ~/$MAIN_BA_FILE | awk '{print $2}' | cut -d'(' -f1
 alias fgrep="grep -F --color=auto --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
 alias fgrepa="grep -F --color=always --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
 alias fuck='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
+alias github="/usr/local/bin/gh"
 alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
 alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
 alias ghwt='sudo dmidecode | grep "Product Name"'
@@ -1497,12 +1498,12 @@ alias vidh="$VIM_CMD -do"
 alias vidv="$VIM_CMD -dO"
 alias view="$VIM_CMD -R"
 alias vih="$VIM_CMD -o"
-alias vihaf='_f() { "$VIM_CMD" +/"$1" -o $(grep -lr "$1" .); }; _f'
+alias vihaf='_f() { "$VIM_CMD" +/"$1" -o $(grep -ilr "$1" .); }; _f'
 alias vihd="$VIM_CMD -do"
 alias vim="$VIM_CMD"
 alias vit="$VIM_CMD -p"
 alias viv="$VIM_CMD -O"
-alias vivaf='_f() { "$VIM_CMD" +/"$1" -O $(grep -lr "$1" .); }; _f'
+alias vivaf='_f() { "$VIM_CMD" +/"$1" -O $(grep -ilr "$1" .); }; _f'
 alias vivd="$VIM_CMD -dO"
 alias viw="$VIM_CMD -R"
 # alias vms="set | egrep 'CLUST_(NEW|OLD)|HOSTS_(NEW|OLD)|BRNCH_(NEW|OLD)|ES_PD_TSD|SDELEGATE|DB_SCRIPT|VAULT_PWF|VPC_NAME'"
