@@ -1118,36 +1118,64 @@ function tf {
 
 function tfe {
    # set/show terraform environment
-   # usage:
-   #    tfe                  show terraform environment
-   #    tfe KEY=VAL          set terraform environmetn variable "TF_VAR_<KEY>=<VAL>"
-   #    tfe versions         show available terraform versions
-   #    tfe version=VERSION  set terraform version  "TERRAFORM_VERSION=<VERSION>"
-   #                         (use the alias "tf" to use the desired terraform version)
+   local _TF_ENV_DIR="$HOME/.tfenv/versions"
+   local _TF_RELEASES_URL="https://releases.hashicorp.com"
+   local _USAGE=\
+'usage:
+  tfe                  show terraform environment
+  tfe KEY=VAL          set terraform environmetn variable "TF_VAR_<KEY>=<VAL>"
+  tfe use VERSION      set terraform version  "TERRAFORM_VERSION=<VERSION>"
+                       (use the alias "tf" to use the desired terraform version)
+  tfe -h|--help|help   show this help/usage
+  tfe versions         show available terraform versions'
    local _cmd=$1
    local _key _val
    local _version _versions
-   if [[ "$_cmd" == "versions" ]]; then
+   local _available_versions _version_url _zip_name
+   if [[ "$_cmd" == "-h" ]] || [[ "$_cmd" == "--help" ]] || [[ "$_cmd" == "help" ]]; then
+      echo "this function helps to set/show your terraform environment"
+      echo "$_USAGE"
+   elif [[ "$_cmd" == "versions" ]]; then
       # get versions in /usr/local/bin
       _versions=$(basename /usr/local/bin/terraform* | grep -v '^terraform\(\.[0-9]\+\)\{0,2\}$' | sed 's/^terraform.//g') 
       # add versions saved by runway
-      _versions="$_versions $(basename $(ls -d $HOME/.tfenv/versions/*))"
-      for _version in $_versions; do echo $_version; done | sort -u
-   elif [[ "$_cmd" =~ version=.* ]]; then
-      _version=${_cmd##*=}
+      # shellcheck disable=SC2046,SC2086
+      _versions="$_versions $(basename $(ls -d $_TF_ENV_DIR/*))"
+      for _version in $_versions; do echo "$_version"; done | sort -uV | tr '\n' ',' | sed 's/,/, /g'
+   elif [[ "$_cmd" =~ "use" ]]; then
+      _version=$2
       if [[ -x "/usr/local/bin/terraform.$_version" ]]; then
          export TERRAFORM_VERSION="/usr/local/bin/terraform.$_version"
-      elif [[ -x "$HOME/.tfenv/versions/$_version/terraform" ]]; then
-         export TERRAFORM_VERSION="$HOME/.tfenv/versions/$_version/terraform"
+         tfe
+      elif [[ -x "$_TF_ENV_DIR/$_version/terraform" ]]; then
+         export TERRAFORM_VERSION="$_TF_ENV_DIR/$_version/terraform"
+         tfe
       else
-         echo "cannot find desired version ($_version) in '/usr/local/bin' nor '$HOME/.tfenv/versions'"
-         echo "these are the available versions:"
+         echo "cannot find desired version ($_version) in '/usr/local/bin' nor '$_TF_ENV_DIR'"
+         echo "these are the installed versions:"
+         echo -n "   "
          tfe versions
+         echo "going to attempt to install it"
+         _zip_name="terraform_${_version}_darwin_amd64.zip"
+         _version_url="${_TF_RELEASES_URL}/terraform/${_version}/${_zip_name}"
+         if curl -s -f -o "/tmp/${_zip_name}" "${_version_url}"; then
+            unzip "/tmp/${_zip_name}" -d "$_TF_ENV_DIR/$_version"
+            tfe use "${_version}"
+         else
+            _available_versions="$(curl -s "${_TF_RELEASES_URL}/terraform/" | grep -oE 'terraform_\d+\.\d+.\d+' | sort -uV | sed 's/^terraform_//' | tr '\n' ',' | sed 's/,/, /g')"
+            echo "cannot find desired version ($_version) at '$_TF_RELEASES_URL'"
+            echo "these are the available versions:"
+            echo "   $_available_versions"
+            return
+         fi
       fi
    elif [[ "$_cmd" =~ .*=.* ]]; then
       _key=${_cmd%%=*}
       _val=${_cmd##*=}
       export "TF_VAR_$_key=$_val"
+   elif [[ -n "$_cmd" ]]; then
+      echo "error: incorrect usage"
+      echo "$_USAGE"
    else
       tf --version | head -1
       echo "Path: ${TERRAFORM_VERSION:-Not set}"
