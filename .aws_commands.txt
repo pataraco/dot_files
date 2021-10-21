@@ -115,6 +115,7 @@ aws iam list-users --query Users[*].[UserName,UserId] --output table
 aws iam put-role-policy --role-name ROLE_NAME --policy-name POLICY_NAME --policy-document file://PATH_TO/POLICY_DOC.json
 aws iam update-login-profile --user-name USER_NAME --password PASSWORD --password-reset-required
 aws kms list-aliases --query "Aliases[?AliasName=='alias/ALIAS_NAME'].AliasArn" --output text
+aws lambda get-function --function-name NAME --query Configuration.Environment.Variables --output table
 aws lambda invoke --function-name FUNCTION_NAME --payload fileb://payload.json /tmp/OUTPUT.log
 aws lambda update-alias --function-name FUNCTION_NAME --name ALIAS_NAME [--function-version VERSION_NUMBER]
 aws lambda update-function-code --function-name FUNCTION_NAME --s3-bucket S3_BUCKET --s3-key S3_KEY --publish
@@ -157,6 +158,7 @@ aws ssm delete-association --instance-id $INST_ID
 aws ssm get-parameter --name /aws/service/ami-windows-latest/Windows_Server-2012-R2_RTM-English-64Bit-Base
 aws ssm get-parameter --name /aws/service/ecs/optimized-ami/amazon-linux/recommended --with-decryption
 aws ssm put-parameter --name KEY_NAME --value PASSWD --type SecureString --overwrite
+aws ssm start-session --target INSTANCE_ID
 aws sts get-caller-identity
 aws sts get-session-token --serial-number arn-of-the-mfa-device --token-code code-from-token
 aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --output text); echo $aws_acct  # get AWS account
