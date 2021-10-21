@@ -279,7 +279,8 @@ hi FoldColumn   cterm=none ctermfg=39  ctermbg=17  gui=none guifg=bg guibg=fg
 hi StatusLine   cterm=none ctermfg=15  ctermbg=22  gui=bold guifg=bg guibg=fg
 hi StatusLineNC cterm=none ctermfg=15  ctermbg=52  gui=bold guifg=bg guibg=fg
 hi VertSplit    cterm=none ctermfg=25  ctermbg=24  gui=none guifg=bg guibg=fg
-hi MatchParen   cterm=none ctermfg=0   ctermbg=190 gui=none guifg=bg guibg=fg
+" hi MatchParen   cterm=none ctermfg=0   ctermbg=190 gui=none guifg=bg guibg=fg "yellow
+hi MatchParen   cterm=none ctermfg=15   ctermbg=34 gui=none guifg=bg guibg=fg
 " setting the following messes with schemes in nvim
 """""hi Normal       cterm=none ctermfg=grey ctermbg=black   gui=none guifg=bg guibg=fg
 "hi Cursor       cterm=none ctermfg=black ctermbg=magenta gui=none guifg=bg guibg=fg
