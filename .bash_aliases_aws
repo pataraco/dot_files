@@ -146,6 +146,30 @@ function awsar {
    aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName
 }
 
+function awsassrole {
+   # assume an AWS role
+   local _USAGE="usage: awsassrole IAM_ROLE_ARN"
+   local _DURATION=3600  # seconds
+   local _iam_role_arn=$1
+   local _iam_role_name=${_iam_role_arn#*/}
+   local _session
+   if [[ -n "$_iam_role_arn" ]]; then
+      [ -n "$AWS_DEBUG" ] && echo "debug: aws sts assume-role --region us-east-1 --role-arn $_iam_role_arn  --role-session-name $_iam_role_name --duration-seconds $_DURATION"
+      if _session=$(aws sts assume-role --region us-east-1 --role-arn "$_iam_role_arn"  --role-session-name "$_iam_role_name" --duration-seconds "$_DURATION"); then
+         echo "Assumed role: $_iam_role_name"
+         export AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId <<< "$_session")
+         export AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey <<< "$_session")
+         export AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken <<< "$_session")
+      else
+         echo "Could not assume role: $_iam_role_name"
+         exit 1
+      fi
+   else
+      echo "error: did not provide an AWS IAM ARN"
+      echo "$_USAGE"
+   fi
+}
+
 function awsdr {
    # AWS Set Default Region
    local _area
@@ -168,6 +192,7 @@ function awsdr {
             e) _area="east";;
             n) _area="north";;
             s) _area="south";;
+            S) _area="southeast";;
             w) _area="west";;
             *) echo "unknown area (${_region:1:1}): exiting..."; return;;
          esac
@@ -1474,6 +1499,8 @@ function saesso {
          fi
          if [[ -n "$_aws_signin_url" ]]; then
             case $_CONSOLE_DEST in
+               api) _CONSOLE_DEST="apigateway" ;;
+               cf) _CONSOLE_DEST="cloudformation" ;;
                ddb) _CONSOLE_DEST="dynamodb" ;;
                eb) _CONSOLE_DEST="elasticbeanstalk" ;;
                secrets) _CONSOLE_DEST="secretsmanager" ;;
@@ -1646,6 +1673,7 @@ function wtac {
 
 alias awscl="aws configure list"
 alias awsclp="aws configure list-profiles"
+alias awsconsole="saesso console"
 alias awsga="aws sts get-caller-identity --output text --query Account"
 alias awsgci="aws sts get-caller-identity"
 alias awsgr="aws sts get-caller-identity --output text --query Arn"
