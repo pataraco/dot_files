@@ -13,6 +13,7 @@ echo -ne "\033]0;$(whoami)@$(hostname)\007"
 PS_SHOW_AV=0  # Ansible
 PS_SHOW_CV=0  # Chef
 PS_SHOW_PV=1  # Python
+PS_SHOW_TV=0  # Terraform
 
 # -------------------- global variables --------------------
 
@@ -124,7 +125,11 @@ function bash_prompt {
    if [[ $PS_SHOW_CV -eq 1 ]]; then  # get Chef version
       if [[ -z "$CHEF_VERSION" ]]; then
          export CHEF_VERSION
-         CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
+         if [[ -n "$(command -v knife)" ]]; then
+            CHEF_VERSION=$(knife --version 2>/dev/null | head -1 | awk '{print $NF}')
+         else
+            CHEF_VERSION="notfound"
+         fi
       fi
       PS_CHF="${PYLW}C$CHEF_VERSION$PNRM|"
       (( _versions_len += ${#CHEF_VERSION} + 2 ))
@@ -132,7 +137,11 @@ function bash_prompt {
    if [[ $PS_SHOW_AV -eq 1 ]]; then  # get Ansible version
       if [[ -z "$ANSIBLE_VERSION" ]]; then
          export ANSIBLE_VERSION
-         ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
+         if [[ -n "$(command -v ansible)" ]]; then
+            ANSIBLE_VERSION=$(ansible --version 2>/dev/null | head -1 | awk '{print $NF}')
+         else
+            ANSIBLE_VERSION="notfound"
+         fi
       fi
       PS_ANS="${PCYN}A$ANSIBLE_VERSION$PNRM|"
       (( _versions_len += ${#ANSIBLE_VERSION} + 2 ))
@@ -140,9 +149,18 @@ function bash_prompt {
    if [[ $PS_SHOW_PV -eq 1 ]]; then  # get Python version
       export PYTHON_VERSION
       PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
-      # PS_PY="${PMAG}P$PYTHON_VERSION$PNRM|"
       PS_PY="${PNGRN}🐍$PYTHON_VERSION$PNRM|"
       (( _versions_len += ${#PYTHON_VERSION} + 2 ))
+   fi
+   if [[ $PS_SHOW_TV -eq 1 ]]; then  # get Terraform version
+      export TERRAFORM_VERSION
+      if [[ -n "$TERRAFORM_PATH" ]]; then
+         TERRAFORM_VERSION=$(tf --version 2>&1 | head -1 | awk '{print $NF}')
+      else
+         TERRAFORM_VERSION="notset"
+      fi
+      PS_TF="${PMAG}🐢$TERRAFORM_VERSION$PNRM|"
+      (( _versions_len += ${#TERRAFORM_VERSION} + 2 ))
    fi
    # get/show git info (if in a git repo)
    local _git_branch _git_branch_len _git_status
@@ -271,9 +289,9 @@ function bash_prompt {
    # check for/show jobs running in the background
    if [[ "$(jobs | wc -l | tr -d ' ')" -gt 1 ]]; then
       # using "1" because the `git branch` above runs in the background
-      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO(\j)${PS_COL}⌲$PNRM "
+      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_TF$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO(\j)${PS_COL}⌲$PNRM "
    else
-      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO${PS_COL}⌲$PNRM "
+      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_TF$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO${PS_COL}⌲$PNRM "
    fi
 }
 
@@ -1109,10 +1127,10 @@ function stopwatch {
 }
 
 function tf {
-   if [[ -z "$TERRAFORM_VERSION" ]]; then
-      echo "terraform version not set, please use 'tfe version=VERSION'"
+   if [[ -z "$TERRAFORM_PATH" ]]; then
+      echo "terraform version not set, please use 'tfe use VERSION'"
    else
-      $TERRAFORM_VERSION "$@"
+      $TERRAFORM_PATH "$@"
    fi
 }
 
@@ -1123,15 +1141,17 @@ function tfe {
    local _USAGE=\
 'usage:
   tfe                  show terraform environment
-  tfe KEY=VAL          set terraform environmetn variable "TF_VAR_<KEY>=<VAL>"
-  tfe use VERSION      set terraform version  "TERRAFORM_VERSION=<VERSION>"
+  tfe KEY=VAL          set terraform environment variable "TF_VAR_<KEY>=<VAL>"
+  tfe use VERSION      set terraform version
                        (use the alias "tf" to use the desired terraform version)
-  tfe -h|--help|help   show this help/usage
-  tfe versions         show available terraform versions'
+  tfe unset            unset the environment (version and environment vars)
+  tfe versions         show available terraform versions
+  tfe -h|--help|help   show this help/usage'
    local _cmd=$1
    local _key _val
    local _version _versions
    local _available_versions _version_url _zip_name
+   local _tf_vars _tf_var
    if [[ "$_cmd" == "-h" ]] || [[ "$_cmd" == "--help" ]] || [[ "$_cmd" == "help" ]]; then
       echo "this function helps to set/show your terraform environment"
       echo "$_USAGE"
@@ -1145,10 +1165,10 @@ function tfe {
    elif [[ "$_cmd" =~ "use" ]]; then
       _version=$2
       if [[ -x "/usr/local/bin/terraform.$_version" ]]; then
-         export TERRAFORM_VERSION="/usr/local/bin/terraform.$_version"
+         export TERRAFORM_PATH="/usr/local/bin/terraform.$_version"
          tfe
       elif [[ -x "$_TF_ENV_DIR/$_version/terraform" ]]; then
-         export TERRAFORM_VERSION="$_TF_ENV_DIR/$_version/terraform"
+         export TERRAFORM_PATH="$_TF_ENV_DIR/$_version/terraform"
          tfe
       else
          echo "cannot find desired version ($_version) in '/usr/local/bin' nor '$_TF_ENV_DIR'"
@@ -1173,12 +1193,19 @@ function tfe {
       _key=${_cmd%%=*}
       _val=${_cmd##*=}
       export "TF_VAR_$_key=$_val"
+   elif [[ "$_cmd" == "unset" ]]; then
+      _tf_vars=$(env | grep ^TF_VAR | tr '=' ' ' | awk '{print $1}')
+      for _tf_var in $_tf_vars; do
+         unset "${_tf_var}"
+      done
+      unset TERRAFORM_PATH
+      tfe
    elif [[ -n "$_cmd" ]]; then
       echo "error: incorrect usage"
       echo "$_USAGE"
    else
       tf --version | head -1
-      echo "Path: ${TERRAFORM_VERSION:-Not set}"
+      echo "Path: ${TERRAFORM_PATH:-Not set}"
       env | \grep '^TF_VAR_'
    fi
 }
@@ -1481,11 +1508,13 @@ alias pe='ps -ef'
 alias pssav='PS_SHOW_AV=1'
 alias psscv='PS_SHOW_CV=1'
 alias psspv='PS_SHOW_PV=1'
-alias pssallv='PS_SHOW_AV=1; PS_SHOW_CV=1; PS_SHOW_PV=1'
+alias psstv='PS_SHOW_TV=1'
+alias pssallv='PS_SHOW_AV=1; PS_SHOW_CV=1; PS_SHOW_PV=1; PS_SHOW_TV=1'
 alias pshav='PS_SHOW_AV=0; unset PS_ANS'
 alias pshcv='PS_SHOW_CV=0; unset PS_CHF'
 alias pshpv='PS_SHOW_PV=0; unset PS_PY'
-alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_PV=0; unset PS_ANS; unset PS_CHF; unset PS_PY'
+alias pshtv='PS_SHOW_TV=0; unset PS_TF'
+alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_PV=0; PS_SHOW_TV=0; unset PS_ANS; unset PS_CHF; unset PS_PY; unset PS_TF'
 alias ccrlf="sed -e 's/[[:cntrl:]]/\n/g' -i .orig"
 alias rcrlf="sed -e 's/[[:cntrl:]]$//g' -i .orig"
 alias ring="\$HOME/repos/pataraco/scripts/misc/ring.sh"
@@ -1510,6 +1539,7 @@ alias tf12='/usr/local/bin/terraform.0.12'
 alias tf13='/usr/local/bin/terraform.0.13'
 alias tf14='/usr/local/bin/terraform.0.14'
 alias tmx='tmux new-session -s Raco -n MYSHTUFF \; split-window -h \;  split-window -h \;  split-window -h \;  \; select-layout main-horizontal'
+alias tmxn='_f() { tmux new-window -n ${1:-NEW_WINDOW} \; split-window -h \;  split-window -h \;  split-window -h \;  \; select-layout main-horizontal; }; _f'
 alias tspo='tmux set-window-option synchronize-panes on'
 alias tspx='tmux set-window-option synchronize-panes off'
 alias tt='echo -ne "\033]0;$(whoami)@$(hostname)\007"'
