@@ -4,7 +4,7 @@
 " --------
 "  Steps to use neovim (nvim) (or use github.com/pataraco/dot_files/setup.sh)
 "  1. brew install neovim  (should be installed via `brew bundle`)
-"  3. mkdir -p mkdir -p $HOME/.config/nvim
+"  2. mkdir -p mkdir -p $HOME/.config/nvim
 "  3. ln -s $HOME/.vimrc $HOME/.config/nvim/init.vim
 "  4. curl -fLo $HOME/.local/share/nvim/site/autoload/plug.vim --create-dirs \
 "       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
@@ -27,6 +27,8 @@
 " --------
  let g:highlighting = 0
 "set cmdheight=2                " set height of status bar
+" vim diff: reduce number of common lines to 5
+ set diffopt+=context:5
  set ffs=unix                   " show ^M from DOS files
  " here's a plugin to try; set fold column only if/when folds exist
  "   https://github.com/benknoble/vim-auto-origami
@@ -129,6 +131,9 @@ nnoremap <silent> <Leader>" ciW""<Esc>P
 nnoremap <silent> <Leader>ac gUiw
 " change word to all lowercase
 nnoremap <silent> <Leader>al guiw
+" vim diff: reduce number of common lines to 1/7
+nnoremap <silent> <Leader>d1 :silent set diffopt+=context:1<CR>
+nnoremap <silent> <Leader>d7 :silent set diffopt+=context:7<CR>
 " fold current block
 nnoremap <silent> <Leader>f mf}zf'f<CR>
 " turn cursor highlighting on/off
@@ -499,7 +504,7 @@ augroup END
 " wrap long diffed lines
 autocmd VimEnter * if &diff | execute 'windo set wrap' | endif
 " set tab -> space conversions based on file types
-autocmd FileType sh     set tabstop=3 | set shiftwidth=3 | set expandtab
+autocmd FileType sh     set tabstop=2 | set shiftwidth=2 | set expandtab
 autocmd FileType yaml   set tabstop=2 | set shiftwidth=2 | set expandtab
 autocmd FileType python set tabstop=4 | set shiftwidth=4 | set expandtab
 " Auto Commands }}}
