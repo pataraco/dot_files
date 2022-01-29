@@ -1,4 +1,6 @@
 
+
+
 aws acm describe-certificate --region REGION --certificate-arn ARN
 aws acm import-certificate --certificate file://WWW.pem.crt --private-key file://WWW.pem.key --certificate-chain file://WWW.chain.pem.crt
 aws acm list-certificates --region REGION
@@ -42,6 +44,8 @@ aws deploy get-deployment --deployment-id ID
 aws deploy list-deployemtns --application-name APP_NAME
 aws deploy push --application-name APP_NAME --s3-location s3://BUCKET_NAME/PATH_TO/APP.zip --ignore-hidden-files
 aws ds describe-domain-controllers --directory-id $DIR_ID
+aws dynamodb delete-item --region REGION --table TABLE --key '{"KEY_NAME": {"ITEM_TYPE": "ITEM_NAME"}}'
+aws dynamodb get-item --region REGION --table TABLE --key '{"KEY_NAME": {"ITEM_TYPE": "ITEM_NAME"}}'
 aws dynamodb list-tables
 aws ec2 allocate-address
 aws ec2 associate-address --instance-id INST_ID
