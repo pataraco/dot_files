@@ -1500,6 +1500,7 @@ function saesso {
          if [[ -n "$_aws_signin_url" ]]; then
             case $_CONSOLE_DEST in
                api) _CONSOLE_DEST="apigateway" ;;
+               cdn) _CONSOLE_DEST="cloudfront" ;;
                cf) _CONSOLE_DEST="cloudformation" ;;
                ddb) _CONSOLE_DEST="dynamodb" ;;
                eb) _CONSOLE_DEST="elasticbeanstalk" ;;

@@ -12,7 +12,7 @@ echo -ne "\033]0;$(whoami)@$(hostname)\007"
 # show Ansible, Chef or Python versions in prompt
 PS_SHOW_AV=0  # Ansible
 PS_SHOW_CV=0  # Chef
-PS_SHOW_PV=1  # Python
+PS_SHOW_PV=0  # Python
 PS_SHOW_TV=0  # Terraform
 
 # -------------------- global variables --------------------

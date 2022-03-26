@@ -158,22 +158,22 @@ if command -v kubectl &> /dev/null; then
    source <(kubectl completion bash)
 fi
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$(''$HOME'/opt/anaconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "$HOME/opt/anaconda3/etc/profile.d/conda.sh" ]; then
-        . "$HOME/opt/anaconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="$HOME/opt/anaconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
+## # >>> conda initialize >>>
+## # !! Contents within this block are managed by 'conda init' !!
+## __conda_setup="$(''$HOME'/opt/anaconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+## if [ $? -eq 0 ]; then
+##     eval "$__conda_setup"
+## else
+##     if [ -f "$HOME/opt/anaconda3/etc/profile.d/conda.sh" ]; then
+##         . "$HOME/opt/anaconda3/etc/profile.d/conda.sh"
+##     else
+##         export PATH="$HOME/opt/anaconda3/bin:$PATH"
+##     fi
+## fi
+## unset __conda_setup
+## # <<< conda initialize <<<
 
-# add $HOME/repos/pyenv to beginning of PATH (if it exists)
+# add $HOME/repos/pyenv/bin to beginning of PATH (if it exists)
 pyenv_repo=$HOME/repos/pyenv
 if [ -d "$pyenv_repo" ]; then
    export PYENV_ROOT=$pyenv_repo
@@ -183,7 +183,8 @@ fi
 
 # add `pyenv init` to shell to enable shims and autcompletion
 # adds $HOME/.pyenv/shims to beginning of PATH
-command -v pyenv &> /dev/null && eval "$(pyenv init -)"
+# OLD: command -v pyenv &> /dev/null && eval "$(pyenv init -)"
+command -v pyenv &> /dev/null && eval "$(pyenv init --path)"
 # use `pipenv`
 # # add `pyenv virtualenv-init` to shell to enable shims and autcompletion
 # # adds pyenv-virtualenv shims to beginning of PATH
