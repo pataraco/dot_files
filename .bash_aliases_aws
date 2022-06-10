@@ -28,6 +28,19 @@ function _get_aws_profile_setting {
    [[ -n "$_val" ]] && echo "$_val"
 }
 
+function _get_saml_setting {
+   # returns value of specified setting from a profile in AWS config
+   # usage: _get_saml_setting profile setting
+   local _SAML_CFG=$HOME/.aws/.saml2aws
+   local _PROFILE=$1
+   local _SETTING=$2
+   local _def
+   local _val
+   _def=$(awk -v adp="[${_PROFILE}]" -v key="$_SETTING" '$1==adp {pfound="true"; next}; (pfound=="true" && $1==key) {print $0; exit}; (pfound=="true" && $1~/^\[/) {exit}' "$_SAML_CFG")
+   _val=$(cut -d'=' -f2 <<< "$_def" | cut -c 2-)
+   [[ -n "$_val" ]] && echo "$_val"
+}
+
 function _set_aws_prompt_colors {
    # sets AWS environment related prompt attribute colors depending on env
    local _ENV=$1
@@ -68,6 +81,8 @@ function _show_aws_environment {
 function _unset_aws_environment {
    # unsets AWS environment related variables
    unset AWS_ACCESS_KEY_ID
+   unset AWS_ACCOUNT_ID
+   unset AWS_CREDENTIAL_EXPIRATION
    unset AWS_DEFAULT_PROFILE
    unset AWS_DEFAULT_REGION
    unset AWS_ENVIRONMENT
@@ -75,6 +90,7 @@ function _unset_aws_environment {
    unset AWS_SECURITY_TOKEN
    unset AWS_SESSION_TOKEN
    unset AWS_STS_EXPIRES_TS
+   unset SAML2AWS_PROFILE
    echo "AWS environment has been unset"
 }
 
@@ -88,6 +104,52 @@ function _verify_aws_profile {
       echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
       return 2
    fi
+}
+
+function _verify_saml_profile {
+   # verify profile exists in AWS configs
+   local _SAML_CFG=$HOME/.aws/.saml2aws
+   local _PROFILE=$1
+   local _AWS_PROFILES=$(\grep '^\[' "$_SAML_CFG" | awk -F'[][]' '{print $2}' | tr -s '\n' ' ')
+   local _VALID_PROFILES=$(tr ' ' ':' <<< "${_AWS_PROFILES}unset")
+   if [[ ! $_VALID_PROFILES =~ (^|:)$_PROFILE(:|$) ]]; then
+      echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
+      return 2
+   fi
+}
+
+function awsconsole {
+  # fire up AWS Console if AWS Environment Variables are all set
+  local _CONSOLE_LOGIN_SCRIPT="$HOME/repos/pataraco/scripts/aws/aws_sso_console_login.py"
+  local _CONSOLE_DEST="$1"
+  local _aws_signin_url
+  if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_SESSION_TOKEN" ]]; then
+     echo "can't log in to console - AWS environment not set up"
+     return
+  fi
+  if [[ -x "$_CONSOLE_LOGIN_SCRIPT" ]]; then
+     _aws_signin_url=$($_CONSOLE_LOGIN_SCRIPT)
+  else
+    echo "can't log in to console - console login script doesn't exist: $_CONSOLE_LOGIN_SCRIPT"
+    return
+  fi
+  if [[ -n "$_aws_signin_url" ]]; then
+    case $_CONSOLE_DEST in
+          api) _CONSOLE_DEST="apigateway";;
+          cdn) _CONSOLE_DEST="cloudfront";;
+          cfn) _CONSOLE_DEST="cloudformation";;
+          ddb) _CONSOLE_DEST="dynamodb";;
+           eb) _CONSOLE_DEST="elasticbeanstalk";;
+      secrets) _CONSOLE_DEST="secretsmanager";;
+          ssm) _CONSOLE_DEST="systems-manager/parameters";;
+          sso) _CONSOLE_DEST="singlesignon";;
+    esac
+    open -n -a "Google Chrome" --args "--new-window" "--profile-directory=${AWS_DEFAULT_PROFILE}" "${_aws_signin_url}${_CONSOLE_DEST}"
+  else
+    echo "can't log in to console - could not generate signin URL"
+    return 3
+  fi
+  return
 }
 
 function assh {
@@ -1411,6 +1473,7 @@ function sae {
          # _aws_acct=$(aws sts get-caller-identity --profile "$AWS_DEFAULT_PROFILE" | jq -r .Account)
          _aws_acct=$(aws sts get-caller-identity --query Account --output text)
          export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
+         export AWS_ACCOUNT_ID=$_aws_acct
          _sso_start_url=$(_get_aws_profile_setting "$_PROFILE" sso_start_url)
          if [ -n "$_sso_start_url" ]; then
             # TODO: doesn't work - gotta figure this out!
@@ -1467,11 +1530,48 @@ function saefc {
    fi
 }
 
+function saesaml {
+  # Set AWS environment using SAML
+  #  github = https://github.com/Versent/saml2aws
+  local _PROFILE="$1"
+  local _SAML_CFG=$HOME/.aws/.saml2aws
+
+  if [[ -n "$_PROFILE" ]]; then
+    _verify_saml_profile "$_PROFILE" || return $?
+    if [ "$_PROFILE" == "unset" ]; then
+      _unset_aws_environment
+    else
+      _unset_aws_environment > /dev/null
+      # "hide" the config - temporary until fully using SAML
+      mv $HOME/.aws/config{,.sso}
+      saml2aws login \
+        --config=$_SAML_CFG \
+        --idp-account="$_PROFILE" \
+        --username=$(_get_saml_setting "$_PROFILE" username) \
+        --password=$(cat $HOME/.aws/.saml2aws.password) \
+        --skip-prompt
+      # un "hide" the config - temporary until fully using SAML
+      mv $HOME/.aws/config{.sso,}
+      # set AWS environment variables
+      export AWS_DEFAULT_PROFILE=$_PROFILE  # for `aws` CLI (instead of using --profile)
+      eval $(saml2aws script --config=$_SAML_CFG --idp-account="$_PROFILE")
+      export AWS_DEFAULT_REGION=$(_get_saml_setting "$_PROFILE" region)
+      export AWS_ACCOUNT_ID=$(_get_saml_setting "$_PROFILE" aws_acct_id)
+      export AWS_ENVIRONMENT="$(_get_saml_setting "$_PROFILE" aws_account_desc) [$AWS_ACCOUNT_ID]"
+      # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
+      export DEPLOY_ENVIRONMENT=$(_get_saml_setting "$_PROFILE" runway_deploy_env)
+      echo "AWS environment set (via SAML): $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
+    fi
+    # environment used for PS_PROMPT (color)
+    _set_aws_prompt_colors $(_get_saml_setting "$_PROFILE" environment)
+  else
+    _show_aws_environment
+  fi
+}
+
 function saesso {
    # Set AWS environment using SSO and assuming the role in .aws/configs
    local _PROFILE="$1"
-   local _CONSOLE_DEST="$2"
-   local _CONSOLE_LOGIN_SCRIPT="$HOME/repos/pataraco/scripts/aws/aws_sso_console_login.py"
    local _SSO_CACHE_DIR="$HOME/.aws/sso/cache"
    local _aws_acct_desc
    local _aws_signin_url
@@ -1486,35 +1586,6 @@ function saesso {
    local _sso_role_name
 
    if [[ -n "$_PROFILE" ]]; then
-      if [[ "$_PROFILE" == "console" ]]; then # WIP - not ready
-         if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_SESSION_TOKEN" ]]; then
-            echo "can't log in to console - AWS environment not set up"
-            return
-         fi
-         if [[ -x "$_CONSOLE_LOGIN_SCRIPT" ]]; then
-            _aws_signin_url=$($_CONSOLE_LOGIN_SCRIPT)
-         else
-            echo "can't log in to console - console login script doesn't exist: $_CONSOLE_LOGIN_SCRIPT"
-            return
-         fi
-         if [[ -n "$_aws_signin_url" ]]; then
-            case $_CONSOLE_DEST in
-               api) _CONSOLE_DEST="apigateway" ;;
-               cdn) _CONSOLE_DEST="cloudfront" ;;
-               cf) _CONSOLE_DEST="cloudformation" ;;
-               ddb) _CONSOLE_DEST="dynamodb" ;;
-               eb) _CONSOLE_DEST="elasticbeanstalk" ;;
-               secrets) _CONSOLE_DEST="secretsmanager" ;;
-               ssm) _CONSOLE_DEST="systems-manager/parameters" ;;
-               sso) _CONSOLE_DEST="singlesignon" ;;
-            esac
-            open -n -a "Google Chrome" --args "--new-window" "--profile-directory=${AWS_DEFAULT_PROFILE}" "${_aws_signin_url}${_CONSOLE_DEST}"
-         else
-            echo "can't log in to console - could not generate signin URL"
-            return 3
-         fi
-         return
-      fi
       _verify_aws_profile "$_PROFILE" || return $?
       if [ "$_PROFILE" == "unset" ]; then
          _unset_aws_environment
@@ -1572,6 +1643,7 @@ function saesso {
          export AWS_DEFAULT_PROFILE=$_PROFILE  # for `aws` CLI (instead of using --profile)
          _aws_acct_desc=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
          export AWS_ENVIRONMENT="$_aws_acct_desc [$_sso_account_id]"
+         export AWS_ACCOUNT_ID=$_sso_account_id
          # _environment used for PS_PROMPT (color)
          _environment=$(_get_aws_profile_setting "$_PROFILE" environment)
          # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
@@ -1621,6 +1693,7 @@ function sar {
             local _aws_env
             _aws_env=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
             export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
+           export AWS_ACCOUNT_ID=$_aws_acct
             local _exp_time
             _exp_time=$(jq -r .Credentials.Expiration "$_AWS_STS_CREDS")
             # export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
@@ -1672,9 +1745,9 @@ function wtac {
 
 # -------------------- define aliases --------------------
 
+alias aaid="echo \$AWS_ACCOUNT_ID"
 alias awscl="aws configure list"
 alias awsclp="aws configure list-profiles"
-alias awsconsole="saesso console"
 alias awsga="aws sts get-caller-identity --output text --query Account"
 alias awsgci="aws sts get-caller-identity"
 alias awsgr="aws sts get-caller-identity --output text --query Arn"
