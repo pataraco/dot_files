@@ -1,6 +1,5 @@
 
 
-
 aws acm describe-certificate --region REGION --certificate-arn ARN
 aws acm import-certificate --certificate file://WWW.pem.crt --private-key file://WWW.pem.key --certificate-chain file://WWW.chain.pem.crt
 aws acm list-certificates --region REGION
@@ -18,10 +17,15 @@ aws cloudformation delete-stack --stack-name CF_STACK_NAME
 aws cloudformation deploy --template-file TEMPLATE.yaml --stack-name STACK_NAME --capabilities CAPABILITY_IAM
 aws cloudformation describe-stacks --stack-name CF_STACK_NAME
 aws cloudformation get-template --stack-name STACK_NAME | jq -r .TemplateBody
+aws cloudformation list-stack-resources --region REGION --stack-name NAME --query "StackResourceSummaries[?ResourceType=='AWS::IAM::Role'].PhysicalResourceId"
 aws cloudformation list-stacks | jq .StackSummaries[].StackName
 aws cloudformation package --template-file TEMPLATE.yaml --output-template-file SAM_TEMPLATE.yaml --s3-bucket BUCKET --s3-prefix KEY
 aws cloudformation update-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE
 aws cloudformation wait stack-create-complete --stack-name CF_STACK_NAME
+aws cloudfront delete-distribution --id ID --region REGION
+aws cloudfront get-distribution --id ID --query "Distribution.DistributionConfig.Origins.Items[].[DomainName,S3OriginConfig.OriginAccessIdentity]|[]"
+aws cloudfront get-distribution --id ID --query "Distribution.DistributionConfig.[Origins.Items[].[DomainName,S3OriginConfig.OriginAccessIdentity],Aliases.Items]|[]"
+aws cloudfront list-distributions --query "DistributionList.Items[?DomainName=='HOST.cloudfront.net'].Id" --output text
 aws codebuild list-builds-for-project --project-name PROJECT_NAME --sort-order DESCENDING --max-items 1 --output text | grep IDS | cut -d':' -f2  # get latest build ID
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
 aws codecommit get-repository --repository-name REPO_NAME
@@ -47,6 +51,7 @@ aws ds describe-domain-controllers --directory-id $DIR_ID
 aws dynamodb delete-item --region REGION --table TABLE --key '{"KEY_NAME": {"ITEM_TYPE": "ITEM_NAME"}}'
 aws dynamodb get-item --region REGION --table TABLE --key '{"KEY_NAME": {"ITEM_TYPE": "ITEM_NAME"}}'
 aws dynamodb list-tables
+aws dynamodb update-time-to-live --table-name TABLE --time-to-live-specification "AttributeName=ttl,Enabled=false"
 aws ec2 allocate-address
 aws ec2 associate-address --instance-id INST_ID
 aws ec2 authorize-security-group-ingress --group-name SG_NAME --from-port FROM_PORT --to-port TO_PORT --ip-protocol tcp --cidr-ip CIDR
@@ -106,6 +111,7 @@ aws iam create-role --role-name ROLE_NAME --assume-role-policy-document file://P
 aws iam create-user --user-name USER_NAME
 aws iam get-group --group-name GROUP_NAME | grep USER_NAME	# search for specific user
 aws iam get-group --group-name GROUP_NAME | grep UserName	# get all users
+aws iam get-policy-version --policy-arn arn:aws:iam::$AWS_ACCOUNT_ID:policy/POLICY --version-id VERSION
 aws iam get-role --role-name ROLE_NAME --query Role.Arn --output text
 aws iam list-access-keys --user-name USER_NAME
 aws iam list-attached-group-policies --group-name GROUP_NAME
@@ -113,6 +119,7 @@ aws iam list-group-policies --group-name GROUP_NAME
 aws iam list-groups
 aws iam list-groups-for-user --user-name USER_NAME		# list all groups user is in
 aws iam list-policies
+aws iam list-policy-versions --policy-arn arn:aws:iam::$AWS_ACCOUNT_ID:policy/POLICY --query Versions[0].VersionId
 aws iam list-roles --path-prefix /aws-reserved/sso.amazonaws.com --query Roles[].Arn | grep AWSReservedSSO_AWSAdministratorAccess
 aws iam list-ssh-public-keys
 aws iam list-users --query Users[*].[UserName,UserId] --output table
@@ -121,6 +128,7 @@ aws iam update-login-profile --user-name USER_NAME --password PASSWORD --passwor
 aws kms list-aliases --query "Aliases[?AliasName=='alias/ALIAS_NAME'].AliasArn" --output text
 aws lambda get-function --function-name NAME --query Configuration.Environment.Variables --output table
 aws lambda invoke --function-name FUNCTION_NAME --payload fileb://payload.json /tmp/OUTPUT.log
+aws lambda list-functions --query "Functions[?Runtime=='nodejs12.x'].FunctionName"
 aws lambda update-alias --function-name FUNCTION_NAME --name ALIAS_NAME [--function-version VERSION_NUMBER]
 aws lambda update-function-code --function-name FUNCTION_NAME --s3-bucket S3_BUCKET --s3-key S3_KEY --publish
 aws lambda update-function-configuration --function-name FUNCTION_NAME --timeout N --memory-size M
@@ -146,6 +154,7 @@ aws s3 sync --profile AWS_PROFILE --exclude \* --include DIR_NAME\* s3://BUCKET_
 aws s3 sync --profile AWS_PROFILE s3://BUCKET_SRC/ /BUCKET_DEST/dir/
 aws s3api get-bucket-notification-configuration --bucket BUCKET
 aws s3api get-bucket-policy --bucket BUCKET | jq '.Policy | fromjson'
+aws s3api get-public-access-block --bucket BUCKET
 aws s3api list-buckets --query Owner.ID --output text  # canonical ID
 aws secretsmanager get-secret-value --secret-id NAME --query SecretString --output text | jq .
 aws ses --region REGION get-identity-verification-attributes --identities EMAIL_ADDR
