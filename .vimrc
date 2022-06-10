@@ -185,10 +185,11 @@ call plug#begin('~/.local/share/nvim/plugged')
 " Plug 'python-mode/python-mode', { 'branch': 'develop' }
 Plug 'neomake/neomake'
 " https://github.com/scrooloose/nerdtree
-Plug 'scrooloose/nerdtree'
-nnoremap <silent> <Leader>nt :NERDTreeToggle<CR>
+" Plug 'scrooloose/nerdtree'
+" nnoremap <silent> <Leader>nt :NERDTreeToggle<CR>
+" add Git commands to vim
 " https://github.com/tpope/vim-fugitive
-Plug 'tpope/vim-fugitive'
+" Plug 'tpope/vim-fugitive'
 " 3. call plug#end() to update &runtimepath and initialize plugin system
 call plug#end()
 " Plug Ins }}}

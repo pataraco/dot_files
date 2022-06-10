@@ -127,5 +127,6 @@ alias scof=showcof
 alias vcoba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 # company specific
 alias cd-doi="cd $HOME/repos/$COMPANY/devops-infrastructure"
+alias vl='export VAULT_ADDR=$(cat ~/.ssh/adsk_vault_address); vault login -method=ldap username=racop'
 
 [ -n "$PS1" ] && echo -n "$CO_BA_FILE (end). "
