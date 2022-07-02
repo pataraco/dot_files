@@ -2,7 +2,7 @@
 
 # file: ~/.bash_aliases - sourced by ~/.bashrc
 
-# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117,SC2155
 
 # -------------------- initial directives --------------------
 
@@ -1087,6 +1087,35 @@ function _ssh {
    fi
 }
 
+function _verify_snowsql_connection {
+  # verify connection exists in Snowflake SQL CLI config
+  local _SNOW_SQL_CFG=$HOME/.snowsql/config
+  local _CONNECTION=$1
+  local _snow_sql_connections=$(\grep '^\[connections\.' "$_SNOW_SQL_CFG" | awk -F'[][]' '{print $2}' | cut -d'.' -f2 | tr -s '\n' ' ')
+  local _valid_connections=$(tr ' ' ':' <<< "${_snow_sql_connections}")
+  if [[ ! $_valid_connections =~ (^|:)$_CONNECTION(:|$) ]]; then
+    echo -e "WTF? Try again... Only these connections exist:\n   " "$_snow_sql_connections"
+    return 2
+  fi
+}
+
+function sfcli {
+  # little wrapper for snowsql
+  local _SNOW_SQL_CFG=$HOME/.snowsql/config
+  local _CONNECTION=$1
+  local _prompt_format
+  local _sf_env
+  if [[ -n "$_CONNECTION" ]]; then
+    _verify_snowsql_connection "$_CONNECTION" || return $?
+    _sf_env=${_CONNECTION%-*}
+    _prompt_format=$(grep "^#prompt_format\[$_sf_env\]" "$_SNOW_SQL_CFG" | cut -d'"' -f2)
+     sed -i '' "s/^prompt_format.*/\prompt_format=\"${_prompt_format//\\/\\\\}\"/" "$_SNOW_SQL_CFG"
+     snowsql -c "$_CONNECTION"
+  else
+    echo "usage: sfcli CONNECTION"
+  fi
+}
+
 function sse {
    # ssh in to a server as user "ec2-user" and run optional command(s)
    _ssh sse ec2-user "$@"
@@ -1166,9 +1195,13 @@ function tfe {
       _version=$2
       if [[ -x "/usr/local/bin/terraform.$_version" ]]; then
          export TERRAFORM_PATH="/usr/local/bin/terraform.$_version"
+         rm -f /usr/local/bin/terraform
+         ln -s "$TERRAFORM_PATH" /usr/local/bin/terraform
          tfe
       elif [[ -x "$_TF_ENV_DIR/$_version/terraform" ]]; then
          export TERRAFORM_PATH="$_TF_ENV_DIR/$_version/terraform"
+         rm -f /usr/local/bin/terraform
+         ln -s "$TERRAFORM_PATH" /usr/local/bin/terraform
          tfe
       else
          echo "cannot find desired version ($_version) in '/usr/local/bin' nor '$_TF_ENV_DIR'"
