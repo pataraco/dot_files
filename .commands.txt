@@ -32,6 +32,8 @@ arp inet_addr (192.168.1.29)
 awk 'BEGIN {RS=" "} found=="true" {print $1;exit}; $1=="-r" {found="true"}'	# parse a line
 awk 'found=="true" && $1~/([0-9]{1,3}\.){3}[0-9]{1,3}/ {print $1;exit}; $1=="virtual_ipaddress" {found="true"}'
 az account show
+az acr check-health --name innovyze
+az acr check-health --name innovyze --yes
 az acr login --name innovyze
 az acr repository show-tags -n innovyze --repository devops-azure-pipeline-image --orderby time_desc --output table
 base64 /dev/urandom|head -c 128; echo
@@ -71,6 +73,7 @@ dig MX example.com
 dig NS us-east-1.amazonaws.com
 dmidecode | egrep -i 'date|bios'
 dmidecode | grep Product
+docker build -t TAG .
 docker exec -u 0 -it NAME bash
 docker ps -a
 docker ps -a --format "table {{.ID}} {{.Image}}\t{{.Status}}\t{{.Ports}}"
@@ -80,6 +83,7 @@ docker rm $(docker-entrypoint.sh ps --all -q -f status=exited)
 docker rm -v $(docker ps -q -f status=exited)
 docker rm -v NAME
 docker rmi [--force] $(docker images -a -q)
+docker run --rm --name NAME -it IMAGE COMMAND
 docker run -it --rm -P IMAGE
 docker system prune -a
 docker tag APP:latest AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/APP:latest
