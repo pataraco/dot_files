@@ -22,10 +22,12 @@ aws cloudformation list-stacks | jq .StackSummaries[].StackName
 aws cloudformation package --template-file TEMPLATE.yaml --output-template-file SAM_TEMPLATE.yaml --s3-bucket BUCKET --s3-prefix KEY
 aws cloudformation update-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE
 aws cloudformation wait stack-create-complete --stack-name CF_STACK_NAME
+aws cloudfront create-invalidation --distribution-id ID --paths '/*'
 aws cloudfront delete-distribution --id ID --region REGION
 aws cloudfront get-distribution --id ID --query "Distribution.DistributionConfig.Origins.Items[].[DomainName,S3OriginConfig.OriginAccessIdentity]|[]"
 aws cloudfront get-distribution --id ID --query "Distribution.DistributionConfig.[Origins.Items[].[DomainName,S3OriginConfig.OriginAccessIdentity],Aliases.Items]|[]"
 aws cloudfront list-distributions --query "DistributionList.Items[?DomainName=='HOST.cloudfront.net'].Id" --output text
+aws cloudfront list-distributions --query DistributionList.Items[].[Id,Comment] --output table
 aws codebuild list-builds-for-project --project-name PROJECT_NAME --sort-order DESCENDING --max-items 1 --output text | grep IDS | cut -d':' -f2  # get latest build ID
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
 aws codecommit get-repository --repository-name REPO_NAME
@@ -92,8 +94,8 @@ aws ec2 stop-instances --region REGION --instance-ids ID1 [ID2...]
 aws ec2 terminate-instances --region REGION --instance-ids ID1 [ID2...]
 aws ecr describe-images --repository-name REPO --region REGION
 aws ecr describe-repositories --region REGION
-aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $AWS_ACCT.dkr.ecr.$REGION.amazonaws.com  # aws (v2.0.10)
-aws ecr get-login-password | docker login --username AWS --password-stdin AWS_ACCT.dkr.ecr.us-west-2.amazonaws.com/REPO
+aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com  # aws (v2.0.10)
+aws ecr get-login-password | docker login --username AWS --password-stdin AWS_ACCT.dkr.ecr.us-west-2.amazonaws.com/REPO  # old AWS CLI
 aws eks update-kubeconfig --name EKS_CLUSTER_NAME [--kubeconfig /path/to/KUBE_CFG]
 aws elasticbeanstalk list-available-solution-stacks
 aws elb describe-load-balancers --load-balancer-name ELB_NAME | jq -r .LoadBalancerDescriptions[].DNSName # get ELB DNS
