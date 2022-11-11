@@ -4,7 +4,7 @@
 
 # these are functions/aliases specific to Innovyze
 
-# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117,SC2155
 
 CO_BA_FILE=".bash_aliases_$COMPANY"
 
@@ -12,6 +12,26 @@ CO_BA_FILE=".bash_aliases_$COMPANY"
 [ -n "$PS1" ] && echo -n "$CO_BA_FILE (begin)... "
 
 # -------------------- define functions --------------------
+
+function cloneazrepo {
+  # Get an Azure Repos Repo's clone SSH URL
+  local _repo=$1
+  # shellcheck disable=SC2086
+  local _repo_list=$(getazrepocloneurl $_repo)
+  local _repo_ssh_url
+  if [[ $(wc -l <<< "$_repo_list") -gt 1 ]]; then
+    echo "please be more specific, more than one repo found:"
+    # shellcheck disable=SC2013
+    for _repo in $(awk -F'/' '{print $4}' <<< "$_repo_list"); do
+      _repo_ssh_url=$(grep "/$_repo$" <<< "$_repo_list")
+      echo " - $_repo ($_repo_ssh_url)"
+    done
+  else
+    echo "found: $_repo_list"
+    # shellcheck disable=SC2086
+    git clone $_repo_list
+  fi
+}
 
 function getazrepocloneurl {
    # Get an Azure Repos Repo's clone SSH URL
@@ -127,6 +147,7 @@ alias scof=showcof
 alias vcoba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 # company specific
 alias cd-doi="cd $HOME/repos/$COMPANY/devops-infrastructure"
-alias vl='export VAULT_ADDR=$(cat ~/.ssh/adsk_vault_address); vault login -method=ldap username=racop'
+alias vld='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.dev); pbcopy < ~/.ssh/.adsk.vpn.dev.pw; vault login -method=ldap username=racop; vault token create -ttl=2764800'
+alias vlp='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.prd); pbcopy < ~/.ssh/.adsk.vpn.prd.pw; vault login -method=ldap username=racop; vault token create -ttl=2764800'
 
 [ -n "$PS1" ] && echo -n "$CO_BA_FILE (end). "
