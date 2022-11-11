@@ -103,6 +103,13 @@ function _tmux_send_keys_all_panes {
    done
 }
 
+function dockersize {
+  docker manifest inspect -v "$1" | \
+    jq -c 'if type == "array" then .[] else . end' | \
+    jq -r '[ ( .Descriptor.platform | [ .os, .architecture, .variant, ."os.version" ] | del(..|nulls) | join("/") ), ( [ .SchemaV2Manifest.layers[].size ] | add ) ] | join(" ")' |\
+    numfmt --to iec --format '%.2f' --field 2 | column -t
+}
+
 function bash_prompt {
    # customize Bash Prompt
    # show status of last command
@@ -1572,8 +1579,12 @@ alias tf11='/usr/local/bin/terraform.0.11'
 alias tf12='/usr/local/bin/terraform.0.12'
 alias tf13='/usr/local/bin/terraform.0.13'
 alias tf14='/usr/local/bin/terraform.0.14'
-alias tmx='tmux new-session -s Raco -n MYSHTUFF \; split-window -h \;  split-window -h \;  split-window -h \;  \; select-layout main-horizontal'
-alias tmxn='_f() { tmux new-window -n ${1:-NEW_WINDOW} \; split-window -h \;  split-window -h \;  split-window -h \;  \; select-layout main-horizontal; }; _f'
+alias tmx='tmux new -d -s Raco -n MyShtuff \; splitw \; splitw \; splitw \; selectl tiled           \; selectp -t 1;
+           tmux neww           -n DevOps   \; splitw \; splitw \; splitw \; selectl main-vertical   \; selectp -t 1;
+           tmux neww           -n FrontEnd \; splitw \; splitw \; splitw \; selectl main-horizontal \; selectp -t 1;
+           tmux neww           -n BackEnd  \; splitw \; splitw \; splitw \; selectl main-horizontal \; selectp -t 1;
+           tmux selectw -t Raco:MyShtuff \; selectp -t 1 \; attach -t Raco'
+alias tmxn='_f() { tmux new-window -n ${1:-NEW_WINDOW} \; split-window \;  split-window \;  split-window \;  \; select-layout main-horizontal; }; _f'
 alias tspo='tmux set-window-option synchronize-panes on'
 alias tspx='tmux set-window-option synchronize-panes off'
 alias tt='echo -ne "\033]0;$(whoami)@$(hostname)\007"'
