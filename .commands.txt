@@ -162,6 +162,7 @@ neutron floatingip-create net04_ext
 nova boot --flavor m1.large --image 64470276-fec7-4b6c-84e5-7556b76f07d3 --security-groups "base,inside-core,inside-chef" --key-name Red5PublicTest --nic net-id=7f5dca69-81f8-4ceb-abc8-dabb7d5de2ef,v4-fixed-ip=10.149.0.5 --availability-zone core-1 chef-server-01
 nova force-delete 458795c7-a296-4476-954d-8a0c2382b051
 nova reset-state 458795c7-a296-4476-954d-8a0c2382b051
+npm list PACKAGE --depth=0 --json
 ntpdate ntphost1.star
 open -n -a "Google Chrome" --args "--new-window" "--profile-directory=$PROFILE" "$URL"
 openssl ciphers -v 'ALL:eNULL'
