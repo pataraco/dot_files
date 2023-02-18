@@ -18,15 +18,19 @@ aws cloudformation deploy --template-file TEMPLATE.yaml --stack-name STACK_NAME 
 aws cloudformation describe-stacks --stack-name CF_STACK_NAME
 aws cloudformation get-template --stack-name STACK_NAME | jq -r .TemplateBody
 aws cloudformation list-stack-resources --region REGION --stack-name NAME --query "StackResourceSummaries[?ResourceType=='AWS::IAM::Role'].PhysicalResourceId"
+aws cloudformation list-stack-resources --region REGION --stack-name STACK --query "StackResourceSummaries[].[LogicalResourceId,ResourceType,PhysicalResourceId]" --output table
 aws cloudformation list-stacks | jq .StackSummaries[].StackName
 aws cloudformation package --template-file TEMPLATE.yaml --output-template-file SAM_TEMPLATE.yaml --s3-bucket BUCKET --s3-prefix KEY
 aws cloudformation update-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE
 aws cloudformation wait stack-create-complete --stack-name CF_STACK_NAME
-aws cloudfront create-invalidation --distribution-id ID --paths '/*'
+aws cloudfront create-invalidation --distribution-id ID --paths '/*' --query "Invalidation.[Id,Status]" --output text
 aws cloudfront delete-distribution --id ID --region REGION
 aws cloudfront get-distribution --id ID --query "Distribution.DistributionConfig.Origins.Items[].[DomainName,S3OriginConfig.OriginAccessIdentity]|[]"
 aws cloudfront get-distribution --id ID --query "Distribution.DistributionConfig.[Origins.Items[].[DomainName,S3OriginConfig.OriginAccessIdentity],Aliases.Items]|[]"
+aws cloudfront get-invalidation --distribution-id CDN_ID --id ID --query Invalidation.Status
 aws cloudfront list-distributions --query "DistributionList.Items[?DomainName=='HOST.cloudfront.net'].Id" --output text
+aws cloudfront list-distributions --query "DistributionList.Items[?contains(Comment,'PATTERN')].[Id,Aliases.Items|join(', ',@)]" --output table
+aws cloudfront list-distributions --query "DistributionList.Items[?contains(Comment,'PATTERN')].[Id,Comment]"
 aws cloudfront list-distributions --query DistributionList.Items[].[Id,Comment] --output table
 aws codebuild list-builds-for-project --project-name PROJECT_NAME --sort-order DESCENDING --max-items 1 --output text | grep IDS | cut -d':' -f2  # get latest build ID
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
@@ -143,7 +147,7 @@ aws route53 create-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_I
 aws route53 delete-vpc-association-authorization --hosted-zone-id $HOSTED_ZONE_ID --vpc VPCRegion=$REGION,VPCId=$VPC_ID
 aws route53 get-hosted-zone --id $HOSTED_ZONE_ID
 aws route53 list-hosted-zones --query "HostedZones[?Name==example.com.].[Name,Id,Config.PrivateZone,ResourceRecordSetCount,Config.Comment]" --output table
-aws route53 list-hosted-zones-by-name --query "HostedZones[?contain(Name,'qa.com')].Id"
+aws route53 list-hosted-zones-by-name --query "HostedZones[?contains(Name,'qa.com')].Id"
 aws route53 list-vpc-association-authorizations --hosted-zone-id $HOSTED_ZONE_ID
 aws s3 cp $FILE s3://$BUCKET/$KEY --sse aws:kms --sse-kms-key-id $KMS_ARN
 aws s3 ls s3://S3_BUCKET/KEY --profile PROFILE --recursive --summarize --human-readable
