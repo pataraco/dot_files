@@ -222,36 +222,42 @@ function awsar {
 }
 
 function awsassrole {
-   # assume an AWS role
-   local _USAGE="usage: awsassrole IAM_ROLE_ARN|IAM_ROLE_NAME"
-   local _DURATION=3600  # seconds
-   local _iam_arg=$1
-   local _iam_role_arn
-   local _iam_role_arn_default="arn:aws:iam::${AWS_ACCOUNT_ID}:role/$_iam_arg"
-   if [[ ! "$_iam_arg" =~ ^arn:aws:iam::.*:role/.* ]]; then
-      echo "this does not resemble an AWS IAM ARN: '$_iam_arg'"
-      echo "using this one: '$_iam_role_arn_default'"
-      _iam_role_arn=$_iam_role_arn_default
+  # assume an AWS role
+  local _USAGE="usage: awsassrole IAM_ROLE_ARN|IAM_ROLE_NAME"
+  local _DURATION=3600  # seconds
+  local _iam_arg=$1
+  local _iam_role_arn
+  local _iam_role_arn_default="arn:aws:iam::${AWS_ACCOUNT_ID}:role/$_iam_arg"
+  if [[ ! "$_iam_arg" =~ ^arn:aws:iam::.*:role/.* ]]; then
+    echo "this does not resemble an AWS IAM ARN: '$_iam_arg'"
+    echo "using this one: '$_iam_role_arn_default'"
+    _iam_role_arn=$_iam_role_arn_default
+  else
+    _iam_role_arn=$_iam_arg
+  fi
+  local _iam_role_name=${_iam_role_arn#*/}
+  local _iam_role_aws_acct_id=$(cut -d':' -f5 <<< "$_iam_role_arn")
+  local _iam_role_aws_acct_env=$(awsacct "$_iam_role_aws_acct_id")
+  local _session
+  if [[ -n "$_iam_role_arn" ]]; then
+    [ -n "$AWS_DEBUG" ] && echo "debug: aws sts assume-role --region us-east-1 --role-arn $_iam_role_arn --role-session-name $_iam_role_name --duration-seconds $_DURATION"
+    if _session=$(aws sts assume-role --region us-east-1 --role-arn "$_iam_role_arn" --role-session-name "$_iam_role_name" --duration-seconds "$_DURATION"); then
+      _unset_aws_environment > /dev/null
+      export AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId <<< "$_session")
+      export AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey <<< "$_session")
+      export AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken <<< "$_session")
+      export AWS_DEFAULT_PROFILE="role:$_iam_role_name"
+      _set_aws_prompt_colors "$_iam_role_aws_acct_env"
+      unset AWS_DEFAULT_PROFILE
+      echo "Assumed role: $_iam_role_name [$_iam_role_aws_acct_env]"
     else
-      _iam_role_arn=$_iam_arg
-   fi
-   local _iam_role_name=${_iam_role_arn#*/}
-   local _session
-   if [[ -n "$_iam_role_arn" ]]; then
-      [ -n "$AWS_DEBUG" ] && echo "debug: aws sts assume-role --region us-east-1 --role-arn $_iam_role_arn --role-session-name $_iam_role_name --duration-seconds $_DURATION"
-      if _session=$(aws sts assume-role --region us-east-1 --role-arn "$_iam_role_arn" --role-session-name "$_iam_role_name" --duration-seconds "$_DURATION"); then
-         echo "Assumed role: $_iam_role_name"
-         export AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId <<< "$_session")
-         export AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey <<< "$_session")
-         export AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken <<< "$_session")
-      else
-         echo "Could not assume role: $_iam_role_name"
-         return 1
-      fi
-   else
-      echo "error: did not provide an AWS IAM ARN"
-      echo "$_USAGE"
-   fi
+      echo "Could not assume role: $_iam_role_name"
+      return 1
+    fi
+  else
+    echo "error: did not provide an AWS IAM ARN"
+    echo "$_USAGE"
+  fi
 }
 
 function awsdr {
