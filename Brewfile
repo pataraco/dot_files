@@ -1,220 +1,133 @@
-ansible
-aom
-apr
-apr-util
-argon2
-aspell
-autoconf
-automake
-aws-iam-authenticator
-aws-sam-cli
-awscli
-azure-cli
-bash-completion
-bdw-gc
-black
-brotli
-c-ares
-ca-certificates
-cairo
-cask
-cloudformation-guard
-colordiff
-composer
-coreutils
-curl
-curl-openssl
-dep
-docbook
-docbook-xsl
-dotnet
-emacs
-flyway
-fontconfig
-freetds
-freetype
-fribidi
-fzf
-gd
-gdbm
-gdk-pixbuf
-gettext
-gh
-ghostscript
-giflib
-git
-git-lfs
-git-secrets
-glib
-gmp
-gnu-getopt
-gnu-sed
-gnutls
-go
-gobject-introspection
-graphite2
-graphviz
-gts
-guile
-harfbuzz
-helm
-icu4c
-ilmbase
-imagemagick
-imath
-ipcalc
-jansson
-jasper
-jbig2dec
-jemalloc
-jenkins
-jpeg
-jpeg-xl
-jq
-kompose
-kops
-krb5
-kubernetes-cli
-lastpass-cli
-libassuan
-libavif
-libde265
-libev
-libevent
-libffi
-libgpg-error
-libheif
-libidn
-libidn2
-liblqr
-libmetalink
-libnghttp2
-libomp
-libpng
-libpq
-libpthread-stubs
-libraw
-librsvg
-libsodium
-libssh2
-libtasn1
-libtermkey
-libtiff
-libtool
-libunistring
-libuv
-libvmaf
-libvterm
-libx11
-libxau
-libxcb
-libxdmcp
-libxext
-libxrender
-libyaml
-libzip
-little-cms2
-luajit
-luajit-openresty
-luv
-lzo
-m4
-macos-term-size
-mas
-maven
-minikube
-mongosh
-mpdecimal
-msgpack
-mysql-client
-ncurses
-neovim
-netpbm
-nettle
-nghttp2
-node
-node@14
-nvm
-oniguruma
-openexr
-openjdk
-openjdk@11
-openjpeg
-openldap
-openssl@1.1
-p11-kit
-packer
-pango
-pcre
-pcre2
-pgcli
-php
-pinentry
-pipenv
-pixman
-pkg-config
-pwgen
-pyenv
-pyenv-virtualenv
-python-tabulate
-python@3.10
-python@3.8
-python@3.9
-readline
-reattach-to-user-namespace
-rtmpdump
-ruby
-saml2aws
-serverless
-shared-mime-info
-shellcheck
-six
-sops
-sqlite
-tcl-tk
-terraform
-tflint
-the_silver_searcher
-tidy-html5
-tmux
-tree
-tree-sitter
-ttygif
-ttyrec
-unbound
-unibilium
-unixodbc
-utf8proc
-vault
-watch
-webp
-wget
-x265
-xmlto
-xorgproto
-xz
-yarn
-yq
-zlib
-zstd
-adobe-acrobat-reader
-adoptopenjdk8
-amazon-music
-chromedriver
-datagrip
-docker
-google-backup-and-sync
-google-chrome
-google-cloud-sdk
-iterm2
-java
-lastpass
-mysqlworkbench
-pandora
-postman
-qlmarkdown
-remote-desktop-manager
-slack
-snowflake-snowsql
-spotify
-visual-studio-code
+tap "aws/tap"
+tap "homebrew/bundle"
+tap "homebrew/cask"
+tap "homebrew/cask-versions"
+tap "homebrew/core"
+tap "weaveworks/tap"
+brew "python@3.11"
+brew "ansible"
+brew "webp"
+brew "autoconf"
+brew "automake"
+brew "aws-iam-authenticator"
+brew "awscli"
+brew "python@3.10"
+brew "azure-cli"
+brew "bash-completion"
+brew "black"
+brew "glib"
+brew "pkg-config"
+brew "python@3.9"
+brew "cairo"
+brew "guile"
+brew "p11-kit"
+brew "unbound"
+brew "gnutls"
+brew "emacs"
+brew "cask"
+brew "cfn-flip"
+brew "cfn-lint"
+brew "cloudformation-guard"
+brew "colordiff"
+brew "composer"
+brew "openldap"
+brew "curl"
+brew "go"
+brew "dep"
+brew "dotnet"
+brew "harfbuzz"
+brew "flyway"
+brew "freetds"
+brew "fzf"
+brew "gdk-pixbuf"
+brew "gh"
+brew "git"
+brew "git-lfs"
+brew "git-secrets"
+brew "gnu-sed"
+brew "gobject-introspection"
+brew "netpbm"
+brew "python@3.8"
+brew "pango"
+brew "librsvg"
+brew "graphviz"
+brew "helm"
+brew "shared-mime-info"
+brew "libheif"
+brew "libraw"
+brew "imagemagick"
+brew "ipcalc"
+brew "jenkins"
+brew "jq"
+brew "kompose"
+brew "kubernetes-cli"
+brew "kops"
+brew "lastpass-cli"
+brew "luv"
+brew "mas"
+brew "maven"
+brew "minikube"
+brew "node@16"
+brew "mongosh"
+brew "mysql-client"
+brew "neovim"
+brew "nghttp2"
+brew "node"
+brew "node@14"
+brew "nvm"
+brew "openssl@3"
+brew "packer"
+brew "python-tabulate"
+brew "pgcli"
+brew "php"
+brew "pipenv"
+brew "pwgen"
+brew "pyenv"
+brew "pyenv-virtualenv"
+brew "reattach-to-user-namespace"
+brew "ruby"
+brew "saml2aws"
+brew "serverless"
+brew "shellcheck"
+brew "sops"
+brew "terraform"
+brew "terraform-docs"
+brew "tflint"
+brew "the_silver_searcher"
+brew "tmux"
+brew "tree"
+brew "ttygif"
+brew "vault"
+brew "watch"
+brew "wget"
+brew "yarn"
+brew "yq"
+brew "zlib"
+brew "aws/tap/aws-sam-cli"
+cask "adobe-acrobat-reader"
+cask "adoptopenjdk8"
+cask "amazon-music"
+cask "chromedriver"
+cask "datagrip"
+cask "docker"
+cask "google-backup-and-sync"
+cask "google-chrome"
+cask "google-cloud-sdk"
+cask "iterm2"
+cask "lastpass"
+cask "mysqlworkbench"
+cask "pandora"
+cask "postman"
+cask "powershell"
+cask "qlmarkdown"
+cask "remote-desktop-manager"
+cask "slack"
+cask "snowflake-snowsql"
+cask "spotify"
+cask "visual-studio-code"
+mas "GarageBand", id: 682658836
+mas "iMovie", id: 408981434
+mas "Keynote", id: 409183694
+mas "Microsoft Remote Desktop", id: 1295203466
+mas "Numbers", id: 409203825
+mas "Pages", id: 409201541

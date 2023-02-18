@@ -1,14 +1,34 @@
 # These can/will be installed via `brew bundle` and the Brewfile
-Amazon Music        $ brew cask install amazon-music
-Atom                $ brew cask install atom
-Chrome              $ brew cask install google-chrome
-Docker              $ brew cask install docker
-LastPass            $ brew cask install lastpass
-MySQLWorkbench      $ brew cask install mysqlworkbench
-Pandora             $ brew cask install pandora
-Postman             $ brew cask install postman
-Slack               $ brew cask install slack
-Spotify             $ brew cask install spotify
-VirtualBox          $ brew cask install virtualbox
-Visual Studio Code  $ brew cask install visual-studio-code
-iTerm2              $ brew cask install iterm2
+--------------------------------------------------------------
+Amazon Music         $ brew install amazon-music
+Atom                 $ brew install atom
+Google Chrome        $ brew install google-chrome
+Google Drive         $ brew install google-drive
+Google Cloud SDK     $ brew install google-chrome
+Google Go            $ brew install google-go
+DataGrip (JetBrains) $ brew install datagrip
+Docker               $ brew install docker
+LastPass             $ brew install lastpass
+Pandora              $ brew install pandora
+PowerShell           $ brew install powershell
+Postman              $ brew install postman
+MySQL Workbench      $ brew install mysqlworkbench
+SnowSQL              $ brew install snowflake-snowsql
+Slack                $ brew install slack
+Spotify              $ brew install spotify
+VirtualBox           $ brew install virtualbox
+Visual Studio Code   $ brew install visual-studio-code
+iTerm2               $ brew install iterm2
+Zoom                 $ brew install zoom
+
+# Other Applications
+--------------------------------------------------------------
+Logitech G HUB
+Microsoft Excel
+Microsoft OneNote
+Microsoft Outlook
+Microsoft PowerPoint
+Microsoft Word
+Microsoft Remote Desktop
+OneDrive
+Pulse Secure

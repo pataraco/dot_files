@@ -53,6 +53,8 @@ The `setup.sh` script will:
 1. Set date/time format in menu bar    *(edit the script and change to your desired format)*
 2. Set the login shell to `/bin/bash`  *(again, edit to your desired, e.g. '/bin/zsh')*
 3. Install `Homebrew` and the packages listed in the Brewfile *(replace with your own)*
+   (brew bundle [install]  # installs all found in Brewfile)
+   (brew bundle dump       # create Brewfile)
 4. Saves existing dot files to `$HOME/.orig`
 5. Creates symlinks to all dot files found herein
 
