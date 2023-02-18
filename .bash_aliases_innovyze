@@ -144,6 +144,9 @@ alias cof="grep '^function .* ' ~/$CO_BA_FILE | awk '{print $2}' | cut -d'(' -f1
 alias gitnewrel='set -x; git push origin :release 2>/dev/null; git branch -D release 2>/dev/null; git checkout develop && git fetch -p origin && git merge origin/develop; git checkout -b release; git push origin release; set +x'
 alias scoba='source ~/$CO_BA_FILE'
 alias scof=showcof
+alias scdnm="$HOME/repos/innovyze/devops-tools/aws/show-api-cdn-mappings.sh"
+alias samrc="$HOME/repos/innovyze/devops-tools/aws/show-api-mr-configs.sh"
+alias scfns="$HOME/repos/innovyze/devops-tools/aws/show-cfn-stacks.sh"
 alias vcoba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 # company specific
 alias cd-doi="cd $HOME/repos/$COMPANY/devops-infrastructure"
