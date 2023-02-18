@@ -2,27 +2,28 @@
 --------------------------------------------------------------
 Amazon Music         $ brew install amazon-music
 Atom                 $ brew install atom
-Google Chrome        $ brew install google-chrome
-Google Drive         $ brew install google-drive
-Google Cloud SDK     $ brew install google-chrome
-Google Go            $ brew install google-go
 DataGrip (JetBrains) $ brew install datagrip
 Docker               $ brew install docker
+Google Chrome        $ brew install google-chrome
+Google Cloud SDK     $ brew install google-chrome
+Google Drive         $ brew install google-drive
+Google Go            $ brew install google-go
+iTerm2               $ brew install iterm2
 LastPass             $ brew install lastpass
-Pandora              $ brew install pandora
-PowerShell           $ brew install powershell
-Postman              $ brew install postman
 MySQL Workbench      $ brew install mysqlworkbench
-SnowSQL              $ brew install snowflake-snowsql
+Pandora              $ brew install pandora
+Postman              $ brew install postman
+PowerShell           $ brew install powershell
 Slack                $ brew install slack
+SnowSQL              $ brew install snowflake-snowsql
 Spotify              $ brew install spotify
 VirtualBox           $ brew install virtualbox
 Visual Studio Code   $ brew install visual-studio-code
-iTerm2               $ brew install iterm2
 Zoom                 $ brew install zoom
 
 # Other Applications
 --------------------------------------------------------------
+GitHub Desktop
 Logitech G HUB
 Microsoft Excel
 Microsoft OneNote
