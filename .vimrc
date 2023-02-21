@@ -4,7 +4,7 @@
 " --------
 "  Steps to use neovim (nvim) (or use github.com/pataraco/dot_files/setup.sh)
 "  1. brew install neovim  (should be installed via `brew bundle`)
-"  2. mkdir -p mkdir -p $HOME/.config/nvim
+"  2. mkdir -p $HOME/.config/nvim
 "  3. ln -s $HOME/.vimrc $HOME/.config/nvim/init.vim
 "  4. curl -fLo $HOME/.local/share/nvim/site/autoload/plug.vim --create-dirs \
 "       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
