@@ -10,6 +10,9 @@
 
 [ -n "$PS1" ] && echo -n ".bash_profile (begin)... "
 
+# suppress "The default interactve shell is now zsh" warning
+export BASH_SILENCE_DEPRECATION_WARNING=1
+
 # set to use AWS related functions/aliases
 export AWS_SHIT=$HOME/.bash_aliases_aws
 
@@ -143,8 +146,10 @@ fi
 
 # Node Version Manager
 export NVM_DIR="$HOME/.nvm"
-export NVM_SCRIPT="/usr/local/opt/nvm/nvm.sh"
-export NVM_COMPLETION="/usr/local/opt/nvm/etc/bash_completion.d/nvm"
+# export NVM_SCRIPT="/usr/local/opt/nvm/nvm.sh"
+# export NVM_COMPLETION="/usr/local/opt/nvm/etc/bash_completion.d/nvm"
+export NVM_SCRIPT="$HOMEBREW_REPOSITORY/opt/nvm/nvm.sh"
+export NVM_COMPLETION="$HOMEBREW_REPOSITORY/opt/nvm/etc/bash_completion.d/nvm"
 [ -s "$NVM_SCRIPT" ] && source "$NVM_SCRIPT"          # loads nvm
 [ -s "$NVM_COMPLETION" ] && source "$NVM_COMPLETION"  # loads nvm CLI completion
 
@@ -173,6 +178,9 @@ fi
 ## unset __conda_setup
 ## # <<< conda initialize <<<
 
+# added by Snowflake SnowSQL installer v1.2
+export PATH=/Applications/SnowSQL.app/Contents/MacOS:$PATH
+
 # add $HOME/repos/pyenv/bin to beginning of PATH (if it exists)
 pyenv_repo=$HOME/repos/pyenv
 if [ -d "$pyenv_repo" ]; then
@@ -193,6 +201,9 @@ command -v pyenv &> /dev/null && eval "$(pyenv init --path)"
 # remove duplicate entries in the PATH (both work - take your pick)
 # PATH=$(perl -e 'print join(":", grep { not $seen{$_}++ } split(/:/, $ENV{PATH}))')
 PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/:$//')
+
+# add brew installtion dirs to PATH
+eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # Output completion message
 [ -n "$PS1" ] && echo -n ".bash_profile (end). "
