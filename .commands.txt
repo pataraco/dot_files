@@ -36,6 +36,8 @@ az acr check-health --name innovyze
 az acr check-health --name innovyze --yes
 az acr login --name innovyze
 az acr repository show-tags -n innovyze --repository devops-azure-pipeline-image --orderby time_desc --output table
+az devops configure --defaults organization=https://dev.azure.com/MyOrg/
+az devops configure --defaults project=PROJ
 base64 /dev/urandom|head -c 128; echo
 base64 /dev/urandom|tr -dc A-Za-z0-9|head -c 29; echo
 build=XXX;type=NNN; for fte in `ls *.$type`; do echo $fte; openssl enc -e -in $fte -out $fte.r5e -pass file:/home/praco/repos/client_certificates/builds/$build/publictest-aes-pass.bin -aes-256-cbc; done

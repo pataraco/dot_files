@@ -153,6 +153,10 @@ export NVM_COMPLETION="$HOMEBREW_REPOSITORY/opt/nvm/etc/bash_completion.d/nvm"
 [ -s "$NVM_SCRIPT" ] && source "$NVM_SCRIPT"          # loads nvm
 [ -s "$NVM_COMPLETION" ] && source "$NVM_COMPLETION"  # loads nvm CLI completion
 
+# Enamble git CLI auto completion
+export GIT_COMPLETION="$HOME/.git-completion.bash"
+[ -s "$GIT_COMPLETION" ] && source "$GIT_COMPLETION"  # loads git CLI completion
+
 # Enamble AWS CLI auto completion
 if command -v aws_completer &> /dev/null; then
    complete -C "$(command -v aws_completer)" aws

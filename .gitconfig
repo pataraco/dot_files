@@ -13,14 +13,20 @@
 	caa = commit -a --amend
 	# cfb = create feature branch
 	cfb = "!git checkout master && \
-		git fetch -p origin master && \
+		git fetch --prune origin master && \
 		git merge origin/master && \
 		git checkout -b"
+	fmdev = "!git checkout dev && git fetch --prune origin && git merge origin/dev"
+	fmqa = "!git checkout qa && git fetch --prune origin && git merge origin/qa"
+	fmprod = "!git checkout prod && git fetch --prune origin && git merge origin/prod"
+	fmd = "!git checkout develop && git fetch --prune origin && git merge origin/develop"
+	fmdt = "!git checkout develop && git fetch --tags --prune origin --force && git merge origin/develop"
 	# fmm: fetch & merge master; do this instead of `git pull`
-	fmd = "!git checkout dev && git fetch -p origin && git merge origin/dev"
-	fmdp = "!git checkout develop && git fetch -p origin && git merge origin/develop"
-	fmm = "!git checkout master && git fetch -p -P origin && git merge origin/master"
-	fms = "!git checkout stage && git fetch -p origin && git merge origin/stage"
+	fmm = "!git checkout master && git fetch --prune origin && git merge origin/master"
+	fmr = "!git checkout release && git fetch --prune origin && git merge origin/release"
+	fms = "!git checkout stage && git fetch --prune origin && git merge origin/stage"
+	fmu = "!git checkout master && git fetch --prune upstream && git merge upstream/master"
+	fmx = "!git fetch --prune origin && git merge origin/$(git symbolic-ref HEAD|cut -d/ -f3-)"
 	#cm = "!git add -A && git commit -m"
 	cm = commit -m
 	co = checkout
@@ -41,6 +47,7 @@
 	ss = status -s
 	# temporarily save work
 	save = "!git add -A && git commit -m 'SAVEPOINT'"
+	sl = "shortlog -s -n --all --no-merges"
 	wip = "!git commit -am 'WIP'"
 	# continue work
 	undo = reset HEAD~1 --mixed
@@ -62,10 +69,14 @@
 	lnc = log --pretty=format:"%h\\ %s\\ [%cn]"
 	lp = log -p # show patch/updates
 	# ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
-	ls = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
-	lsl = "!git ls -5"  # show last 5 commits
-	lss = "!git ls -S"  # search logs for PATTERN"
-	lsf = "!git ls --"  # show logs for files (and directories)
+	# ls = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
+	ls = "!git lsa -12"  # show last 5 commits
+	lsa = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
+	# lss = "!git ls -S"  # search logs for PATTERN"
+	# lsf = "!git ls --"  # show logs for files (and directories)
+	lss = "!git lsa -S"  # search logs for PATTERN"
+	lsf = "!git lsa --"  # show logs for files (and directories)
+	# lsl = "!git ls -5"  # show last 5 commits
 	lsa = log --pretty=format:'%Cred%h%C(yellow)%d %Creset%s %Cgreen(%cr) %C(bold blue)<%cn>' --all --abbrev-commit --date=relative
 	rso = remote show origin
 
@@ -86,7 +97,7 @@
 	excludesfile = /home/praco/.gitignore
 [user]
 	name = Patrick Raco
-	email = pataraco@gmail.com
+	email = patrick.raco@innovyze.com
 # [credential]
 # 	helper = !aws --profile rdrake --region us-east-1 codecommit credential-helper $@
 # 	UseHttpPath = true
@@ -125,3 +136,8 @@
 	cmd = /Applications/p4merge.app/Contents/Resources/launchp4merge $PWD/$BASE $PWD/$LOCAL $PWD/$REMOTE $PWD/$MERGED
 [mergetool "vimdiff"]
 	conflictstyle = diff3
+[filter "lfs"]
+	smudge = git-lfs smudge --skip -- %f
+	process = git-lfs filter-process --skip
+	required = true
+	clean = git-lfs clean -- %f
