@@ -18,6 +18,7 @@ function cloneazrepo {
   local _repo=$1
   # shellcheck disable=SC2086
   local _repo_list=$(getazrepocloneurl $_repo)
+  local _repo_dir
   local _repo_ssh_url
   if [[ $(wc -l <<< "$_repo_list") -gt 1 ]]; then
     echo "please be more specific, more than one repo found:"
@@ -28,8 +29,15 @@ function cloneazrepo {
     done
   else
     echo "found: $_repo_list"
-    # shellcheck disable=SC2086
-    git clone $_repo_list
+    _repo_dir="$(basename "$_repo_list")"
+    if [[ -d "$_repo_dir" ]]; then
+      echo "directory already exists: $_repo_dir"
+      cd "$_repo_dir" || return
+    else
+      # shellcheck disable=SC2086
+      git clone $_repo_list
+      cd "$_repo_dir" || return
+    fi
   fi
 }
 

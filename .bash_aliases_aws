@@ -348,8 +348,7 @@ function awsasgcp {
    local _pc_cmd
    local _region
    _USAGE="usage: awsasgcp -r|--resume or -s|--suspend [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]"
-   # _AWS_CMD=$(command -v aws 2> /dev/null) || { echo "'aws' needed to run this function"; exit 3; }
-   _AWS_CMD="/usr/local/bin/aws"  # hard-code for now
+   _AWS_CMD=$(command -v aws 2> /dev/null) || { echo "'aws' needed to run this function"; exit 3; }
    _JQ_CMD=$(command -v jq 2> /dev/null) || { echo "'jq' needed to run this function"; exit 3; }
    while true; do
       case "$1" in
@@ -380,8 +379,7 @@ function awsasgcp {
 function awsci {
    # reboot, start, stop or terminate an instance
    local _AWS_CMD
-   # _AWS_CMD=$(command -v aws)  # doesn't work if "aws" is an alias
-   _AWS_CMD="/usr/local/bin/aws"  # hard-code for now
+   _AWS_CMD=$(command -v aws)  # doesn't work if "aws" is an alias
    [ -z "$_AWS_CMD" ] && { echo "error: aws command not found"; return 2; }
    local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
    local _USAGE="usage: awsci [-r REGION] reboot|start|stop|terminate INSTANCE_ID|INSTANCE_NAME   # default region: $_DEFAULT_REGION"

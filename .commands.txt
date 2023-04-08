@@ -36,6 +36,7 @@ az acr check-health --name innovyze
 az acr check-health --name innovyze --yes
 az acr login --name innovyze
 az acr repository show-tags -n innovyze --repository devops-azure-pipeline-image --orderby time_desc --output table
+az acr repository show-tags -n innovyze --repository amazon-ecr-public-gallery-lambda-python --orderby time_desc --output table
 az devops configure --defaults organization=https://dev.azure.com/MyOrg/
 az devops configure --defaults project=PROJ
 base64 /dev/urandom|head -c 128; echo

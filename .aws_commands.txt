@@ -140,6 +140,8 @@ aws lambda update-function-code --function-name FUNCTION_NAME --s3-bucket S3_BUC
 aws lambda update-function-configuration --function-name FUNCTION_NAME --timeout N --memory-size M
 aws logs delete-log-group --log-group-name NAME
 aws logs describe-log-groups --query "logGroups[?starts_with(logGroupName,'/aws/api-gateway')].logGroupName" --output text
+aws logs get-log-events --log-group-name /aws/codebuild/ --log-stream-name  --query events[].message --output text
+aws logs get-log-events --log-group-name LOG_NAME --log-stream-name STREAM_NAME --query events[].message --output text
 aws rds describe-db-engine-versions --filter "Name=engine,Values=ENGINE" --query DBEngineVersions[].[Engine,EngineVersion] --output table
 aws rds describe-db-engine-versions --query DBEngineVersions[].[Engine,EngineVersion] --output table
 aws resourcegroupstaggingapi tag-resources --resource-arn-list $ARNs --tags $TAG_KEY=$TAG_VAL

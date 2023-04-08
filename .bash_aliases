@@ -583,19 +583,39 @@ function decimal_to_baseN {
 
 function dj {
    # either add a daily journal entry provided on the command line or edit it
-   DAILY_JOURNAL_DIR="$HOME/notes"
-   DAILY_JOURNAL_FILE="$DAILY_JOURNAL_DIR/Daily_Journal.txt"
-   [[ ! -d "$DAILY_JOURNAL_DIR" ]] && mkdir "$DAILY_JOURNAL_DIR"
+   local _DAILY_JOURNAL_DIR="$HOME/notes"
+   local _DAILY_JOURNAL_FILE="$_DAILY_JOURNAL_DIR/Daily_Journal.txt"
+   [[ ! -d "$_DAILY_JOURNAL_DIR" ]] && mkdir "$_DAILY_JOURNAL_DIR"
    if [[ $# -ne 0 ]]; then
       case $1 in
-         cat) cat "$DAILY_JOURNAL_FILE" ;;
-         help) echo "usage: dj [cat|help|last|tail|LOG_ENTRY]" ;;
-         last) tail -n 1 "$DAILY_JOURNAL_FILE" ;;
-         tail) tail "$DAILY_JOURNAL_FILE" ;;
-         *) echo "$(date +'%d-%m-%Y'): $*" >> "$DAILY_JOURNAL_FILE" ;;
+         -c|cat) cat "$_DAILY_JOURNAL_FILE" ;;
+         -e|edit) vi "$_DAILY_JOURNAL_FILE" ;;
+         -h|help) echo "usage: dj [-c/cat|-e/edit|-h/help|-l/last|-t/tail|LOG_ENTRY]" ;;
+         -l|last) tail -n 1 "$_DAILY_JOURNAL_FILE" ;;
+         -t|tail) tail "$_DAILY_JOURNAL_FILE" ;;
+         *) echo "$(date +'%d-%m-%Y'): $*" >> "$_DAILY_JOURNAL_FILE" ;;
       esac
    else
-      $VIM_CMD "$DAILY_JOURNAL_FILE"
+      $VIM_CMD "$_DAILY_JOURNAL_FILE"
+   fi
+}
+
+function dm {
+   # either add a daily memory entry provided on the command line or edit it
+   local _DAILY_MEMORY_DIR="$HOME/notes"
+   local _DAILY_MEMORY_FILE="$_DAILY_MEMORY_DIR/Daily_Memory.txt"
+   [[ ! -d "$_DAILY_MEMORY_DIR" ]] && mkdir "$_DAILY_MEMORY_DIR"
+   if [[ $# -ne 0 ]]; then
+      case $1 in
+         -c|cat) cat "$_DAILY_MEMORY_FILE" ;;
+         -e|edit) vi "$_DAILY_MEMORY_FILE" ;;
+         -h|help) echo "usage: dm [-c/cat|-e/edit|-h/help|-l/last|-t/tail|LOG_ENTRY]" ;;
+         -l|last) tail -n 1 "$_DAILY_MEMORY_FILE" ;;
+         -t|tail) tail "$_DAILY_MEMORY_FILE" ;;
+         *) echo "$(date +'%d-%m-%Y'): $*" >> "$_DAILY_MEMORY_FILE" ;;
+      esac
+   else
+      $VIM_CMD "$_DAILY_MEMORY_FILE"
    fi
 }
 
@@ -1174,6 +1194,7 @@ function tfe {
    # set/show terraform environment
    local _TF_ENV_DIR="$HOME/.tfenv/versions"
    local _TF_RELEASES_URL="https://releases.hashicorp.com"
+   local _USER_BIN_DIR="/opt/homebrew/bin"
    local _USAGE=\
 'usage:
   tfe                  show terraform environment
@@ -1192,26 +1213,26 @@ function tfe {
       echo "this function helps to set/show your terraform environment"
       echo "$_USAGE"
    elif [[ "$_cmd" == "versions" ]]; then
-      # get versions in /usr/local/bin
-      _versions=$(basename /usr/local/bin/terraform* | grep -v '^terraform\(\.[0-9]\+\)\{0,2\}$' | sed 's/^terraform.//g') 
+      # get versions in $_USER_BIN_DIR
+      _versions=$(basename $_USER_BIN_DIR/terraform* | grep -v '^terraform\(\.[0-9]\+\)\{0,2\}$' | sed 's/^terraform.//g') 
       # add versions saved by runway
       # shellcheck disable=SC2046,SC2086
       _versions="$_versions $(basename $(ls -d $_TF_ENV_DIR/*))"
       for _version in $_versions; do echo "$_version"; done | sort -uV | tr '\n' ',' | sed 's/,/, /g'
    elif [[ "$_cmd" =~ "use" ]]; then
       _version=$2
-      if [[ -x "/usr/local/bin/terraform.$_version" ]]; then
-         export TERRAFORM_PATH="/usr/local/bin/terraform.$_version"
-         rm -f /usr/local/bin/terraform
-         ln -s "$TERRAFORM_PATH" /usr/local/bin/terraform
+      if [[ -x "$_USER_BIN_DIR/terraform.$_version" ]]; then
+         export TERRAFORM_PATH="$_USER_BIN_DIR/terraform.$_version"
+         rm -f $_USER_BIN_DIR/terraform
+         ln -s "$TERRAFORM_PATH" $_USER_BIN_DIR/terraform
          tfe
       elif [[ -x "$_TF_ENV_DIR/$_version/terraform" ]]; then
          export TERRAFORM_PATH="$_TF_ENV_DIR/$_version/terraform"
-         rm -f /usr/local/bin/terraform
-         ln -s "$TERRAFORM_PATH" /usr/local/bin/terraform
+         rm -f $_USER_BIN_DIR/terraform
+         ln -s "$TERRAFORM_PATH" $_USER_BIN_DIR/terraform
          tfe
       else
-         echo "cannot find desired version ($_version) in '/usr/local/bin' nor '$_TF_ENV_DIR'"
+         echo "cannot find desired version ($_version) in '$_USER_BIN_DIR' nor '$_TF_ENV_DIR'"
          echo "these are the installed versions:"
          echo -n "   "
          tfe versions
