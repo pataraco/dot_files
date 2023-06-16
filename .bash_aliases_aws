@@ -122,12 +122,15 @@ function awsacct {
   # get AWS account name by ID or ID by name
   local _AWS_ACCTS="$HOME/.aws/accounts.json"
   local _name_or_id=$1
+  if [[ -z "$_name_or_id" ]] || [[ "$_name_or_id" == "all" ]]; then
+    jq -r '.[] | .name + ": " + .id' "$_AWS_ACCTS"
+  fi
   if \grep -Ewq '[0-9]+' <<< "$_name_or_id"; then
     local _aws_acct_name=$(jq -r '.[] | select(.id=="'"$_name_or_id"'") | .name' "$_AWS_ACCTS")
   else
     local _aws_acct_id=$(jq -r '.[] | select(.name=="'"$_name_or_id"'") | .id' "$_AWS_ACCTS")
   fi
-  echo "${_aws_acct_name}${_aws_acct_id}" | pbcopy
+  echo -n "${_aws_acct_name}${_aws_acct_id}" | pbcopy
   pbpaste
 }
 
