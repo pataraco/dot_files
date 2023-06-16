@@ -588,11 +588,11 @@ function dj {
    [[ ! -d "$_DAILY_JOURNAL_DIR" ]] && mkdir "$_DAILY_JOURNAL_DIR"
    if [[ $# -ne 0 ]]; then
       case $1 in
-         -c|cat) cat "$_DAILY_JOURNAL_FILE" ;;
-         -e|edit) vi "$_DAILY_JOURNAL_FILE" ;;
-         -h|help) echo "usage: dj [-c/cat|-e/edit|-h/help|-l/last|-t/tail|LOG_ENTRY]" ;;
-         -l|last) tail -n 1 "$_DAILY_JOURNAL_FILE" ;;
-         -t|tail) tail "$_DAILY_JOURNAL_FILE" ;;
+         -c|--cat) cat "$_DAILY_JOURNAL_FILE" ;;
+         -e|--edit) vi "$_DAILY_JOURNAL_FILE" ;;
+         -h|--help) echo "usage: dj [-c/cat|-e/edit|-h/help|-l/last|-t/tail|LOG_ENTRY]" ;;
+         -l|--last) tail -n 1 "$_DAILY_JOURNAL_FILE" ;;
+         -t|--tail) tail "$_DAILY_JOURNAL_FILE" ;;
          *) echo "$(date +'%d-%m-%Y'): $*" >> "$_DAILY_JOURNAL_FILE" ;;
       esac
    else
@@ -1513,6 +1513,7 @@ alias a="alias | grep -v ^declare | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print
 # alias aws="/usr/local/bin/aws"
 alias c="clear"
 alias cc="tsend clear"
+alias ccr2bn="awk -v ORS='\\\\n' '1'" # converts carriage returns to '\n'
 alias cdh="cd ~; cd"
 alias cd-ia="cd ~/repos/infrastructure-automation/exercises/auto_website"
 alias cd-t="cd ~/repos/troposphere"
