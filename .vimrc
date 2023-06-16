@@ -296,8 +296,8 @@ hi ExtraWhitespace cterm=none ctermfg=red ctermbg=red guifg=red guibg=red
 "autocmd Syntax * syn match ExtraWhitespace /\s\+$\| \+\ze\t/ containedin=ALL
 " Show trailing whitepace and tabs (NOT WORKING)
 "autocmd Syntax * syn match ExtraWhitespace /\s\+$\|\t/ containedin=ALL
-" Highlight th 80th column
-set colorcolumn=80          " set the column width
+" Highlight th 120th column
+set colorcolumn=120          " set the column width
 hi ColorColumn   cterm=none ctermfg=1 ctermbg=233  gui=none guifg=bg guibg=fg
 " Colorizations }}}
 
@@ -441,7 +441,7 @@ function! MyFoldText()
     setlocal fillchars+=fold:\
   elseif !exists('b:foldpat') || b:foldpat==0
     let l:foldtext = ' '.(v:foldend-v:foldstart).' lines folded '.v:folddashes.'|'
-    let l:endofline = (&textwidth>0 ? &textwidth : 80)
+    let l:endofline = (&textwidth>0 ? &textwidth : 120)
     "let l:linetext = strpart(getline(v:foldstart),0,l:endofline-strlen(l:foldtext))
     let l:line = ' ' . substitute(getline(v:foldstart), '^\s*"\?\s*\|\s*"\?\s*{{' . '{\d*\s*', '', 'g') . ' '
     setlocal fillchars+=fold:-
