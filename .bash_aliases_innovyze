@@ -27,6 +27,8 @@ function cloneazrepo {
       _repo_ssh_url=$(grep "/$_repo$" <<< "$_repo_list")
       echo " - $_repo ($_repo_ssh_url)"
     done
+  elif [[ -z "$_repo_list" ]]; then
+    echo "please try again, did not find anything matching '$_repo'"
   else
     echo "found: $_repo_list"
     _repo_dir="$(basename "$_repo_list")"
