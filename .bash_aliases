@@ -14,6 +14,7 @@ PS_SHOW_AV=0  # Ansible
 PS_SHOW_CV=0  # Chef
 PS_SHOW_PV=0  # Python
 PS_SHOW_TV=0  # Terraform
+PS_SHOW_TS=1  # Timestamp
 
 # -------------------- global variables --------------------
 
@@ -59,7 +60,8 @@ PNGRN='\[\e[32m\]'   # green (normal)
 PGRY='\[\e[1;30m\]'  # grey (bold black)
 PMAG='\[\e[1;35m\]'  # magenta (bold)
 PRED='\[\e[1;31m\]'  # red (bold)
-PWHT='\[\e[1;37m\]'  # white (bold)
+PWHT='\[\e[37m\]'    # white
+PWHTB='\[\e[1;37m\]' # white (bold)
 PYLW='\[\e[1;33m\]'  # yellow (bold)
 PBBG='\[\e[1;44m\]'  # blue BG (bold)
 PCBG='\[\e[1;46m\]'  # cyan BG (bold)
@@ -169,6 +171,11 @@ function bash_prompt {
       PS_TF="${PMAG}🐢$TERRAFORM_VERSION$PNRM|"
       (( _versions_len += ${#TERRAFORM_VERSION} + 2 ))
    fi
+   if [[ $PS_SHOW_TS -eq 1 ]]; then  # get Timestamp
+      export TIME_STAMP
+      TIME_STAMP=$(date +"%d-%m-%y %T ")
+      PS_TS="${PWHT}$TIME_STAMP$PNRM"
+   fi
    # get/show git info (if in a git repo)
    local _git_branch _git_branch_len _git_status
    local _git_has_mods=false        _git_has_mods_cached=false
@@ -243,7 +250,7 @@ function bash_prompt {
       if [[ "$ONICA_SSO_EXPIRES_TS" -gt "$_now_ts" ]]; then
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007" # set the window title
          if [[ $((ONICA_SSO_EXPIRES_TS - _now_ts)) -lt 900 ]]; then
-            PS_AWS="⚠️ [${PWHT}${AWS_DEFAULT_PROFILE}${PNRM}]"
+            PS_AWS="⚠️ [${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}]"
          fi
       else
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY](EXPIRED)\007" # set the window title
@@ -262,7 +269,7 @@ function bash_prompt {
             _tminus="(T-$(secs_to_hms $((_exp_ts - _now_ts))))"
             echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007" # set the window title
             if [[ $((_exp_ts - _now_ts)) -lt 900 ]]; then
-               PS_AWS="⚠️ [${PWHT}${AWS_DEFAULT_PROFILE}${PNRM}]"
+               PS_AWS="⚠️ [${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}]"
             fi
          else
             export AWS_STS_EXPIRES_TS=$_now_ts
@@ -282,7 +289,7 @@ function bash_prompt {
          _tminus="(T-$(secs_to_hms $((_exp_ts - _now_ts))))"
          echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007" # set the window title
          if [[ $((_exp_ts - _now_ts)) -lt 900 ]]; then
-            PS_AWS="⚠️ [${PWHT}${AWS_DEFAULT_PROFILE}${PNRM}]"
+            PS_AWS="⚠️ [${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}]"
          fi
       else
          echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007" # set the window title
@@ -294,11 +301,10 @@ function bash_prompt {
    # check for/show pyenv virtual environment
    [[ -n "$VIRTUAL_ENV" ]] && PS_PROJ="($PCYN$(basename "$VIRTUAL_ENV")$PNRM)" || PS_PROJ=""
    # check for/show jobs running in the background
-   if [[ "$(jobs | wc -l | tr -d ' ')" -gt 1 ]]; then
-      # using "1" because the `git branch` above runs in the background
-      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_TF$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO(\j)${PS_COL}⌲$PNRM "
+   if [[ "$(jobs | wc -l | tr -d ' ')" -gt 0 ]]; then
+      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_TF$PS_PATH\n$PS_TS$PS_PROJ$PS_AWS$PS_WHO(\j)${PS_COL}⌲$PNRM "
    else
-      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_TF$PS_PATH\n$PS_PROJ$PS_AWS$PS_WHO${PS_COL}⌲$PNRM "
+      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_TF$PS_PATH\n$PS_TS$PS_PROJ$PS_AWS$PS_WHO${PS_COL}⌲$PNRM "
    fi
 }
 
@@ -1207,6 +1213,8 @@ function tfe {
    local _cmd=$1
    local _key _val
    local _version _versions
+   local _version_darwin_arm_added="1.0.2"
+   local _host_arch _host_os _arch _os
    local _available_versions _version_url _zip_name
    local _tf_vars _tf_var
    if [[ "$_cmd" == "-h" ]] || [[ "$_cmd" == "--help" ]] || [[ "$_cmd" == "help" ]]; then
@@ -1214,7 +1222,7 @@ function tfe {
       echo "$_USAGE"
    elif [[ "$_cmd" == "versions" ]]; then
       # get versions in $_USER_BIN_DIR
-      _versions=$(basename $_USER_BIN_DIR/terraform* | grep -v '^terraform\(\.[0-9]\+\)\{0,2\}$' | sed 's/^terraform.//g') 
+      _versions=$(basename $_USER_BIN_DIR/terraform* | grep -v '^terraform\(\.[0-9]\+\)\{0,2\}$' | sed 's/^terraform.//g')
       # add versions saved by runway
       # shellcheck disable=SC2046,SC2086
       _versions="$_versions $(basename $(ls -d $_TF_ENV_DIR/*))"
@@ -1222,23 +1230,46 @@ function tfe {
    elif [[ "$_cmd" =~ "use" ]]; then
       _version=$2
       if [[ -x "$_USER_BIN_DIR/terraform.$_version" ]]; then
-         export TERRAFORM_PATH="$_USER_BIN_DIR/terraform.$_version"
-         rm -f $_USER_BIN_DIR/terraform
-         ln -s "$TERRAFORM_PATH" $_USER_BIN_DIR/terraform
-         tfe
+        export TERRAFORM_PATH="$_USER_BIN_DIR/terraform.$_version"
+        rm -f $_USER_BIN_DIR/terraform
+        ln -s "$TERRAFORM_PATH" $_USER_BIN_DIR/terraform
+        tfe
       elif [[ -x "$_TF_ENV_DIR/$_version/terraform" ]]; then
-         export TERRAFORM_PATH="$_TF_ENV_DIR/$_version/terraform"
-         rm -f $_USER_BIN_DIR/terraform
-         ln -s "$TERRAFORM_PATH" $_USER_BIN_DIR/terraform
-         tfe
+        export TERRAFORM_PATH="$_TF_ENV_DIR/$_version/terraform"
+        rm -f $_USER_BIN_DIR/terraform
+        ln -s "$TERRAFORM_PATH" $_USER_BIN_DIR/terraform
+        tfe
       else
-         echo "cannot find desired version ($_version) in '$_USER_BIN_DIR' nor '$_TF_ENV_DIR'"
-         echo "these are the installed versions:"
-         echo -n "   "
-         tfe versions
-         echo "going to attempt to install it"
-         _zip_name="terraform_${_version}_darwin_amd64.zip"
+        echo "cannot find desired version ($_version) in '$_USER_BIN_DIR' nor '$_TF_ENV_DIR'"
+        echo "these are the installed versions:"
+        echo -n "   "
+        tfe versions
+        echo "going to attempt to install it"
+        _host_os=$(uname -s)
+        case $_host_os in
+          Darwin) _os=darwin;;
+          Linux) _os=linux;;
+          *) _os=unknown;;
+        esac
+        _host_arch=$(uname -m)
+        case $_host_arch in
+          x86_64) _arch=amd64;;
+          arm64)
+            _arch=arm64
+            # check if the version is less than when Darwin arm64 was added; if so, use amd64
+            if [[ "$_os" == "darwin" ]] && [[ "$_version" == "$(tr '|' '\n' <<< "$_version|$_version_darwin_arm_added"|sort -V|head -n 1)" ]]; then
+              _arch=amd64
+            fi
+            ;;
+          *) _arch=unknown;;
+        esac
+        if [[ "$_arch" == "unknown" ]] && [[ "$_os" == "unknown" ]]; then
+          echo "error: cannot determine correct terraform binary to download for (Arch: $_host_arch, O.S.: $_host_os)"
+          return 1
+        fi
+         _zip_name="terraform_${_version}_${_os}_${_arch}.zip"
          _version_url="${_TF_RELEASES_URL}/terraform/${_version}/${_zip_name}"
+         echo "getting zip file: $_version_url"
          if curl -s -f -o "/tmp/${_zip_name}" "${_version_url}"; then
             unzip "/tmp/${_zip_name}" -d "$_TF_ENV_DIR/$_version"
             tfe use "${_version}"
@@ -1572,11 +1603,13 @@ alias pssav='PS_SHOW_AV=1'
 alias psscv='PS_SHOW_CV=1'
 alias psspv='PS_SHOW_PV=1'
 alias psstv='PS_SHOW_TV=1'
+alias pssts='PS_SHOW_TS=1'
 alias pssallv='PS_SHOW_AV=1; PS_SHOW_CV=1; PS_SHOW_PV=1; PS_SHOW_TV=1'
 alias pshav='PS_SHOW_AV=0; unset PS_ANS'
 alias pshcv='PS_SHOW_CV=0; unset PS_CHF'
 alias pshpv='PS_SHOW_PV=0; unset PS_PY'
 alias pshtv='PS_SHOW_TV=0; unset PS_TF'
+alias pshts='PS_SHOW_TS=0; unset PS_TS'
 alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_PV=0; PS_SHOW_TV=0; unset PS_ANS; unset PS_CHF; unset PS_PY; unset PS_TF'
 alias ccrlf="sed -e 's/[[:cntrl:]]/\n/g' -i .orig"
 alias rcrlf="sed -e 's/[[:cntrl:]]$//g' -i .orig"
