@@ -47,19 +47,19 @@ function _set_aws_prompt_colors {
    if [ "$COLOR_PROMPT" == "yes" ]; then
       case $_ENV in
          dev)
-            PS_COL="$PCYN"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+            PS_COL="$PCYN"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
          devops)
-            PS_COL="$PBBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+            PS_COL="$PBBG"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
          mine)
-            PS_COL="$PGBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+            PS_COL="$PGBG"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
          mixed)
-            PS_COL="$PYLW"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+            PS_COL="$PYLW"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
          prod)
-            PS_COL="$PRBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+            PS_COL="$PRBG"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
          qa)
-            PS_COL="$PMBG"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+            PS_COL="$PMBG"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
          test)
-            PS_COL="$PCYN"; PS_AWS="${PS_COL}[$AWS_DEFAULT_PROFILE]$PNRM " ;;
+            PS_COL="$PCYN"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
          *)
             PS_COL="$PNRM"; PS_AWS="$PNRM" ;;
       esac
@@ -336,7 +336,7 @@ function awssnsep {
 
 function awsasgcp {
    # usage:
-   #   awsasgcp 
+   #   awsasgcp
    #     -r|--resume or -s|--suspend
    #     [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]
    # suspend/resume ALL AWS AutoScaling processes
@@ -1832,6 +1832,7 @@ function wtac {
 # -------------------- define aliases --------------------
 
 alias aaid="echo \$AWS_ACCOUNT_ID"
+alias awsacctsfrompolicies='_f() { for id in $(cat "$1"); do id=$(cut -d "-" -f3 <<< "$id"); echo -n "$id: "; awsacct $id; echo;  done; }; _f'
 alias awscl="aws configure list"
 alias awsclp="aws configure list-profiles"
 alias awsga="aws sts get-caller-identity --output text --query Account"
