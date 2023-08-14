@@ -152,6 +152,7 @@ function showcof {
 # company common
 alias cof="grep '^function .* ' ~/$CO_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scof\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
 alias gitnewrel='set -x; git push origin :release 2>/dev/null; git branch -D release 2>/dev/null; git checkout develop && git fetch -p origin && git merge origin/develop; git checkout -b release; git push origin release; set +x'
+alias npmchrome='export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true; export PUPPETEER_EXECUTABLE_PATH=$(which chromium)'
 alias scoba='source ~/$CO_BA_FILE'
 alias scof=showcof
 alias scdnm="$HOME/repos/innovyze/devops-tools/aws/show-api-cdn-mappings.sh"
