@@ -40,6 +40,7 @@ az acr repository show-tags -n innovyze --repository amazon-ecr-public-gallery-l
 az acr repository show-tags -n innovyze --repository devops-azure-pipeline-image --orderby time_desc --output table
 az devops configure --defaults organization=https://dev.azure.com/MyOrg/
 az devops configure --defaults project=PROJ
+az devops user show --user EMAIL
 base64 /dev/urandom|head -c 128; echo
 base64 /dev/urandom|tr -dc A-Za-z0-9|head -c 29; echo
 build=XXX;type=NNN; for fte in `ls *.$type`; do echo $fte; openssl enc -e -in $fte -out $fte.r5e -pass file:/home/praco/repos/client_certificates/builds/$build/publictest-aes-pass.bin -aes-256-cbc; done
@@ -138,9 +139,9 @@ hpasmcli -s "show server" | egrep "ML350|System"
 hplog -v | grep Critical
 hplog -v | perl -n -e 'if (/^\d\d\d\d\s/) { chomp; print "$_ "; $n=1; next; } if ($n) { print; $n=0; }' | grep -E 'Critical'
 hwclock [-w]
-jq -r '.packages."node_modules/PACKAGE".version' package-lock.json
 jq -r '.packages."".dependencies | to_entries[] | .key' package-lock.json
 jq -r '.packages."".devDependencies | to_entries[] | .key' package-lock.json
+jq -r '.packages."node_modules/PACKAGE".version' package-lock.json
 keyring -b artifacts_keyring.ArtifactsKeyringBackend get https://pkgs.dev.azure.com/$ADO_COMPANY/$ADO_PROJECT/_packaging/$ADO_FEED/pypi/simple/ VssSessionToken
 kf openstack server delete game-neweden-1298-02 -y --purge
 kill -[15|6|9] PID				# nice|HUP|force
