@@ -1183,7 +1183,7 @@ function stopwatch {
       _current=$(date +'%d-%b-%Y %T')
       [[ "$(uname)" != "Darwin" ]] && _current_secs=$(date +%s -d "$_current") || _current_secs=$(date -jf '%d-%b-%Y %T' "$_current" +'%s')
       # TODO: almost works for Darwin, need to figure out proper delta
-      [[ "$(uname)" != "Darwin" ]] && _delta=$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs") || _delta=$(date -jf '%s' "0 $((_current_secs - _start_secs))" +'%T')
+      [[ "$(uname)" != "Darwin" ]] && _delta=$(date +%T -d "0 $_current_secs secs - $_start_secs secs secs") || _delta=$(date -jf '%s' "$((_current_secs - _start_secs))" +'%T'|sed 's/^16:/00:/')
       echo -ne "  Start: ${GRN}$_started${NRM} - Finish: ${RED}$_current${NRM} Delta: ${YLW}$_delta${NRM}\r"
    done
 }
@@ -1563,7 +1563,7 @@ alias f="grep '^function .* ' ~/$MAIN_BA_FILE | awk '{print $2}' | cut -d'(' -f1
 alias fgrep="grep -F --color=auto --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
 alias fgrepa="grep -F --color=always --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
 alias fuck='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
-alias github="/usr/local/bin/gh"
+alias github="$(which gh)"
 alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
 alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
 alias ghwt='sudo dmidecode | grep "Product Name"'
