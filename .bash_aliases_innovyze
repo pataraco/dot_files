@@ -4,7 +4,7 @@
 
 # these are functions/aliases specific to Innovyze
 
-# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117,SC2155
+# shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117,SC2155,SC2154
 
 CO_BA_FILE=".bash_aliases_$COMPANY"
 
@@ -161,7 +161,7 @@ alias scfns="$HOME/repos/innovyze/devops-tools/aws/show-cfn-stacks.sh"
 alias vcoba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 # company specific
 alias cd-doi="cd $HOME/repos/$COMPANY/devops-infrastructure"
-alias vld='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.dev); pbcopy < ~/.ssh/.adsk.vpn.dev.pw; vault login -method=ldap username=racop; vault token create -ttl=2764800'
-alias vlp='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.prd); pbcopy < ~/.ssh/.adsk.vpn.prd.pw; vault login -method=ldap username=racop; vault token create -ttl=2764800'
+alias vld='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.prd); _vpw_dev=$(< ~/.ssh/.adsk.vpn.dev.pw); vault login -method=ldap username=racop password=$_vpw_dev; vault token create -ttl=2764800'
+alias vlp='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.prd); _vpw_prd=$(< ~/.ssh/.adsk.vpn.prd.pw); vault login -method=ldap username=racop password=$_vpw_prd; vault token create -ttl=2764800'
 
 [ -n "$PS1" ] && echo -n "$CO_BA_FILE (end). "
