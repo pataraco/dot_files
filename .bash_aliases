@@ -243,6 +243,9 @@ function bash_prompt {
       local _ps_path_chopped="..${_pwd:$_ps_path_start_pos:$_space_for_path}"
       PS_PATH="$PGRN${_ps_path_chopped}$PNRM"
    fi
+   # show/adjust of AWS profile prompt for default regioin
+   [[ -n "$AWS_DEFAULT_PROFILE" ]] && [[ -n "$AWS_DEFAULT_REGION" ]] && [[ -n "$PS_AWS_COL" ]] &&
+     PS_AWS="[${PS_AWS_COL}${AWS_DEFAULT_PROFILE}${PNRM}:${PWHTB}${AWS_DEFAULT_REGION}${PNRM}] "
    # show/adjust colors of AWS profile prompt depending on expiration time left
    if [[ "$COMPANY" == "onica" ]] && [[ -n "$ONICA_SSO_ACCOUNT_KEY" ]] && [[ -n "$ONICA_SSO_EXPIRES_TS" ]]; then
       local _now_ts
@@ -250,11 +253,11 @@ function bash_prompt {
       if [[ "$ONICA_SSO_EXPIRES_TS" -gt "$_now_ts" ]]; then
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007" # set the window title
          if [[ $((ONICA_SSO_EXPIRES_TS - _now_ts)) -lt 900 ]]; then
-            PS_AWS="⚠️ [${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}]"
+            PS_AWS="⚠️ [${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}:${AWS_DEFAULT_REGION:-n/a}]"
          fi
       else
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY](EXPIRED)\007" # set the window title
-         PS_AWS="🛑[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
+         PS_AWS="🛑[${PGRY}${AWS_DEFAULT_PROFILE}${PNRM}:${AWS_DEFAULT_REGION:-n/a}]"
       fi
    elif [[ "$COMPANY" == "ag" ]] && [[ -n "$AWS_SESSION_TOKEN" ]] && [[ -n "$AWS_DEFAULT_PROFILE" ]] && [[ -n "$AWS_STS_EXPIRES_TS" ]]; then
       local _now_ts
@@ -269,17 +272,17 @@ function bash_prompt {
             _tminus="(T-$(secs_to_hms $((_exp_ts - _now_ts))))"
             echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007" # set the window title
             if [[ $((_exp_ts - _now_ts)) -lt 900 ]]; then
-               PS_AWS="⚠️ [${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}]"
+               PS_AWS="⚠️ [${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}:${AWS_DEFAULT_REGION:-n/a}]"
             fi
          else
             export AWS_STS_EXPIRES_TS=$_now_ts
             rm -f "$HOME/.aws/${AWS_DEFAULT_PROFILE}_mfa_credentials"
             echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007" # set the window title
-            PS_AWS="🛑[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
+            PS_AWS="🛑[${PGRY}${AWS_DEFAULT_PROFILE}${PNRM}:${AWS_DEFAULT_REGION:-n/a}]"
          fi
       else
          echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007" # set the window title
-         PS_AWS="🛑[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
+         PS_AWS="🛑[${PGRY}${AWS_DEFAULT_PROFILE}${PNRM}:${AWS_DEFAULT_REGION:-n/a}]"
       fi
    elif [[ -n "$AWS_STS_EXPIRES_TS" ]]; then
       local _now_ts
@@ -289,11 +292,11 @@ function bash_prompt {
          _tminus="(T-$(secs_to_hms $((_exp_ts - _now_ts))))"
          echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE]$_tminus\007" # set the window title
          if [[ $((_exp_ts - _now_ts)) -lt 900 ]]; then
-            PS_AWS="⚠️ [${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}]"
+            PS_AWS="⚠️ [${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}:${AWS_DEFAULT_REGION:-n/a}]"
          fi
       else
          echo -ne "\033]0;$(whoami)@$(hostname)-[$AWS_DEFAULT_PROFILE](EXPIRED)\007" # set the window title
-         PS_AWS="🛑[$PGRY$AWS_DEFAULT_PROFILE$PNRM]"
+         PS_AWS="🛑[${PGRY}${AWS_DEFAULT_PROFILE}${PNRM}:${AWS_DEFAULT_REGION:-n/a}]"
       fi
    else
       echo -ne "\033]0;$(whoami)@$(hostname)\007" # set the window title
@@ -1557,18 +1560,19 @@ alias dff="colordiff -U0"
 alias disp="tsend 'echo \$DISPLAY'"
 alias dus="du -sh * | sort -h"
 alias eaf="eval \"$(declare -F | sed -e 's/-f /-fx /')\""
-alias egrep="grep -E --color=auto --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
-alias egrepa="grep -E --color=always --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
+export GREP_EXCLUDED_DIRS='{node_modules,.git,.terraform,.serverless,terraform.tfstate.d,cdk.out}'
+alias egrep="grep -E --color=auto --exclude-dir=$GREP_EXCLUDED_DIRS"
+alias egrepa="grep -E --color=always --exclude-dir=$GREP_EXCLUDED_DIRS"
 alias f="grep '^function .* ' ~/$MAIN_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`sf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
-alias fgrep="grep -F --color=auto --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
-alias fgrepa="grep -F --color=always --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
+alias fgrep="grep -F --color=auto --exclude-dir=$GREP_EXCLUDED_DIRS"
+alias fgrepa="grep -F --color=always --exclude-dir=$GREP_EXCLUDED_DIRS"
 alias fuck='echo "sudo $(history -p \!\!)"; sudo $(history -p \!\!)'
 alias github="$(which gh)"
 alias ghwb="sudo dmidecode | egrep -i 'date|bios'"
 alias ghwm="sudo dmidecode | egrep -i '^memory device$|	size:.*B'"
 alias ghwt='sudo dmidecode | grep "Product Name"'
-alias grep="grep --color=auto --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
-alias grepa="grep --color=always --exclude-dir node_modules --exclude-dir .git --exclude-dir .terraform --exclude-dir .serverless --exclude-dir terraform.tfstate.d"
+alias grep="grep --color=auto --exclude-dir=$GREP_EXCLUDED_DIRS"
+alias grepa="grep --color=always --exclude-dir=$GREP_EXCLUDED_DIRS"
 alias guid='printf "%x\n" `date +%s`'
 alias h="history | tail -20"
 alias kaj='eval kill $(jobs -p)'
