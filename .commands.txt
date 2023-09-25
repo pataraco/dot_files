@@ -80,6 +80,7 @@ dmidecode | egrep -i 'date|bios'
 dmidecode | grep Product
 docker build -t TAG .
 docker exec -u 0 -it NAME bash
+docker inspect IMAGE:TAG | jq '.[].Config | .Entrypoint,.Cmd'
 docker ps -a
 docker ps -a --format "table {{.ID}} {{.Image}}\t{{.Status}}\t{{.Ports}}"
 docker pull AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/REPO:TAG
