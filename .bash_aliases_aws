@@ -45,24 +45,22 @@ function _set_aws_prompt_colors {
    # sets AWS environment related prompt attribute colors depending on env
    local _ENV=$1
    if [ "$COLOR_PROMPT" == "yes" ]; then
-      case $_ENV in
-         dev)
-            PS_COL="$PCYN"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
-         devops)
-            PS_COL="$PBBG"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
-         mine)
-            PS_COL="$PGBG"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
-         mixed)
-            PS_COL="$PYLW"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
-         prod)
-            PS_COL="$PRBG"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
-         qa)
-            PS_COL="$PMBG"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
-         test)
-            PS_COL="$PCYN"; PS_AWS="[${PS_COL}$AWS_DEFAULT_PROFILE$PNRM] " ;;
-         *)
-            PS_COL="$PNRM"; PS_AWS="$PNRM" ;;
-      esac
+     case $_ENV in
+       dev)    PS_AWS_COL="$PCYN";;
+       devops) PS_AWS_COL="$PBBG";;
+       mine)   PS_AWS_COL="$PGBG";;
+       mixed)  PS_AWS_COL="$PYLW";;
+       prod)   PS_AWS_COL="$PRBG";;
+       qa)     PS_AWS_COL="$PMBG";;
+       test)   PS_AWS_COL="$PCYN";;
+       *)      PS_AWS_COL="$PNRM";;
+     esac
+     case $_ENV in
+       dev|devops|mine|mixed|prod|qa|test)
+         PS_AWS="[${PS_AWS_COL}${AWS_DEFAULT_PROFILE}${PNRM}:${PWHTB}${AWS_DEFAULT_REGION:-n/a}${PNRM}] ";;
+       *)
+         PS_AWS="$PNRM";;
+     esac
    fi
 }
 
@@ -1155,15 +1153,16 @@ default display:
    done
    [ -n "$_filters" ] && _filters="--filters ${_filters% }"
    [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table"
    if [ "$_region" == "all" ]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         eval "$_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-      done
+     local _ALL_REGIONS
+     _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+     for _region in $_ALL_REGIONS; do
+       [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table"
+       eval "$_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+     done
    else
-      eval "$_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+     [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table"
+     eval "$_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
    fi
 }
 
