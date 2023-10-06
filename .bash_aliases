@@ -12,6 +12,7 @@ echo -ne "\033]0;$(whoami)@$(hostname)\007"
 # show Ansible, Chef or Python versions in prompt
 PS_SHOW_AV=0  # Ansible
 PS_SHOW_CV=0  # Chef
+PS_SHOW_NV=0  # Node
 PS_SHOW_PV=0  # Python
 PS_SHOW_TV=0  # Terraform
 PS_SHOW_TS=1  # Timestamp
@@ -60,6 +61,7 @@ PNGRN='\[\e[32m\]'   # green (normal)
 PGRY='\[\e[1;30m\]'  # grey (bold black)
 PMAG='\[\e[1;35m\]'  # magenta (bold)
 PRED='\[\e[1;31m\]'  # red (bold)
+PNRED='\[\e[31m\]'   # red (normal)
 PWHT='\[\e[37m\]'    # white
 PWHTB='\[\e[1;37m\]' # white (bold)
 PYLW='\[\e[1;33m\]'  # yellow (bold)
@@ -155,11 +157,22 @@ function bash_prompt {
       PS_ANS="${PCYN}A$ANSIBLE_VERSION$PNRM|"
       (( _versions_len += ${#ANSIBLE_VERSION} + 2 ))
    fi
-   if [[ $PS_SHOW_PV -eq 1 ]]; then  # get Python version
+   export GIT_ROOT=$(git rev-parse --show-toplevel)
+   if [[ $PS_SHOW_NV -eq 1 ]] || [[ -e "$GIT_ROOT/.nvmrc" ]]; then  # get Node version
+      export NODE_VERSION
+      NODE_VERSION=$(node --version 2>&1 | cut -d'v' -f2)
+      PS_ND="${PNRED}🦀$NODE_VERSION$PNRM|"
+      (( _versions_len += ${#NODE_VERSION} + 2 ))
+    else
+      unset PS_ND
+   fi
+   if [[ $PS_SHOW_PV -eq 1 ]] || [[ -e "$GIT_ROOT/Pipfile" ]]; then  # get Python version
       export PYTHON_VERSION
       PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
       PS_PY="${PNGRN}🐍$PYTHON_VERSION$PNRM|"
       (( _versions_len += ${#PYTHON_VERSION} + 2 ))
+    else
+      unset PS_PY
    fi
    if [[ $PS_SHOW_TV -eq 1 ]]; then  # get Terraform version
       export TERRAFORM_VERSION
@@ -305,9 +318,9 @@ function bash_prompt {
    [[ -n "$VIRTUAL_ENV" ]] && PS_PROJ="($PCYN$(basename "$VIRTUAL_ENV")$PNRM)" || PS_PROJ=""
    # check for/show jobs running in the background
    if [[ "$(jobs | wc -l | tr -d ' ')" -gt 0 ]]; then
-      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_TF$PS_PATH\n$PS_TS$PS_PROJ$PS_AWS$PS_WHO(\j)${PS_COL}⌲$PNRM "
+      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_ND$PS_PY$PS_TF$PS_PATH\n$PS_TS$PS_PROJ$PS_AWS$PS_WHO(\j)${PS_COL}⌲$PNRM "
    else
-      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_PY$PS_TF$PS_PATH\n$PS_TS$PS_PROJ$PS_AWS$PS_WHO${PS_COL}⌲$PNRM "
+      PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_ND$PS_PY$PS_TF$PS_PATH\n$PS_TS$PS_PROJ$PS_AWS$PS_WHO${PS_COL}⌲$PNRM "
    fi
 }
 
@@ -1605,16 +1618,18 @@ alias pbp='pbpaste'
 alias pe='ps -ef'
 alias pssav='PS_SHOW_AV=1'
 alias psscv='PS_SHOW_CV=1'
+alias pssnv='PS_SHOW_NV=1'
 alias psspv='PS_SHOW_PV=1'
 alias psstv='PS_SHOW_TV=1'
 alias pssts='PS_SHOW_TS=1'
-alias pssallv='PS_SHOW_AV=1; PS_SHOW_CV=1; PS_SHOW_PV=1; PS_SHOW_TV=1'
+alias pssallv='PS_SHOW_AV=1; PS_SHOW_CV=1; PS_SHOW_NV=1; PS_SHOW_PV=1; PS_SHOW_TV=1'
 alias pshav='PS_SHOW_AV=0; unset PS_ANS'
 alias pshcv='PS_SHOW_CV=0; unset PS_CHF'
+alias pshnv='PS_SHOW_NV=0; unset PS_ND'
 alias pshpv='PS_SHOW_PV=0; unset PS_PY'
 alias pshtv='PS_SHOW_TV=0; unset PS_TF'
 alias pshts='PS_SHOW_TS=0; unset PS_TS'
-alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_PV=0; PS_SHOW_TV=0; unset PS_ANS; unset PS_CHF; unset PS_PY; unset PS_TF'
+alias pshallv='PS_SHOW_AV=0; PS_SHOW_CV=0; PS_SHOW_NV=0; PS_SHOW_PV=0; PS_SHOW_TV=0; unset PS_ANS PS_CHF PS_ND PS_PY PS_TF PS_TS'
 alias ccrlf="sed -e 's/[[:cntrl:]]/\n/g' -i .orig"
 alias rcrlf="sed -e 's/[[:cntrl:]]$//g' -i .orig"
 alias ring="\$HOME/repos/pataraco/scripts/misc/ring.sh"
