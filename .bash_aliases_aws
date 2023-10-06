@@ -80,6 +80,7 @@ function _unset_aws_environment {
    # unsets AWS environment related variables
    unset AWS_ACCESS_KEY_ID
    unset AWS_ACCOUNT_ID
+   unset AWS_ACCOUNT
    unset AWS_CREDENTIAL_EXPIRATION
    unset AWS_DEFAULT_PROFILE
    unset AWS_DEFAULT_REGION
@@ -1722,6 +1723,7 @@ function saevl {
         export AWS_SECRET_ACCESS_KEY=$(jq -r .data.secret_key <<< "$_vault_data")
         export AWS_SESSION_TOKEN=$(jq -r .data.security_token <<< "$_vault_data")
         export AWS_DEFAULT_PROFILE=$_PROFILE  # for `aws` CLI (instead of using --profile)
+        export AWS_ACCOUNT=$_PROFILE  # for serverless (shouldn't be here, but :shrug:)
         export AWS_DEFAULT_REGION=$(_get_saml_setting "$_PROFILE" region)
         export AWS_ENVIRONMENT="$(_get_saml_setting "$_PROFILE" aws_account_desc) [$AWS_ACCOUNT_ID]"
         # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
