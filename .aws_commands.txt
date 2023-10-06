@@ -5,6 +5,7 @@ aws acm request-certificate --region REGION --domain-name HOST.DOMAIN --domain-v
 aws acm resend-validation-email --region REGION --certificate-arn ARN --domain HOST.DOMAIN --validation-domain DOMAIN
 aws apigateway create-base-path-mapping --rest-api-id ID --domain-name DOMAIN --stage STAGE --base-path PATH
 aws apigatewayv2 create-api-mapping --api-id ID --domain-name DOMAIN --stage STAGE --api-mapping-key PATH
+aws appsync get-introspection-schema --api-id ID --format FORMAT OUTFILE
 aws autoscaling create-auto-scaling-group --auto-scaling-group-name ASG_NAME --launch-configuration-name LC_NAME --min-size MIN --max-size MAX --desired-capacity DESIRED --availability-zones AZ1 AZ2 --tags ResourceId=ASG_NAME,ResourceType=auto-scaling-group,Key=KEY,Value=VAL,PropagateAtLaunch=true|false
 aws autoscaling create-launch-configuration --launch-configuration-name LC_NAME --image-id AMI --key-name KEY_PAIR --security-groups SG --user-data file://PATH_TO/FILE --instance-type TYPE --iam-instance-profile PROFILE
 aws autoscaling delete-auto-scaling-group --auto-scaling-group-name ASG_NAME --force-delete
