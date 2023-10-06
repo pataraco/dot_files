@@ -236,6 +236,8 @@ stty -a < /dev/ttyaa05
 su eci -c '/eci/dev/bin/loader dev XXXXXX'
 su informix -c '/home/informix/bin/start_logical_logs'	# tape | backup
 su informix -c '/home/informix/bin/stop_logical_logs'	# tape | backup
+systemctl --type=service --state=running
+systemctl status SERVICE
 tbinit
 tbmode -[ky|sy]
 tbmode -z 22354 21770
