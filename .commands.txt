@@ -1,4 +1,3 @@
-
 /etc/init.d/crond [start|stop]
 /etc/init.d/ntpd [start|stop]
 /etc/init.d/smb [start|stop]
@@ -10,7 +9,7 @@
 /sbin/fuser -v[m] MOUNTPOINT			# e.g. /maint
 /sbin/lvextend -L [+-]N[GB|MB] VOLUME_GROUP	# e.g. /dev/mapper/vg01-lvol9
 /sbin/resize2fs VOLUME_GROUP			# e.g. /dev/mapper/vg01-lvol9
-ADO_ARTIFACTS_TOKEN=$(keyring -b artifacts_keyring.ArtifactsKeyringBackend get https://pkgs.dev.azure.com/$ADO_COMPANY/$ADO_PROJECT/_packaging/$ADO_FEED/pypi/simple/ VssSessionToken 2> /dev/null)
+export ADO_ARTIFACTS_TOKEN=$(keyring -b artifacts_keyring.ArtifactsKeyringBackend get https://pkgs.dev.azure.com/$ADO_COMPANY/$ADO_PROJECT/_packaging/$ADO_FEED/pypi/simple/ VssSessionToken 2> /dev/null)
 ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling resume-processes --auto-scaling-group-name $asgn; done
 ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling suspend-processes --auto-scaling-group-name $asgn; done
 RACK_ENV=ENVIRONMENT bundle exec rake db:migrate # run from "/var/apps/APP/current"

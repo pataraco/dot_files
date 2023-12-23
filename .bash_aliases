@@ -9,7 +9,7 @@
 # update change the title bar of the terminal
 echo -ne "\033]0;$(whoami)@$(hostname)\007"
 
-# show Ansible, Chef or Python versions in prompt
+# show Ansible, Chef, Node or Python versions in prompt
 PS_SHOW_AV=0  # Ansible
 PS_SHOW_CV=0  # Chef
 PS_SHOW_NV=0  # Node
@@ -55,16 +55,19 @@ export ULN="${ESC}[4m"    # underlined
 # for changing prompt colors
 PBLK='\[\e[30m\]'  # black (normal)
 PBLU='\[\e[1;34m\]'  # blue (bold)
+PNBLU='\[\e[34m\]'   # blue (normal)
 PCYN='\[\e[1;36m\]'  # cyan (bold)
 PGRN='\[\e[1;32m\]'  # green (bold)
 PNGRN='\[\e[32m\]'   # green (normal)
 PGRY='\[\e[1;30m\]'  # grey (bold black)
 PMAG='\[\e[1;35m\]'  # magenta (bold)
+PNMAG='\[\e[35m\]'   # magenta (normal)
 PRED='\[\e[1;31m\]'  # red (bold)
 PNRED='\[\e[31m\]'   # red (normal)
 PWHT='\[\e[37m\]'    # white
 PWHTB='\[\e[1;37m\]' # white (bold)
 PYLW='\[\e[1;33m\]'  # yellow (bold)
+PNYLW='\[\e[33m\]'   # yellow (normal)
 PBBG='\[\e[1;44m\]'  # blue BG (bold)
 PCBG='\[\e[1;46m\]'  # cyan BG (bold)
 PGBG='\[\e[1;42m\]'  # green BG (bold)
@@ -87,6 +90,8 @@ REPO_DIR=$HOME/repos
 
 # turn on `vi` command line editing - oh yeah!
 set -o vi
+# turn off 'history substitution' - oh no!
+set +o histexpand
 
 # show 3 directories of CWD in prompt
 export PROMPT_DIRTRIM=3
@@ -157,31 +162,31 @@ function bash_prompt {
       PS_ANS="${PCYN}A$ANSIBLE_VERSION$PNRM|"
       (( _versions_len += ${#ANSIBLE_VERSION} + 2 ))
    fi
-   export GIT_ROOT=$(git rev-parse --show-toplevel)
+   export GIT_ROOT=$(git rev-parse --show-toplevel 2> /dev/null)
    if [[ $PS_SHOW_NV -eq 1 ]] || [[ -e "$GIT_ROOT/.nvmrc" ]]; then  # get Node version
       export NODE_VERSION
       NODE_VERSION=$(node --version 2>&1 | cut -d'v' -f2)
-      PS_ND="${PNRED}🦀$NODE_VERSION$PNRM|"
+      PS_ND="${PNGRN}🦀$NODE_VERSION$PNRM|"
       (( _versions_len += ${#NODE_VERSION} + 2 ))
     else
       unset PS_ND
    fi
-   if [[ $PS_SHOW_PV -eq 1 ]] || [[ -e "$GIT_ROOT/Pipfile" ]]; then  # get Python version
+   if [[ $PS_SHOW_PV -eq 1 ]] || [[ -e "$GIT_ROOT/.python-version" ]]; then  # get Python version
       export PYTHON_VERSION
-      PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
-      PS_PY="${PNGRN}🐍$PYTHON_VERSION$PNRM|"
+      if [[ $(python --version 2>&1) =~ "is not installed" ]]; then
+        PYTHON_VERSION="$(cat $GIT_ROOT/.python-version) not installed"
+      else
+        PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
+      fi
+      PS_PY="${PBLU}🐍$PYTHON_VERSION$PNRM|"
       (( _versions_len += ${#PYTHON_VERSION} + 2 ))
     else
       unset PS_PY
    fi
    if [[ $PS_SHOW_TV -eq 1 ]]; then  # get Terraform version
       export TERRAFORM_VERSION
-      if [[ -n "$TERRAFORM_PATH" ]]; then
-         TERRAFORM_VERSION=$(tf --version 2>&1 | head -1 | awk '{print $NF}')
-      else
-         TERRAFORM_VERSION="notset"
-      fi
-      PS_TF="${PMAG}🐢$TERRAFORM_VERSION$PNRM|"
+      TERRAFORM_VERSION=$(terraform --version 2>&1 | head -1 | awk '{print $NF}' | cut -d'v' -f2)
+      PS_TF="${PNMAG}🐢$TERRAFORM_VERSION$PNRM|"
       (( _versions_len += ${#TERRAFORM_VERSION} + 2 ))
    fi
    if [[ $PS_SHOW_TS -eq 1 ]]; then  # get Timestamp
@@ -1612,7 +1617,7 @@ fi
 alias less="less -FrX"
 alias mv='mv -i'
 alias myip='curl http://ipecho.net/plain; echo'
-alias n='echo n'
+alias nn='echo n'
 alias pa='ps auxfw'
 alias pbp='pbpaste'
 alias pe='ps -ef'
@@ -1696,7 +1701,7 @@ fi
 alias wgft='echo "$(history -p \!\!) | grep"; $(history -p \!\!) | grep'
 alias whoa='echo "$(history -p \!\!) | less"; $(history -p \!\!) | less -FrX'
 alias xterm='xterm -fg white -bg black -fs 10 -cn -rw -sb -si -sk -sl 5000'
-alias y='echo y'
+alias yy='echo y'
 
 # -------------------- final touches --------------------
 

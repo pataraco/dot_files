@@ -13,6 +13,36 @@ CO_BA_FILE=".bash_aliases_$COMPANY"
 
 # -------------------- define functions --------------------
 
+function cloneadskrepo {
+  # Get an Azure Repos Repo's clone SSH URL
+  local _repo=$1
+  # shellcheck disable=SC2086
+  local _repo_list=$(getadskrepocloneurl $_repo)
+  local _repo_dir
+  local _repo_ssh_url
+  if [[ $(wc -l <<< "$_repo_list") -gt 1 ]]; then
+    echo "please be more specific, more than one repo found:"
+    # shellcheck disable=SC2013
+    for _repo in $(awk -F'/' '{print $4}' <<< "$_repo_list"); do
+      _repo_ssh_url=$(grep "/$_repo$" <<< "$_repo_list")
+      echo " - $_repo ($_repo_ssh_url)"
+    done
+  elif [[ -z "$_repo_list" ]]; then
+    echo "please try again, did not find anything matching '$_repo'"
+  else
+    echo "found: $_repo_list"
+    _repo_dir="$(basename "$_repo_list")"
+    if [[ -d "$_repo_dir" ]]; then
+      echo "directory already exists: $_repo_dir"
+      cd "$_repo_dir" || return
+    else
+      # shellcheck disable=SC2086
+      git clone $_repo_list
+      cd "$_repo_dir" || return
+    fi
+  fi
+}
+
 function cloneazrepo {
   # Get an Azure Repos Repo's clone SSH URL
   local _repo=$1
@@ -41,6 +71,11 @@ function cloneazrepo {
       cd "$_repo_dir" || return
     fi
   fi
+}
+
+function getadskrepocloneurl {
+   # Get an Azure Repos Repo's clone SSH URL
+   az repos list --query "[?contains(name,'$1')].sshUrl" -o tsv
 }
 
 function getazrepocloneurl {
@@ -161,7 +196,7 @@ alias scfns="$HOME/repos/innovyze/devops-tools/aws/show-cfn-stacks.sh"
 alias vcoba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPANY_SHIT; sba; }'
 # company specific
 alias cd-doi="cd $HOME/repos/$COMPANY/devops-infrastructure"
-alias vld='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.dev); _vpw_dev=$(< ~/.ssh/.adsk.vpn.dev.pw); vault login -method=ldap username=racop password=$_vpw_dev; vault token create -ttl=2764800'
-alias vlp='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.prd); _vpw_prd=$(< ~/.ssh/.adsk.vpn.prd.pw); vault login -method=ldap username=racop password=$_vpw_prd; vault token create -ttl=2764800'
+alias vld='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.dev); _vpw_dev=$(< ~/.ssh/.adsk.vpn.dev.pw); vault login -method=ldap username=racop password=$_vpw_dev &> /dev/null; vault token create -ttl=2764800 &> /dev/null; saevl'
+alias vlp='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.prd); _vpw_prd=$(< ~/.ssh/.adsk.vpn.prd.pw); vault login -method=ldap username=racop password=$_vpw_prd &> /dev/null; vault token create -ttl=2764800 &> /dev/null; saevl'
 
 [ -n "$PS1" ] && echo -n "$CO_BA_FILE (end). "
