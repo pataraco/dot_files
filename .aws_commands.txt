@@ -32,7 +32,7 @@ aws cloudfront list-distributions --query "DistributionList.Items[?contains(Comm
 aws cloudfront list-distributions --query "DistributionList.Items[?contains(Comment,'PATTERN')].[Id,Comment]"
 aws cloudfront list-distributions --query DistributionList.Items[].[Id,Comment] --output table
 aws codebuild delete-source-credentials --arn ARN
-aws codebuild list-builds-for-project --project-name PROJECT_NAME --sort-order DESCENDING --max-items 1 --output text | grep IDS | cut -d':' -f2  # get latest build ID
+aws codebuild list-builds-for-project --project-name PROJECT_NAME --sort-order DESCENDING --max-items 1 --query ids[0]  # get latest build ID
 aws codebuild list-source-credentials
 aws codecommit create-repository --region REGION --repository-name REPO_NAME --repository-description "REPO DESCRIPTION"
 aws codecommit get-repository --repository-name REPO_NAME
@@ -116,15 +116,14 @@ aws iam create-instance-profile --instance-profile-name INST_PROFILE_NAME
 aws iam create-policy --policy-name POLICY_NAME --policy-document file://PATH_TO/FILE_NAME.json
 aws iam create-role --role-name ROLE_NAME --assume-role-policy-document file://PATH_TO/POLICY_DOC.json
 aws iam create-user --user-name USER_NAME
-aws iam get-group --group-name GROUP_NAME | grep USER_NAME	# search for specific user
-aws iam get-group --group-name GROUP_NAME | grep UserName	# get all users
+aws iam get-group --group-name GROUP_NAME --query Users[].UserName  # get all users
 aws iam get-policy-version --policy-arn arn:aws:iam::$AWS_ACCOUNT_ID:policy/POLICY --version-id VERSION
 aws iam get-role --role-name ROLE_NAME --query Role.Arn --output text
 aws iam list-access-keys --user-name USER_NAME
 aws iam list-attached-group-policies --group-name GROUP_NAME
 aws iam list-group-policies --group-name GROUP_NAME
 aws iam list-groups
-aws iam list-groups-for-user --user-name USER_NAME		# list all groups user is in
+aws iam list-groups-for-user --user-name USER_NAME  # list all groups user is in
 aws iam list-policies
 aws iam list-policy-versions --policy-arn arn:aws:iam::$AWS_ACCOUNT_ID:policy/POLICY --query Versions[0].VersionId
 aws iam list-roles --path-prefix /aws-reserved/sso.amazonaws.com --query Roles[].Arn | grep AWSReservedSSO_AWSAdministratorAccess
@@ -135,6 +134,7 @@ aws iam update-login-profile --user-name USER_NAME --password PASSWORD --passwor
 aws kms list-aliases --query "Aliases[?AliasName=='alias/ALIAS_NAME'].AliasArn" --output text
 aws lambda get-function --function-name NAME --query Configuration.Environment.Variables --output table
 aws lambda invoke --function-name FUNCTION_NAME --payload fileb://payload.json /tmp/OUTPUT.log
+aws lambda list-event-source-mappings --function-name FUNCTION_NAME
 aws lambda list-functions --function-version ALL --query "Functions[?Runtime=='nodejs14.x'].[FunctionArn]"
 aws lambda list-functions --query "Functions[?Runtime=='nodejs12.x'].FunctionName"
 aws lambda update-alias --function-name FUNCTION_NAME --name ALIAS_NAME [--function-version VERSION_NUMBER]
@@ -179,7 +179,7 @@ aws sns --region REGION list-platform-applications | grep REGEX # get the ARN
 aws sns create-topic --name "TOPIC_NAME" | jq -r .TopicArn
 aws sns delete-topic --topic-arn NOTIFICATION_ARN
 aws sns list-subscriptions
-aws sns list-topics | grep "TOPIC_NAME" | cut -d '"' -f4 # get SNS notification ARN
+aws sns list-topics --query Topics[].TopicArn  # get SNS notification ARN
 aws sns subscribe --topic-arn ARN --protocol email --notification-endpoint END_POINT
 aws ssm delete-association --association-id $ASSOC_ID
 aws ssm delete-association --instance-id $INST_ID
@@ -196,8 +196,8 @@ curl http://169.254.169.254/latest/meta-data/; echo
 curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance/; echo
 echo -e "protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get  # set up HTTPS access
 eval $(aws ecr get-login --registry-ids $AWS_ACCT --region $REGION | sed 's/-e none //')  # aws (v1.11.13)
-for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling resume-processes --region REGION --auto-scaling-group-name $asgn; done"
-for asgn in $(aws autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws autoscaling suspend-processes --region REGION --auto-scaling-group-name $asgn; done"
+for asgn in $(aws autoscaling describe-auto-scaling-groups --query AutoScalingGroups[].AutoScalingGroupName --output text); do echo $asgn ; aws autoscaling resume-processes --region REGION --auto-scaling-group-name $asgn; done"
+for asgn in $(aws autoscaling describe-auto-scaling-groups --query AutoScalingGroups[].AutoScalingGroupName --output text); do echo $asgn ; aws autoscaling suspend-processes --region REGION --auto-scaling-group-name $asgn; done"
 sam deploy --template-file SAM_TEMPLATE.yaml --stack-name STACK_NAME --capabilities CAPABILITY_IAM --tags Key1=Val1 Key2=Val2 --parameter-overrides Key1=Val1 Key2=Val2
 sam local generate-event SERVICE EVENT
 sam local invoke FUNCTION
