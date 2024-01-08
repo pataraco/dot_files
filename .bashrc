@@ -11,7 +11,7 @@
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
 
-#echo "sourcing: .bashrc"
+# echo "sourcing: .bashrc"
 [ -n "$PS1" ] && echo -n ".bashrc (begin)... "
 
 # don't put duplicate lines or lines starting with space in the history.
@@ -167,18 +167,5 @@ fi
 
 # this was generated from fuzzy find ($brew install fzf && /usr/local/opt/fzf/install)
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
-
-# tabtab source for serverless package
-# uninstall by removing these lines or running `tabtab uninstall serverless`
-[ -f /usr/local/lib/node_modules/serverless/node_modules/tabtab/.completions/serverless.bash ] && . /usr/local/lib/node_modules/serverless/node_modules/tabtab/.completions/serverless.bash
-# tabtab source for sls package
-# uninstall by removing these lines or running `tabtab uninstall sls`
-[ -f /usr/local/lib/node_modules/serverless/node_modules/tabtab/.completions/sls.bash ] && . /usr/local/lib/node_modules/serverless/node_modules/tabtab/.completions/sls.bash
-# tabtab source for slss package
-# uninstall by removing these lines or running `tabtab uninstall slss`
-[ -f /usr/local/lib/node_modules/serverless/node_modules/tabtab/.completions/slss.bash ] && . /usr/local/lib/node_modules/serverless/node_modules/tabtab/.completions/slss.bash
-# Serverless: tabtab source for packages
-# uninstall by removing these lines
-[ -f ~/.config/tabtab/__tabtab.bash ] && . ~/.config/tabtab/__tabtab.bash
 
 [ -n "$PS1" ] && echo -n ".bashrc (end). "
