@@ -140,7 +140,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 # See /usr/share/doc/bash-doc/examples in the bash-doc package.
 
 if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
+    source ~/.bash_aliases
 fi
 
 # enable programmable completion features (you don't need to enable
@@ -148,7 +148,7 @@ fi
 # sources /etc/bash.bashrc).
 # shellcheck disable=SC1091
 if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
-    . /etc/bash_completion
+    source /etc/bash_completion
 fi
 
 # enable AWS CLI command completion

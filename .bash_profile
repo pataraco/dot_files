@@ -8,7 +8,7 @@
 
 # shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
 
-[ -n "$PS1" ] && echo -n ".bash_profile (begin)... "
+[[ -n "$PS1" ]] && echo -n ".bash_profile (begin)... "
 
 # suppress "The default interactve shell is now zsh" warning
 export BASH_SILENCE_DEPRECATION_WARNING=1
@@ -29,16 +29,16 @@ export COMPANY_SHIT=$HOME/.bash_aliases_$COMPANY
 #umask 022
 
 # set DISPLAY to forward X11
-[ -n "${SSH_CLIENT%% *}" ] && export DISPLAY="${SSH_CLIENT%% *}:0.0"
+[[ -n "${SSH_CLIENT%% *}" ]] && export DISPLAY="${SSH_CLIENT%% *}:0.0"
 
 # set PATH so it includes user's private bin if it exists
-if [ -d "$HOME/bin" ] ; then
+if [[ -d "$HOME/bin" ]] ; then
     [[ ! $PATH =~ $HOME/bin ]] && export PATH="$HOME/bin:$PATH"
 fi
 
 # add arcanist to PATH
 arcanist_repo=$HOME/repos/phacility/arcanist
-if [ -d "$arcanist_repo" ]; then
+if [[ -d "$arcanist_repo" ]]; then
    export ARC_ROOT=$arcanist_repo
    arcanist_bin=$ARC_ROOT/bin
    [[ -d $arcanist_bin && ! $PATH =~ ^$arcanist_bin:|:$arcanist_bin:|:$arcanist_bin$ ]] && export PATH="$PATH:$arcanist_bin"
@@ -65,9 +65,9 @@ hb_mysql_clnt_bin="/usr/local/opt/mysql-client/bin"
 # export GEM_HOME=$GEM_PATH
 
 # if running bash
-if [ -n "$BASH_VERSION" ]; then
+if [[ -n "$BASH_VERSION" ]]; then
    # include .bashrc if it exists
-   if [ -f "$HOME/.bashrc" ]; then
+   if [[ -f "$HOME/.bashrc" ]]; then
       source "$HOME/.bashrc"
    fi
 fi
@@ -84,14 +84,6 @@ fi
 export VIRTUAL_ENV_DISABLE_PROMPT=YES  # set to non-empty value to disable
 # set up pip list column output formating
 export PIP_FORMAT=columns
-# set up "vi" command line editing
-if command -v nvim &> /dev/null; then
-   VIM_CMD=$(command -v nvim)
-else
-   VIM_CMD=$(command -v vim)
-fi
-export EDITOR=$VIM_CMD
-export VISUAL=$VIM_CMD
 # export MANPAGER="col -bx | vim -c 'set ft=man nolist nonu ' -MR -"
 # export MANPAGER="col -b | vim -c 'set ft=man ts=8 nomod nolist nonu noma' -"
 # use following for GNU
@@ -131,11 +123,11 @@ function start_ssh_agent {
 
 # enable bash completion (brew install bash-completion)
 [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] &&
-   source "/usr/local/etc/profile.d/bash_completion.sh"
+ source "/usr/local/etc/profile.d/bash_completion.sh"
 
 # Source SSH settings, if applicable
 
-if [ -f "$SSH_ENV" ]; then
+if [[ -f "$SSH_ENV" ]]; then
    source "$SSH_ENV" > /dev/null
    #ps -ef | grep "$SSH_AGENT_PID.*ssh-agent$" > /dev/null || start_ssh_agent
    # shellcheck disable=SC2009
@@ -149,15 +141,15 @@ fi
 # export NVM_COMPLETION="/usr/local/opt/nvm/etc/bash_completion.d/nvm"
 # export NVM_SCRIPT="$HOMEBREW_REPOSITORY/opt/nvm/nvm.sh"
 # export NVM_COMPLETION="$HOMEBREW_REPOSITORY/opt/nvm/etc/bash_completion.d/nvm"
-# [ -s "$NVM_SCRIPT" ] && source "$NVM_SCRIPT"          # loads nvm
-# [ -s "$NVM_COMPLETION" ] && source "$NVM_COMPLETION"  # loads nvm CLI completion
+# [[ -s "$NVM_SCRIPT" ]] && source "$NVM_SCRIPT"          # loads nvm
+# [[ -s "$NVM_COMPLETION" ]] && source "$NVM_COMPLETION"  # loads nvm CLI completion
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"                    # loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"  # loads nvm bash_completion
+[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"                    # loads nvm
+[[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"  # loads nvm bash_completion
 
 # Enamble git CLI auto completion
 export GIT_COMPLETION="$HOME/.git-completion.bash"
-[ -s "$GIT_COMPLETION" ] && source "$GIT_COMPLETION"  # loads git CLI completion
+[[ -s "$GIT_COMPLETION" ]] && source "$GIT_COMPLETION"  # loads git CLI completion
 
 # Enamble AWS CLI auto completion
 if command -v aws_completer &> /dev/null; then
@@ -172,11 +164,11 @@ fi
 ## # >>> conda initialize >>>
 ## # !! Contents within this block are managed by 'conda init' !!
 ## __conda_setup="$(''$HOME'/opt/anaconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
-## if [ $? -eq 0 ]; then
+## if [[ $? -eq 0 ]]; then
 ##     eval "$__conda_setup"
 ## else
-##     if [ -f "$HOME/opt/anaconda3/etc/profile.d/conda.sh" ]; then
-##         . "$HOME/opt/anaconda3/etc/profile.d/conda.sh"
+##     if [[ -f "$HOME/opt/anaconda3/etc/profile.d/conda.sh" ]]; then
+##         source "$HOME/opt/anaconda3/etc/profile.d/conda.sh"
 ##     else
 ##         export PATH="$HOME/opt/anaconda3/bin:$PATH"
 ##     fi
@@ -185,11 +177,13 @@ fi
 ## # <<< conda initialize <<<
 
 # added by Snowflake SnowSQL installer v1.2
-export PATH=/Applications/SnowSQL.app/Contents/MacOS:$PATH
+if [[ -d /Applications/SnowSQL.app/Contents/MacOS ]]; then
+  export PATH=/Applications/SnowSQL.app/Contents/MacOS:$PATH
+fi
 
 # add $HOME/repos/pyenv/bin to beginning of PATH (if it exists)
 pyenv_repo=$HOME/repos/pyenv
-if [ -d "$pyenv_repo" ]; then
+if [[ -d "$pyenv_repo" ]]; then
    export PYENV_ROOT=$pyenv_repo
    pyenv_bin=$PYENV_ROOT/bin
    [[ -d $pyenv_bin && ! $PATH =~ ^$pyenv_bin:|:$pyenv_bin:|:$pyenv_bin$ ]] && export PATH="$pyenv_bin:$PATH"
@@ -202,14 +196,18 @@ command -v pyenv &> /dev/null && eval "$(pyenv init --path)"
 # use `pipenv`
 # # add `pyenv virtualenv-init` to shell to enable shims and autcompletion
 # # adds pyenv-virtualenv shims to beginning of PATH
-# [ $(command -v pyenv) ] && eval "$(pyenv virtualenv-init -)"
-
-# remove duplicate entries in the PATH (both work - take your pick)
-# PATH=$(perl -e 'print join(":", grep { not $seen{$_}++ } split(/:/, $ENV{PATH}))')
-PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/:$//')
+# [[ $(command -v pyenv) ]] && eval "$(pyenv virtualenv-init -)"
 
 # add brew installtion dirs to PATH
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
+# remove duplicate entries in the PATH (both work - take your pick)
+# PATH=$(perl -e 'print join(":", grep { not $seen{$_}++ } split(/:/, $ENV{PATH}))')
+PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/:$//')
+# set up "vi" command line editing
+VIM_CMD=$(command -v nvim || command -v vim)
+export EDITOR=$VIM_CMD
+export VISUAL=$VIM_CMD
+
 # Output completion message
-[ -n "$PS1" ] && echo -n ".bash_profile (end). "
+[[ -n "$PS1" ]] && echo -n ".bash_profile (end). "

@@ -1601,6 +1601,7 @@ alias kcc='kubectl config current-context'
 alias kcs='kubectl -n kube-system'
 alias kct='kubectl -n testing'
 alias kcw='kubectl -o wide'
+alias kv='_f() { echo "$1='\''${!1}'\''"; }; _f'
 if [[ "$(uname -s)" == "Darwin" ]]; then
    alias l.='ls -dGh .*'
    alias la='ls -aGh'
@@ -1672,7 +1673,7 @@ alias u='uptime'
 alias ua='unalias'
 alias vba='echo "editing: $HOME/$MAIN_BA_FILE"; vi "$HOME/$MAIN_BA_FILE"; sba'
 # upgrade to neovim if available
-[[ $(command -v nvim) ]] && VIM_CMD=$(command -v nvim) || VIM_CMD=$(command -v vim)
+VIM_CMD=$(command -v nvim || command -v vim)
 # shellcheck disable=SC2139
 alias vi="$VIM_CMD"
 alias vid="$VIM_CMD -d"

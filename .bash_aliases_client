@@ -15,7 +15,7 @@ export P4CLIENT=client
 export P4DIFF
 P4DIFF="$(command -v colordiff) -u"
 export P4EDITOR
-P4EDITOR=$(command -v nvim)
+P4EDITOR=$(command -v nvim || command -v vim)
 export P4IGNORE=$HOME/workspaces/client/.p4ignore
 export P4PAGER="less -FrX"
 

@@ -16,7 +16,7 @@ aws cloudformation delete-stack --stack-name CF_STACK_NAME
 aws cloudformation deploy --template-file TEMPLATE.yaml --stack-name STACK_NAME --capabilities CAPABILITY_IAM
 aws cloudformation describe-stacks --stack-name CF_STACK_NAME
 aws cloudformation get-template --stack-name STACK_NAME | jq -r .TemplateBody
-aws cloudformation list-stack-resources --region REGION --stack-name NAME --query "StackResourceSummaries[?ResourceType=='AWS::IAM::Role'].PhysicalResourceId"
+aws cloudformation list-stack-resources --region REGION --stack-name NAME --query "StackResourceSummaries[?ResourceType=='TYPE'].PhysicalResourceId"
 aws cloudformation list-stack-resources --region REGION --stack-name STACK --query "StackResourceSummaries[].[LogicalResourceId,ResourceType,PhysicalResourceId]" --output table
 aws cloudformation list-stacks | jq .StackSummaries[].StackName
 aws cloudformation package --template-file TEMPLATE.yaml --output-template-file SAM_TEMPLATE.yaml --s3-bucket BUCKET --s3-prefix KEY
