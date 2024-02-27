@@ -9,7 +9,6 @@
 /sbin/fuser -v[m] MOUNTPOINT			# e.g. /maint
 /sbin/lvextend -L [+-]N[GB|MB] VOLUME_GROUP	# e.g. /dev/mapper/vg01-lvol9
 /sbin/resize2fs VOLUME_GROUP			# e.g. /dev/mapper/vg01-lvol9
-export ADO_ARTIFACTS_TOKEN=$(keyring -b artifacts_keyring.ArtifactsKeyringBackend get https://pkgs.dev.azure.com/$ADO_COMPANY/$ADO_PROJECT/_packaging/$ADO_FEED/pypi/simple/ VssSessionToken 2> /dev/null)
 ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling resume-processes --auto-scaling-group-name $asgn; done
 ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling suspend-processes --auto-scaling-group-name $asgn; done
 RACK_ENV=ENVIRONMENT bundle exec rake db:migrate # run from "/var/apps/APP/current"
@@ -102,6 +101,7 @@ echo -e protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazo
 echo auth-1207-2015-oct-14|sha512sum|awk '{print $1}' > auth.key
 echo passwd | sha512sum > mikey.bin
 egrep -q '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+export ADO_ARTIFACTS_TOKEN=$(keyring -b artifacts_keyring.ArtifactsKeyringBackend get https://pkgs.dev.azure.com/$ADO_COMPANY/$ADO_PROJECT/_packaging/$ADO_FEED/pypi/simple/ VssSessionToken 2> /dev/null)
 export PIP_EXTRA_INDEX_URL="https://rwh:$ADO_ARTIFACTS_TOKEN@pkgs.dev.azure.com/$ADO_COMPANY/$ADO_PROJECT/_packaging/$ADO_FEED/pypi/simple"
 find -exec md5sum {} \; > .md5sum.checklist
 find . -mtime +3 -exec rm {} \;		# find stuff older than 3 days

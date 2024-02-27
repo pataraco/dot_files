@@ -83,6 +83,7 @@ aws ec2 describe-instances --region REGION --filters "Name=tag:KEY,Values=VAL" -
 aws ec2 describe-instances --region REGION --filters 'Name=tag:Project,Values=vzfl' --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress,InstanceId,State.Name]" --output table
 aws ec2 describe-instances --region REGION --instance-ids INST_ID --query "Reservations[].Instances[].[Tags[?Key=='KEY'].Value|[0]]|[0]"
 aws ec2 describe-key-pairs --key-name KEY_PAIR_NAME
+aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=*internet*,*grp-default*,*elk*,*elasticsearch*,*redis*,*mongodb*,*gunicorn*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=sec-grp*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
 aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[].[Tags[?Key=='Name'].Value|[0],RequesterVpcInfo.CidrBlock,AccepterVpcInfo.CidrBlock,VpcPeeringConnectionId,Status.Code]" --output table

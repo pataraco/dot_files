@@ -53,7 +53,7 @@ export SHC="${ESC}[?25h"  # show cursor
 export ULN="${ESC}[4m"    # underlined
 
 # for changing prompt colors
-PBLK='\[\e[30m\]'  # black (normal)
+PBLK='\[\e[30m\]'    # black (normal)
 PBLU='\[\e[1;34m\]'  # blue (bold)
 PNBLU='\[\e[34m\]'   # blue (normal)
 PCYN='\[\e[1;36m\]'  # cyan (bold)
