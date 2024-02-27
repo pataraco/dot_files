@@ -137,15 +137,15 @@ else
 fi
 
 # Node Version Manager
-# export NVM_SCRIPT="/usr/local/opt/nvm/nvm.sh"
-# export NVM_COMPLETION="/usr/local/opt/nvm/etc/bash_completion.d/nvm"
-# export NVM_SCRIPT="$HOMEBREW_REPOSITORY/opt/nvm/nvm.sh"
-# export NVM_COMPLETION="$HOMEBREW_REPOSITORY/opt/nvm/etc/bash_completion.d/nvm"
-# [[ -s "$NVM_SCRIPT" ]] && source "$NVM_SCRIPT"          # loads nvm
-# [[ -s "$NVM_COMPLETION" ]] && source "$NVM_COMPLETION"  # loads nvm CLI completion
 export NVM_DIR="$HOME/.nvm"
-[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"                    # loads nvm
-[[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"  # loads nvm bash_completion
+# # export NVM_SCRIPT="/opt/homebrew/opt/nvm/nvm.sh"
+# # export NVM_COMPLETION="/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+export NVM_SCRIPT="$HOMEBREW_REPOSITORY/opt/nvm/nvm.sh"
+export NVM_COMPLETION="$HOMEBREW_REPOSITORY/opt/nvm/etc/bash_completion.d/nvm"
+[[ -s "$NVM_SCRIPT" ]] && source "$NVM_SCRIPT"          # loads nvm
+[[ -s "$NVM_COMPLETION" ]] && source "$NVM_COMPLETION"  # loads nvm CLI completion
+# # [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"                    # loads nvm
+# # [[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"  # loads nvm bash_completion
 
 # Enamble git CLI auto completion
 export GIT_COMPLETION="$HOME/.git-completion.bash"
