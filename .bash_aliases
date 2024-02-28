@@ -86,6 +86,9 @@ ORIG_PS1=$PS1
 # directory where all (most) repos are
 REPO_DIR=$HOME/repos
 
+# needed for automatic node version setting with `nvm`
+NODE_VERSION_DIRTY="true"
+
 # -------------------- shell settings --------------------
 
 # turn on `vi` command line editing - oh yeah!
@@ -163,25 +166,47 @@ function bash_prompt {
       (( _versions_len += ${#ANSIBLE_VERSION} + 2 ))
    fi
    export GIT_ROOT=$(git rev-parse --show-toplevel 2> /dev/null)
-   if [[ $PS_SHOW_NV -eq 1 ]] || [[ -e "$GIT_ROOT/.nvmrc" ]]; then  # get Node version
-      export NODE_VERSION
-      NODE_VERSION=$(node --version 2>&1 | cut -d'v' -f2)
-      PS_ND="${PNGRN}🦀$NODE_VERSION$PNRM|"
-      (( _versions_len += ${#NODE_VERSION} + 2 ))
-    else
-      unset PS_ND
-   fi
-   if [[ $PS_SHOW_PV -eq 1 ]] || [[ -e "$GIT_ROOT/.python-version" ]]; then  # get Python version
-      export PYTHON_VERSION
-      if [[ $(python --version 2>&1) =~ "is not installed" ]]; then
-        PYTHON_VERSION="$(cat $GIT_ROOT/.python-version) not installed"
+   if [[ $PWD != "$OLDPWD" ]]; then
+     # automatically set Node version with `nvm`
+     export NODE_VERSION
+     if [[ $NODE_VERSION_DIRTY == "true" ]]; then
+       NODE_VERSION=$(node --version 2>&1 | cut -d'v' -f2)
+       NODE_VERSION_DIRTY="false"
+     fi
+     if [[ -e "$GIT_ROOT/.nvmrc" ]] && ! grep -Fq "$NODE_VERSION" "$GIT_ROOT/.nvmrc"; then
+       nvm install &> /dev/null
+       NVM_DIRTY="true"
+       NODE_VERSION_DIRTY="true"
+     elif [[ ! -e "$GIT_ROOT/.nvmrc" ]] && [[ $NVM_DIRTY == "true" ]]; then
+       nvm use default &> /dev/null
+       NVM_DIRTY="false"
+       NODE_VERSION_DIRTY="true"
+     fi
+     if [[ $PS_SHOW_NV -eq 1 ]] || [[ -e "$GIT_ROOT/.nvmrc" ]]; then  # get Node version
+       if [[ $NODE_VERSION_DIRTY == "true" ]]; then
+         NODE_VERSION=$(node --version 2>&1 | cut -d'v' -f2)
+         NODE_VERSION_DIRTY="false"
+       fi
+       PS_ND="${PNGRN}🦀$NODE_VERSION$PNRM|"
+       (( _versions_len += ${#NODE_VERSION} + 2 ))
       else
-        PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
-      fi
-      PS_PY="${PBLU}🐍$PYTHON_VERSION$PNRM|"
-      (( _versions_len += ${#PYTHON_VERSION} + 2 ))
-    else
-      unset PS_PY
+       unset PS_ND
+     fi
+   fi
+   if [[ $PWD != "$OLDPWD" ]]; then
+     # python version automatically set with `pyenv` - nothing to add like above for Node (nvm)
+     if [[ $PS_SHOW_PV -eq 1 ]] || [[ -e "$GIT_ROOT/.python-version" ]]; then  # get Python version
+       export PYTHON_VERSION
+       if [[ $(python --version 2>&1) =~ "is not installed" ]]; then
+         PYTHON_VERSION="$(cat "$GIT_ROOT/.python-version") not installed"
+       else
+         PYTHON_VERSION=$(python --version 2>&1 | awk '{print $NF}')
+       fi
+       PS_PY="${PBLU}🐍$PYTHON_VERSION$PNRM|"
+       (( _versions_len += ${#PYTHON_VERSION} + 2 ))
+     else
+       unset PS_PY
+     fi
    fi
    if [[ $PS_SHOW_TV -eq 1 ]]; then  # get Terraform version
       export TERRAFORM_VERSION
