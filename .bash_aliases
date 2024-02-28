@@ -22,7 +22,7 @@ PS_SHOW_TS=1  # Timestamp
 MAIN_BA_FILE=".bash_aliases"
 
 # if interactive shell - display message
-[[ -n "$PS1" ]] && echo -n "$MAIN_BA_FILE(🟢) "
+[[ -n "$PS1" ]] && echo -en "${GRN}$MAIN_BA_FILE${NRM} "
 
 # some ansi colorization escape sequences
 [[ "$(uname)" == "Darwin" ]] && ESC="\033" || ESC="\e"
@@ -1744,4 +1744,4 @@ alias yy='echo y'
 export OLD_PROMPT_COMMAND=$PROMPT_COMMAND
 export PROMPT_COMMAND="bash_prompt"
 
-[[ "$PS1" ]] && echo -n "$MAIN_BA_FILE(🛑) "
+[[ "$PS1" ]] && echo -en "${RED}$MAIN_BA_FILE${NRM} "

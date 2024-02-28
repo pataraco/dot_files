@@ -11,7 +11,7 @@
 AWS_BA_FILE=".bash_aliases_aws"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$AWS_BA_FILE(🟢) "
+[ -n "$PS1" ] && echo -en "${GRN}$AWS_BA_FILE${NRM} "
 
 # -------------------- define functions --------------------
 
@@ -1851,4 +1851,4 @@ alias vaba='[ -f $AWS_SHIT ] && { echo "editing: $AWS_SHIT"; vi $AWS_SHIT; sba; 
 
 # -------------------- final touches --------------------
 
-[ -n "$PS1" ] && echo -n "$AWS_BA_FILE(🛑) "
+[ -n "$PS1" ] && echo -en "${RED}$AWS_BA_FILE${NRM} "

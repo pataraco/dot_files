@@ -9,7 +9,7 @@
 CO_BA_FILE=".bash_aliases_$COMPANY"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$CO_BA_FILE(🟢) "
+[ -n "$PS1" ] && echo -en "${GRN}$CO_BA_FILE${NRM} "
 
 # set up some globals
 #CHEF_REPO=/opt/repo
@@ -1138,4 +1138,4 @@ alias pullba='echo -n "pulling ~/.bash_aliases from $OTHERVM... "; scp -q $OTHER
 alias vsy='vi $SW_YAML_FILE'
 alias vvaf=~/scripts/verify_vipsnfips.sh
 
-[ -n "$PS1" ] && echo -n "$CO_BA_FILE(🛑) "
+[ -n "$PS1" ] && echo -en "${RED}$CO_BA_FILE${NRM} "

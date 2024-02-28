@@ -12,7 +12,7 @@
 [ -z "$PS1" ] && return
 
 # echo "sourcing: .bashrc"
-[ -n "$PS1" ] && echo -n ".bashrc(🟢) "
+[ -n "$PS1" ] && echo -en "${GRN}.bashrc${NRM} "
 
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
@@ -168,4 +168,4 @@ fi
 # this was generated from fuzzy find ($brew install fzf && /usr/local/opt/fzf/install)
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
-[ -n "$PS1" ] && echo -n ".bashrc(🛑) "
+[ -n "$PS1" ] && echo -en "${RED}.bashrc${NRM} "

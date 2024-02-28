@@ -9,7 +9,7 @@
 CO_BA_FILE=".bash_aliases_$COMPANY"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$CO_BA_FILE(🟢) "
+[ -n "$PS1" ] && echo -en "${GRN}$CO_BA_FILE${NRM} "
 
 # -------------------- define functions --------------------
 
@@ -139,4 +139,4 @@ alias vcoba='[ -f $COMPANY_SHIT ] && { echo "editing: $COMPANY_SHIT"; vi $COMPAN
 alias vi-wpn="vi ~/Documents/projects/wordpress/wordpress-project-notes.txt"
 alias vl='export VAULT_ADDR=$(cat ~/.ssh/ag_vault_address); vault login -method=github token=$(cat ~/.ssh/github_ag_access_token)'
 
-[ -n "$PS1" ] && echo -n "$CO_BA_FILE(🛑) "
+[ -n "$PS1" ] && echo -en "${RED}$CO_BA_FILE${NRM} "

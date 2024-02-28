@@ -9,7 +9,7 @@
 CO_BA_FILE=".bash_aliases_$COMPANY"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$CO_BA_FILE(🟢) "
+[ -n "$PS1" ] && echo -en "${GRN}$CO_BA_FILE${NRM} "
 
 # -------------------- define functions --------------------
 
@@ -185,6 +185,7 @@ function showcof {
 # -------------------- define aliases --------------------
 
 # company common
+alias adopat='export ADO_PAT=$(< ~/.ssh/.adsk.ado.pat)'
 alias cof="grep '^function .* ' ~/$CO_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scof\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
 alias gitnewrel='set -x; git push origin :release 2>/dev/null; git branch -D release 2>/dev/null; git checkout develop && git fetch -p origin && git merge origin/develop; git checkout -b release; git push origin release; set +x'
 alias npmchrome='export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true; export PUPPETEER_EXECUTABLE_PATH=$(which chromium)'
@@ -200,4 +201,4 @@ alias vld='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.dev); _vpw=$(< ~/.ssh
 alias vls='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.stg); _vpw=$(< ~/.ssh/.adsk.vpn.stg.pw); vault login -method=ldap username=racop password=$_vpw &> /dev/null; vault token create -ttl=2764800 &> /dev/null; saevl'
 alias vlp='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.prd); _vpw=$(< ~/.ssh/.adsk.vpn.prd.pw); vault login -method=ldap username=racop password=$_vpw &> /dev/null; vault token create -ttl=2764800 &> /dev/null; saevl'
 
-[ -n "$PS1" ] && echo -n "$CO_BA_FILE(🛑) "
+[ -n "$PS1" ] && echo -en "${RED}$CO_BA_FILE${NRM} "

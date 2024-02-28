@@ -5,7 +5,7 @@
 # shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
 
 #[ -n "$PS1" ] && echo "sourcing: .bash_logout"
-[ -n "$PS1" ] && echo -n ".bash_logout(🟢) "
+[ -n "$PS1" ] && echo -en "${GRN}.bash_logout${NRM} "
 
 # when leaving the console clear the screen to increase privacy
 
@@ -16,4 +16,4 @@ fi
 # write commands to history
 history -a
 
-[ -n "$PS1" ] && echo -n ".bash_logout(🛑) "
+[ -n "$PS1" ] && echo -en "${RED}.bash_logout${NRM} "

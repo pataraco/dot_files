@@ -8,7 +8,13 @@
 
 # shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
 
-[[ -n "$PS1" ]] && echo -n ".bash_profile(🟢) "
+# some ansi colorization escape sequences
+[[ "$(uname)" == "Darwin" ]] && ESC="\033" || ESC="\e"
+export GRN="${ESC}[32m"   # green FG
+export RED="${ESC}[31m"   # red FG
+export NRM="${ESC}[m"     # to make text normal
+
+[[ -n "$PS1" ]] && echo -en "${GRN}.bash_profile${NRM} "
 
 # set (uncomment) this to see the PATH getting built
 # export PATH_DEBUG=true
@@ -222,4 +228,4 @@ export EDITOR=$VIM_CMD
 export VISUAL=$VIM_CMD
 
 # Output completion message
-[[ -n "$PS1" ]] && echo -n ".bash_profile(🛑) "
+[[ -n "$PS1" ]] && echo -en "${RED}.bash_profile${NRM} "

@@ -7,7 +7,7 @@
 # shellcheck disable=SC2086,SC2139,SC1117
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n ".bash_aliases_client(🟢) "
+[ -n "$PS1" ] && echo -en "${GRN}.bash_aliases_client${NRM} "
 
 # set up for Helix Perforce
 export P4PORT=perforce:5050
@@ -27,4 +27,4 @@ p4o () {
 alias adfsaml="~/scripts/python/saml_auth_adfs.py"
 alias cd-qa="cd $HOME/workspaces/client/terraform/projects/qa"
 
-[ -n "$PS1" ] && echo -n ".bash_aliases_client(🛑) "
+[ -n "$PS1" ] && echo -en "${RED}.bash_aliases_client${NRM} "
