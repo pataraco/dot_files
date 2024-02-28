@@ -9,7 +9,7 @@
 CO_BA_FILE=".bash_aliases_$COMPANY"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$CO_BA_FILE (begin)... "
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE(🟢) "
 
 # -------------------- define functions --------------------
 
@@ -200,4 +200,4 @@ alias vld='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.dev); _vpw=$(< ~/.ssh
 alias vls='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.stg); _vpw=$(< ~/.ssh/.adsk.vpn.stg.pw); vault login -method=ldap username=racop password=$_vpw &> /dev/null; vault token create -ttl=2764800 &> /dev/null; saevl'
 alias vlp='export VAULT_ADDR=$(< ~/.ssh/adsk_vault_address.prd); _vpw=$(< ~/.ssh/.adsk.vpn.prd.pw); vault login -method=ldap username=racop password=$_vpw &> /dev/null; vault token create -ttl=2764800 &> /dev/null; saevl'
 
-[ -n "$PS1" ] && echo -n "$CO_BA_FILE (end). "
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE(🛑) "

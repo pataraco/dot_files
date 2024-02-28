@@ -8,7 +8,11 @@
 
 # shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
 
-[[ -n "$PS1" ]] && echo -n ".bash_profile (begin)... "
+[[ -n "$PS1" ]] && echo -n ".bash_profile(🟢) "
+
+# set (uncomment) this to see the PATH getting built
+# export PATH_DEBUG=true
+[[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
 
 # suppress "The default interactve shell is now zsh" warning
 export BASH_SILENCE_DEPRECATION_WARNING=1
@@ -33,33 +37,32 @@ export COMPANY_SHIT=$HOME/.bash_aliases_$COMPANY
 
 # set PATH so it includes user's private bin if it exists
 if [[ -d "$HOME/bin" ]] ; then
-    [[ ! $PATH =~ $HOME/bin ]] && export PATH="$HOME/bin:$PATH"
+  [[ ! $PATH =~ $HOME/bin ]] && export PATH="$HOME/bin:$PATH" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
 fi
 
 # add arcanist to PATH
 arcanist_repo=$HOME/repos/phacility/arcanist
 if [[ -d "$arcanist_repo" ]]; then
-   export ARC_ROOT=$arcanist_repo
-   arcanist_bin=$ARC_ROOT/bin
-   [[ -d $arcanist_bin && ! $PATH =~ ^$arcanist_bin:|:$arcanist_bin:|:$arcanist_bin$ ]] && export PATH="$PATH:$arcanist_bin"
+  export ARC_ROOT=$arcanist_repo
+  arcanist_bin=$ARC_ROOT/bin
+  [[ -d $arcanist_bin ]] && [[ ! $PATH =~ ^$arcanist_bin:|:$arcanist_bin:|:$arcanist_bin$ ]] && export PATH="$PATH:$arcanist_bin" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
 fi
 
-# add Python 2.7 and .local/bin to PATH
-python27_bin="${HOME}/Library/Python/2.7/bin"
-[[ -d $python27_bin && ! $PATH =~ ^$python27_bin:|:$python27_bin:|:$python27_bin$ ]] && export PATH="$python27_bin:$PATH"
+# add Python 2.7 to PATH
+# shouldn't need this with `pyenv`
+## python27_bin="${HOME}/Library/Python/2.7/bin"
+## [[ -d $python27_bin ]] && [[ ! $PATH =~ ^$python27_bin:|:$python27_bin:|:$python27_bin$ ]] && export PATH="$python27_bin:$PATH" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
+
+# add .local/bin to PATH
 local_bin="${HOME}/.local/bin"
-[[ -d $local_bin && ! $PATH =~ ^$local_bin:|:$local_bin:|:$local_bin$ ]] && export PATH="$local_bin:$PATH"
+[[ -d $local_bin ]] && [[ ! $PATH =~ ^$local_bin:|:$local_bin:|:$local_bin$ ]] && export PATH="$local_bin:$PATH" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
 
 # add AWS ElasticBeanstalk CLI (eb) to path
 eb_bin="${HOME}/.ebcli-virtual-env/executables"
-[[ -d $eb_bin && ! $PATH =~ ^$eb_bin:|:$eb_bin:|:$eb_bin$ ]] && export PATH="$PATH:$eb_bin"
+[[ -d $eb_bin ]] && [[ ! $PATH =~ ^$eb_bin:|:$eb_bin:|:$eb_bin$ ]] && export PATH="$PATH:$eb_bin" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
 
-# add (Homebrew) MySQL client to path
-hb_mysql_clnt_bin="/usr/local/opt/mysql-client/bin"
-[[ -d $hb_mysql_clnt_bin && ! $PATH =~ ^$hb_mysql_clnt_bin:|:$hb_mysql_clnt_bin:|:$hb_mysql_clnt_bin$ ]] && export PATH="$PATH:$hb_mysql_clnt_bin"
-
-# Should not need this stuff
 ## add Ruby related info
+# Should not need this stuff
 # export PATH=$PATH:$HOME/.gem/ruby/1.9.1/bin:$HOME/.gem/ruby/2.2.0/bin
 # export GEM_PATH=$HOME/.gem/ruby/1.9.1
 # export GEM_HOME=$GEM_PATH
@@ -121,10 +124,6 @@ function start_ssh_agent {
     /usr/bin/ssh-add
 }
 
-# enable bash completion (brew install bash-completion)
-[[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] &&
- source "/usr/local/etc/profile.d/bash_completion.sh"
-
 # Source SSH settings, if applicable
 
 if [[ -f "$SSH_ENV" ]]; then
@@ -136,16 +135,28 @@ else
     start_ssh_agent
 fi
 
+# set Homebrew environment and add brew installtion dirs to PATH
+# (sets HOMEBREW_REPOSITORY, HOMEBREW_PREFIX, HOMEBREW_CELLAR)
+eval "$(/opt/homebrew/bin/brew shellenv)" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
+
+# enable bash completion (brew install bash-completion)
+hb_bash_completion_script="$HOMEBREW_REPOSITORY/etc/profile.d/bash_completion.sh"
+[[ -r "$hb_bash_completion_script" ]] && source "$hb_bash_completion_script"
+
 # Node Version Manager
 export NVM_DIR="$HOME/.nvm"
-# # export NVM_SCRIPT="/opt/homebrew/opt/nvm/nvm.sh"
-# # export NVM_COMPLETION="/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+## export NVM_SCRIPT="/opt/homebrew/opt/nvm/nvm.sh"
+## export NVM_COMPLETION="/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
 export NVM_SCRIPT="$HOMEBREW_REPOSITORY/opt/nvm/nvm.sh"
 export NVM_COMPLETION="$HOMEBREW_REPOSITORY/opt/nvm/etc/bash_completion.d/nvm"
 [[ -s "$NVM_SCRIPT" ]] && source "$NVM_SCRIPT"          # loads nvm
 [[ -s "$NVM_COMPLETION" ]] && source "$NVM_COMPLETION"  # loads nvm CLI completion
-# # [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"                    # loads nvm
-# # [[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"  # loads nvm bash_completion
+## [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"                    # loads nvm
+## [[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"  # loads nvm bash_completion
+
+# add (Homebrew) MySQL client to path
+hb_mysql_clnt_bin="$HOMEBREW_REPOSITORY/opt/mysql-client/bin"
+[[ -d $hb_mysql_clnt_bin ]] && [[ ! $PATH =~ ^$hb_mysql_clnt_bin:|:$hb_mysql_clnt_bin:|:$hb_mysql_clnt_bin$ ]] && export PATH="$PATH:$hb_mysql_clnt_bin" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
 
 # Enamble git CLI auto completion
 export GIT_COMPLETION="$HOME/.git-completion.bash"
@@ -177,8 +188,10 @@ fi
 ## # <<< conda initialize <<<
 
 # added by Snowflake SnowSQL installer v1.2
-if [[ -d /Applications/SnowSQL.app/Contents/MacOS ]]; then
-  export PATH=/Applications/SnowSQL.app/Contents/MacOS:$PATH
+snowsql_bin="/Applications/SnowSQL.app/Contents/MacOS"
+if [[ -d "$snowsql_bin" ]]; then
+  export PATH=$PATH:$snowsql_bin
+  [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
 fi
 
 # add $HOME/repos/pyenv/bin to beginning of PATH (if it exists)
@@ -186,28 +199,27 @@ pyenv_repo=$HOME/repos/pyenv
 if [[ -d "$pyenv_repo" ]]; then
    export PYENV_ROOT=$pyenv_repo
    pyenv_bin=$PYENV_ROOT/bin
-   [[ -d $pyenv_bin && ! $PATH =~ ^$pyenv_bin:|:$pyenv_bin:|:$pyenv_bin$ ]] && export PATH="$pyenv_bin:$PATH"
+   [[ -d $pyenv_bin ]] && [[ ! $PATH =~ ^$pyenv_bin:|:$pyenv_bin:|:$pyenv_bin$ ]] && export PATH="$pyenv_bin:$PATH" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
 fi
 
 # add `pyenv init` to shell to enable shims and autcompletion
 # adds $HOME/.pyenv/shims to beginning of PATH
 # OLD: command -v pyenv &> /dev/null && eval "$(pyenv init -)"
-command -v pyenv &> /dev/null && eval "$(pyenv init --path)"
+command -v pyenv &> /dev/null && eval "$(pyenv init --path)" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
 # use `pipenv`
 # # add `pyenv virtualenv-init` to shell to enable shims and autcompletion
 # # adds pyenv-virtualenv shims to beginning of PATH
 # [[ $(command -v pyenv) ]] && eval "$(pyenv virtualenv-init -)"
 
-# add brew installtion dirs to PATH
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
 # remove duplicate entries in the PATH (both work - take your pick)
 # PATH=$(perl -e 'print join(":", grep { not $seen{$_}++ } split(/:/, $ENV{PATH}))')
 PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/:$//')
+[[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
+
 # set up "vi" command line editing
 VIM_CMD=$(command -v nvim || command -v vim)
 export EDITOR=$VIM_CMD
 export VISUAL=$VIM_CMD
 
 # Output completion message
-[[ -n "$PS1" ]] && echo -n ".bash_profile (end). "
+[[ -n "$PS1" ]] && echo -n ".bash_profile(🛑) "

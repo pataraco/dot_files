@@ -7,7 +7,7 @@
 # shellcheck disable=SC2139,SC1117
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n ".bash_aliases_p4 (begin)... "
+[ -n "$PS1" ] && echo -n ".bash_aliases_p4(🟢) "
 
 # set up for Helix Perforce
 export P4PORT=p4server:5050
@@ -27,4 +27,4 @@ p4o () {
 alias adfsaml="~/scripts/python/samlapi_formauth_adfs3.praco.py"
 alias cd-qa="cd $HOME/workspaces/p4_ws/master"
 
-[ -n "$PS1" ] && echo -n ".bash_aliases_p4 (end). "
+[ -n "$PS1" ] && echo -n ".bash_aliases_p4(🛑) "

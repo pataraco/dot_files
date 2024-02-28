@@ -9,7 +9,7 @@
 CO_BA_FILE=".bash_aliases_$COMPANY"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$CO_BA_FILE (begin)... "
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE(🟢) "
 
 # -------------------- define functions --------------------
 
@@ -573,4 +573,4 @@ alias cdr="cd ~/cloud_automation/ansible/roles"
 alias cvhf='~/cloud_automation/ansible/playbooks/VMedix/scripts/create_vm_qa_hosts_file.sh'
 alias cvqhf='~/scripts/$COMPANY/vmedix/create_vm_qa_hosts_file.sh'
 
-[ -n "$PS1" ] && echo -n "$CO_BA_FILE (end). "
+[ -n "$PS1" ] && echo -n "$CO_BA_FILE(🛑) "

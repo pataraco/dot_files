@@ -14,7 +14,7 @@ REPO_DIR=$HOME/repos
 CHEF_BA_FILE=".bash_aliases_chef"
 
 # if interactive shell - display message
-[ -n "$PS1" ] && echo -n "$CHEF_BA_FILE (begin)... "
+[ -n "$PS1" ] && echo -n "$CHEF_BA_FILE(🟢) "
 
 # -------------------- define functions --------------------
 
@@ -996,4 +996,4 @@ alias vsy='vi $SW_YAML_FILE'
 
 # -------------------- final touches --------------------
 
-[ -n "$PS1" ] && echo -n "$CHEF_BA_FILE (end). "
+[ -n "$PS1" ] && echo -n "$CHEF_BA_FILE(🛑) "
