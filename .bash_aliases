@@ -228,7 +228,7 @@ function bash_prompt {
    if _git_branch=$(git rev-parse --quiet --abbrev-ref HEAD 2>/dev/null); then
       # in a git repo
       _git_branch_len=$(( ${#_git_branch} + 1 ))
-      _git_status=$(git status --porcelain 2> /dev/null)
+      _git_status=$(git status -bs 2> /dev/null)
       [[ "$_git_status" =~ ($'\n'|^).M ]] && _git_has_mods=true
       [[ "$_git_status" =~ ($'\n'|^)M ]] && _git_has_mods_cached=true
       [[ "$_git_status" =~ ($'\n'|^)A ]] && _git_has_adds=true
@@ -254,13 +254,14 @@ function bash_prompt {
          PS_GIT="$PNRM${PYLW}⁉️ ${_git_branch}$PNRM"
       else
          [[ -n "$PS_DEBUG" ]] && echo "debug: status='$_git_status' git is ???"
-         _git_status=$(git status -bs 2> /dev/null | grep -F "ahead")
-         if [[ "$_git_status" =~ \[ahead.*\] ]]; then
-            [[ -n "$PS_DEBUG" ]] && echo "debug: status='$_git_status' git is ahead"
-            local _gitahead
-            _gitahead=$({ awk '{print $NF}' | cut -d']' -f1; } <<< "$_git_status")
-            PS_GIT="$PNRM${PMAG}🤙 ${_git_branch}>$_gitahead$PNRM"
-            (( _git_branch_len += 1 + ${#_gitahead} ))
+         local _git_ahead
+         _git_ahead=$(grep -F "ahead" <<< "$_git_status")
+         if [[ "$_git_ahead" =~ \[ahead.*\] ]]; then
+            [[ -n "$PS_DEBUG" ]] && echo "debug: status='$_git_ahead' git is ahead"
+            local _git_ahead_n
+            _git_ahead_n=$({ awk '{print $NF}' | cut -d']' -f1; } <<< "$_git_ahead")
+            PS_GIT="$PNRM${PMAG}🤙 ${_git_branch}>$_git_ahead_n$PNRM"
+            (( _git_branch_len += 1 + ${#_git_ahead_n} ))
          else
             PS_GIT="$PNRM${PNRM}${_git_branch}$PNRM"
          fi

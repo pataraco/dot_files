@@ -58,6 +58,7 @@ aws ds describe-domain-controllers --directory-id $DIR_ID
 aws dynamodb delete-item --region REGION --table TABLE --key '{"KEY_NAME": {"ITEM_TYPE": "ITEM_NAME"}}'
 aws dynamodb get-item --region REGION --table TABLE --key '{"KEY_NAME": {"ITEM_TYPE": "ITEM_NAME"}}'
 aws dynamodb list-tables
+aws dynamodb list-tags-of-resource --resource-arn ARN --query 'Tags[?Key==`KEY`].Value' --output text
 aws dynamodb update-time-to-live --table-name TABLE --time-to-live-specification "AttributeName=ttl,Enabled=false"
 aws ec2 allocate-address
 aws ec2 associate-address --instance-id INST_ID
@@ -167,6 +168,7 @@ aws s3 sync --profile AWS_PROFILE s3://BUCKET_SRC/ /BUCKET_DEST/dir/
 aws s3api get-bucket-lifecycle-configuration --bucket NAME
 aws s3api get-bucket-notification-configuration --bucket BUCKET
 aws s3api get-bucket-policy --bucket BUCKET | jq '.Policy | fromjson'
+aws s3api get-bucket-tagging --bucket BUCKET --query "TagSet[?Key=='KEY'].Value" --output text
 aws s3api get-public-access-block --bucket BUCKET
 aws s3api list-buckets --query Owner.ID --output text  # canonical ID
 aws secretsmanager get-secret-value --secret-id NAME --query SecretString --output text | jq .

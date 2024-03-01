@@ -73,6 +73,10 @@ eb_bin="${HOME}/.ebcli-virtual-env/executables"
 # export GEM_PATH=$HOME/.gem/ruby/1.9.1
 # export GEM_HOME=$GEM_PATH
 
+# set Homebrew environment and add brew installtion dirs to PATH
+# (sets HOMEBREW_REPOSITORY, HOMEBREW_PREFIX, HOMEBREW_CELLAR)
+eval "$(/opt/homebrew/bin/brew shellenv)" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
+
 # if running bash
 if [[ -n "$BASH_VERSION" ]]; then
    # include .bashrc if it exists
@@ -140,10 +144,6 @@ if [[ -f "$SSH_ENV" ]]; then
 else
     start_ssh_agent
 fi
-
-# set Homebrew environment and add brew installtion dirs to PATH
-# (sets HOMEBREW_REPOSITORY, HOMEBREW_PREFIX, HOMEBREW_CELLAR)
-eval "$(/opt/homebrew/bin/brew shellenv)" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
 
 # enable bash completion (brew install bash-completion)
 hb_bash_completion_script="$HOMEBREW_REPOSITORY/etc/profile.d/bash_completion.sh"

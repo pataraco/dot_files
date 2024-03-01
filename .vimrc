@@ -177,13 +177,14 @@ nnoremap <silent> <Leader>m :match<CR>
 "  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 "endif
 " use vim-plug
-" 1. Begin the section with call plug#begin()
+" 1. Begin the section with call plug#begin(custom plugin directory)
 call plug#begin('~/.local/share/nvim/plugged')
 " 2. List the plugins with Plug commands
 " install: https://github.com/python-mode/python-mode
 " python-mode didn't work 100%
 " Plug 'python-mode/python-mode', { 'branch': 'develop' }
 Plug 'neomake/neomake'
+Plug 'github/copilot.vim'
 " https://github.com/scrooloose/nerdtree
 " Plug 'scrooloose/nerdtree'
 " nnoremap <silent> <Leader>nt :NERDTreeToggle<CR>
