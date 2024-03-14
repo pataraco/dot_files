@@ -223,6 +223,7 @@ ssh [-A] -L LOCAL_PORT:HOST:HOST_PORT USER@BASTIAN_HOST  # SSH tunnel
 ssh mongo1.shared1.example.com "mongo --quiet --ssl --sslAllowInvalidCertificates --host mongo1 --eval \"printjson(db.runCommand('ismaster'))\" | grep primary"
 ssh-add -l
 ssh-copy-id [$USER@]$HOSTNAME
+ssh-keygen -E md5 -lf $pub_key_file                                                              # get fingerprint
 ssh-keygen -R $hostname		          # remove host entries from known_hosts
 ssh-keygen -ef OPEN_SSH_KEY -m PEM | openssl rsa -RSAPublicKey_in -outform DER | openssl md5 -c  # get fingerprint
 ssh-keygen -p -f $key_file	          # add/change passphrase
