@@ -4,7 +4,7 @@
 
 # these are functions/aliases specific to AWS
 
-# shellcheck disable=SC1090,SC2029,SC2034,SC2139,SC2142,SC1117,SC2155
+# shellcheck disable=SC1090,SC2029,SC2034,SC2139,SC2142,SC1117,SC2155,SC2086,SC2046
 
 # -------------------- global variables --------------------
 
@@ -1590,27 +1590,33 @@ function saesaml {
       _unset_aws_environment > /dev/null
       # "hide" the config - temporary until fully using SAML
       mv $HOME/.aws/config{,.sso}
-      saml2aws login \
+      if saml2aws login \
         --config=$_SAML_CFG \
         --idp-account="$_PROFILE" \
         --username=$(_get_saml_setting "$_PROFILE" username) \
-        --password=$(cat $HOME/.aws/.saml2aws.password) \
-        --skip-prompt
-      # un "hide" the config - temporary until fully using SAML
-      mv $HOME/.aws/config{.sso,}
-      # set AWS environment variables
-      export AWS_DEFAULT_PROFILE=$_PROFILE  # for `aws` CLI (instead of using --profile)
-      eval $(saml2aws script --config=$_SAML_CFG --idp-account="$_PROFILE")
-      export AWS_DEFAULT_REGION=$(_get_saml_setting "$_PROFILE" region)
-      export AWS_ACCOUNT_ID=$(_get_saml_setting "$_PROFILE" aws_acct_id)
-      export AWS_ENVIRONMENT="$(_get_saml_setting "$_PROFILE" aws_account_desc) [$AWS_ACCOUNT_ID]"
-      # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
-      export DEPLOY_ENVIRONMENT=$(_get_saml_setting "$_PROFILE" runway_deploy_env)
-      export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S-07:00" "$AWS_CREDENTIAL_EXPIRATION" +"%s" 2> /dev/null)
-      echo "AWS environment set (via SAML): $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
+        --password=$(cat $HOME/.aws/.saml2aws.password.$(_get_saml_setting "$_PROFILE" adsk_env)) \
+        --skip-prompt; then
+        # un "hide" the config - temporary until fully using SAML
+        mv $HOME/.aws/config{.sso,}
+        # set AWS environment variables
+        export AWS_DEFAULT_PROFILE=$_PROFILE  # for `aws` CLI (instead of using --profile)
+        eval $(saml2aws script --config=$_SAML_CFG --idp-account="$_PROFILE")
+        export AWS_DEFAULT_REGION=$(_get_saml_setting "$_PROFILE" region)
+        export AWS_ACCOUNT_ID=$(_get_saml_setting "$_PROFILE" aws_acct_id)
+        export AWS_ENVIRONMENT="$(_get_saml_setting "$_PROFILE" aws_account_desc) [$AWS_ACCOUNT_ID]"
+        # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
+        export DEPLOY_ENVIRONMENT=$(_get_saml_setting "$_PROFILE" runway_deploy_env)
+        export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S-07:00" "$AWS_CREDENTIAL_EXPIRATION" +"%s" 2> /dev/null)
+        # environment used for PS_PROMPT (color)
+        _set_aws_prompt_colors $(_get_saml_setting "$_PROFILE" environment)
+        echo "AWS environment set (via SAML): $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
+      else
+        # un "hide" the config - temporary until fully using SAML
+        mv $HOME/.aws/config{.sso,}
+        _set_aws_prompt_colors
+        echo "could not set AWS environment (via SAML)"
+      fi
     fi
-    # environment used for PS_PROMPT (color)
-    _set_aws_prompt_colors $(_get_saml_setting "$_PROFILE" environment)
   else
     _show_aws_environment
   fi
