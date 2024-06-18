@@ -129,8 +129,10 @@ function awsacct {
   else
     local _aws_acct_id=$(jq -r '.[] | select(.name=="'"$_name_or_id"'") | .id' "$_AWS_ACCTS")
   fi
-  echo -n "${_aws_acct_name}${_aws_acct_id}" | pbcopy
-  pbpaste
+  if [[ -n "$_aws_acct_name" ]] || [[ -n "$_aws_acct_id" ]]; then
+    echo -n "${_aws_acct_name}${_aws_acct_id}" | pbcopy
+    pbpaste
+  fi
 }
 
 function awsconsole {
