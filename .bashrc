@@ -8,6 +8,9 @@
 
 # shellcheck disable=SC1090,SC1091,SC1117
 
+# CodeWhisperer pre block. Keep at the top of this file.
+[[ -f "${HOME}/Library/Application Support/codewhisperer/shell/bashrc.pre.bash" ]] && builtin source "${HOME}/Library/Application Support/codewhisperer/shell/bashrc.pre.bash"
+
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
 
@@ -167,5 +170,8 @@ fi
 
 # this was generated from fuzzy find ($brew install fzf && /usr/local/opt/fzf/install)
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+# CodeWhisperer post block. Keep at the bottom of this file.
+[[ -f "${HOME}/Library/Application Support/codewhisperer/shell/bashrc.post.bash" ]] && builtin source "${HOME}/Library/Application Support/codewhisperer/shell/bashrc.post.bash"
 
 [ -n "$PS1" ] && echo -en "${RED}.bashrc${NRM} "

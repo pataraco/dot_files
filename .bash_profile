@@ -8,6 +8,9 @@
 
 # shellcheck disable=SC1090,SC2034,SC2139,SC2142,SC1117
 
+# CodeWhisperer pre block. Keep at the top of this file.
+[[ -f "${HOME}/Library/Application Support/codewhisperer/shell/bash_profile.pre.bash" ]] && builtin source "${HOME}/Library/Application Support/codewhisperer/shell/bash_profile.pre.bash"
+
 # some ansi colorization escape sequences
 [[ "$(uname)" == "Darwin" ]] && ESC="\033" || ESC="\e"
 export GRN="${ESC}[32m"   # green FG
@@ -226,6 +229,9 @@ PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/:$//')
 VIM_CMD=$(command -v nvim || command -v vim)
 export EDITOR=$VIM_CMD
 export VISUAL=$VIM_CMD
+
+# CodeWhisperer post block. Keep at the bottom of this file.
+[[ -f "${HOME}/Library/Application Support/codewhisperer/shell/bash_profile.post.bash" ]] && builtin source "${HOME}/Library/Application Support/codewhisperer/shell/bash_profile.post.bash"
 
 # Output completion message
 [[ -n "$PS1" ]] && echo -en "${RED}.bash_profile${NRM} "
