@@ -65,7 +65,7 @@ aws ec2 associate-address --instance-id INST_ID
 aws ec2 authorize-security-group-ingress --group-name SG_NAME --from-port FROM_PORT --to-port TO_PORT --ip-protocol tcp --cidr-ip CIDR
 aws ec2 create-key-pair --key-name KEY_PAIR_NAME | jq -r .KeyMaterial > PRIVATE_KEY
 aws ec2 create-security-group --group-name SG_NAME --description "SG DESCRIPTION"
-aws ec2 create-tags --region REGION --resources INST_ID --tags Key=KEY,Value=VALUE Key=KEY2,Value=VALUE2
+aws ec2 create-tags --region REGION --resources RESOURCE_ID --tags Key=KEY,Value=VALUE Key=KEY2,Value=VALUE2
 aws ec2 delete-key-pair --key-name KEY_PAIR_NAME
 aws ec2 delete-key-pair [--region REGION] --key-name KEY_PAIR_NAME
 aws ec2 describe-addresses --output table
@@ -85,8 +85,11 @@ aws ec2 describe-instances --region REGION --filters 'Name=tag:Project,Values=vz
 aws ec2 describe-instances --region REGION --instance-ids INST_ID --query "Reservations[].Instances[].[Tags[?Key=='KEY'].Value|[0]]|[0]"
 aws ec2 describe-key-pairs --key-name KEY_PAIR_NAME
 aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName
+aws ec2 describe-security-groups --query "SecurityGroups[].[VpcId,GroupName,GroupId]" --output table
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=*internet*,*grp-default*,*elk*,*elasticsearch*,*redis*,*mongodb*,*gunicorn*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
 aws ec2 describe-security-groups --region REGION --filters "Name=tag:Name,Values=sec-grp*" --query "SecurityGroups[].[GroupName,GroupId]" --output table
+aws ec2 describe-subnets --query "Subnets[*].{Name: Tags[?Key=='Name'].Value|[0], VPC:VpcId, CIDR:CidrBlock, AZ:AvailabilityZone, ID:SubnetId}" --output table
+aws ec2 describe-subnets --query "Subnets[].[VpcId,Tags[?Key=='Name'].Value|[0],SubnetId]" --output table
 aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[].[Tags[?Key=='Name'].Value|[0],RequesterVpcInfo.CidrBlock,AccepterVpcInfo.CidrBlock,VpcPeeringConnectionId,Status.Code]" --output table
 aws ec2 disassociate-address --public-ip PUBLIC_IP
 aws ec2 get-password-data --instance-id INST_ID --priv-launch-key PEM_FILE
@@ -189,9 +192,12 @@ aws ssm delete-association --association-id $ASSOC_ID
 aws ssm delete-association --instance-id $INST_ID
 aws ssm get-parameter --name /aws/service/ami-windows-latest/Windows_Server-2012-R2_RTM-English-64Bit-Base
 aws ssm get-parameter --name /aws/service/ecs/optimized-ami/amazon-linux/recommended --with-decryption
-aws ssm put-parameter --name KEY_NAME --value PASSWD --type SecureString --overwrite
+aws ssm put-parameter --name PARAM_NAME --value PARAM_VAL --type SecureString --description "DESCRIPTION" --tags Key=KEY1,Value=VAL1 Key=KEY2,Value=VAL2 --overwrite
 aws ssm start-session --target INSTANCE_ID
 aws sts get-caller-identity
+aws ec2 describe-vpcs --query "Vpcs[].[VpcId,Tags[?Key=='Name'].Value|[0],CidrBlock]" --output table
+aws ec2 describe-vpc-endpoints --query "VpcEndpoints[].[VpcId,Tags[?Key=='Name'].Value|[0],VpcEndpointId,ServiceName]" --output table
+aws ec2 describe-vpc-endpoints --filters 'Name=tag:KEY,Values=VAL1,VAL2'
 aws sts get-session-token --serial-number arn-of-the-mfa-device --token-code code-from-token
 aws_acct=$(aws ec2 describe-security-groups --query SecurityGroups[0].OwnerId --output text); echo $aws_acct  # get AWS account
 aws_acct=$(aws sts get-caller-identity --query Account --output text); echo $aws_acct  # get AWS account
@@ -200,10 +206,13 @@ curl http://169.254.169.254/latest/meta-data/; echo
 curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance/; echo
 echo -e "protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get  # set up HTTPS access
 eval $(aws ecr get-login --registry-ids $AWS_ACCT --region $REGION | sed 's/-e none //')  # aws (v1.11.13)
+aws ssm list-tags-for-resource --resource-type Parameter --resource-id PARAM_NAME --output table
+aws ssm describe-parameters --filters Key=Name,Values=PARAM_NAME --query Parameters[].[Name,Type,Description] --output table
 for asgn in $(aws autoscaling describe-auto-scaling-groups --query AutoScalingGroups[].AutoScalingGroupName --output text); do echo $asgn ; aws autoscaling resume-processes --region REGION --auto-scaling-group-name $asgn; done"
 for asgn in $(aws autoscaling describe-auto-scaling-groups --query AutoScalingGroups[].AutoScalingGroupName --output text); do echo $asgn ; aws autoscaling suspend-processes --region REGION --auto-scaling-group-name $asgn; done"
 sam deploy --template-file SAM_TEMPLATE.yaml --stack-name STACK_NAME --capabilities CAPABILITY_IAM --tags Key1=Val1 Key2=Val2 --parameter-overrides Key1=Val1 Key2=Val2
 sam local generate-event SERVICE EVENT
+aws ssm add-tags-to-resource --resource-type Parameter --resource-id PARAM_NAME --tags Key=KEY1,Value=VAL1 Key=KEY2,Value=VAL2
 sam local invoke FUNCTION
 sam local start-api
 sam local start-lambda
