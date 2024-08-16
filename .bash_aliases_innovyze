@@ -16,22 +16,24 @@ CO_BA_FILE=".bash_aliases_$COMPANY"
 function cloneadskrepo {
   # Get an Azure Repos Repo's clone SSH URL
   local _repo=$1
+  local _org_or_user=$(basename "$PWD")
   # shellcheck disable=SC2086
-  local _repo_list=$(getadskrepocloneurl $_repo)
+  echo "looking for repos matching '$_repo' for the org/user '$_org_or_user' ..."
+  local _repo_list=$(getadskrepocloneurl "$_org_or_user" "$_repo")
   local _repo_dir
   local _repo_ssh_url
   if [[ $(wc -l <<< "$_repo_list") -gt 1 ]]; then
     echo "please be more specific, more than one repo found:"
     # shellcheck disable=SC2013
-    for _repo in $(awk -F'/' '{print $4}' <<< "$_repo_list"); do
-      _repo_ssh_url=$(grep "/$_repo$" <<< "$_repo_list")
-      echo " - $_repo ($_repo_ssh_url)"
+    for _repo in $(awk -F':' '{print $2}' <<< "$_repo_list"); do
+      _repo_ssh_url=$(grep "$_repo$" <<< "$_repo_list")
+      echo " - ${_repo%.git} ($_repo_ssh_url)"
     done
   elif [[ -z "$_repo_list" ]]; then
-    echo "please try again, did not find anything matching '$_repo'"
+    echo "please try again, did not find anything matching '$_org_or_user/$_repo'"
   else
     echo "found: $_repo_list"
-    _repo_dir="$(basename "$_repo_list")"
+    _repo_dir="$(basename "$_repo_list" .git)"
     if [[ -d "$_repo_dir" ]]; then
       echo "directory already exists: $_repo_dir"
       cd "$_repo_dir" || return
@@ -75,7 +77,16 @@ function cloneazrepo {
 
 function getadskrepocloneurl {
    # Get an Azure Repos Repo's clone SSH URL
-   az repos list --query "[?contains(name,'$1')].sshUrl" -o tsv
+   local _org_or_user=$1
+   local _repo=$2
+   local _max_repos=1000
+   local _gh=$(which gh)
+   export GH_HOST=git.autodesk.com
+   if ! $_gh auth status --hostname $GH_HOST &> /dev/null; then
+     echo "not authenticated to: $GH_HOST"
+     $_gh auth login --hostname $GH_HOST
+   fi
+   $_gh repo list "$_org_or_user" --limit $_max_repos --json sshUrl --jq '.[]|select(.sshUrl|contains("'"$_repo"'"))|.sshUrl'
 }
 
 function getazrepocloneurl {
