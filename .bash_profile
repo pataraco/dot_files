@@ -76,6 +76,9 @@ eb_bin="${HOME}/.ebcli-virtual-env/executables"
 # export GEM_PATH=$HOME/.gem/ruby/1.9.1
 # export GEM_HOME=$GEM_PATH
 
+# this is to remove the nvm path from the PATH so that homebrew installation dirs are not first
+nvm deactivate &> /dev/null
+
 # set Homebrew environment and add brew installtion dirs to PATH
 # (sets HOMEBREW_REPOSITORY, HOMEBREW_PREFIX, HOMEBREW_CELLAR)
 eval "$(/opt/homebrew/bin/brew shellenv)" && [[ -n "$PATH_DEBUG" ]] && echo "(debug): PATH='$PATH'"
