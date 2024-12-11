@@ -757,6 +757,17 @@ function fdgr {
   echo -ne "${SHC}"
 }
 
+function font-test {
+  # test the fonts in the terminal
+  echo -e "Normal"
+  echo -e "\033[1mBold\033[22m"
+  echo -e "\033[3mItalic\033[23m"
+  echo -e "\033[3;1mBold Italic\033[0m"
+  echo -e "\033[4mUnderline\033[24m"
+  echo -e "== === !== >= <= =>"   # test for font ligatures
+  echo -e "契          勒 鈴 " # test nerd fonts
+}
+
 function gdate {
   # convert hex date value to date
   # see the 'guid' alias to create a hex date value
