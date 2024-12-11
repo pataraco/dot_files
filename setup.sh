@@ -97,7 +97,7 @@ $files_saved && echo "original dot files saved to ${ORIG_DIR/$HOME/\$HOME}"
 # set up & configure 'neovim' (with Lua and LazyVim)
 NEOVIM_CONFIG="$HOME/.config/nvim"
 LAZYVIM_URL="https://github.com/LazyVim/starter"
-LUA_SRC="$SRC_REPO/.config/nvim/lua"
+LUA_SRC="$SRC_REPO/config/nvim/lua"
 echo "Setting up Neovim"
 if [[ -d "$NEOVIM_CONFIG" ]]; then
   echo "Neovim config already exists at '$NEOVIM_CONFIG' - saving original as '$NEOVIM_CONFIG.orig'"
