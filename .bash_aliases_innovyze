@@ -76,121 +76,156 @@ function cloneazrepo {
 }
 
 function getadskrepocloneurl {
-   # Get an Azure Repos Repo's clone SSH URL
-   local _org_or_user=$1
-   local _repo=$2
-   local _max_repos=1000
-   local _gh=$(which gh)
-   export GH_HOST=git.autodesk.com
-   if ! $_gh auth status --hostname $GH_HOST &> /dev/null; then
-     echo "not authenticated to: $GH_HOST"
-     $_gh auth login --hostname $GH_HOST
-   fi
-   $_gh repo list "$_org_or_user" --limit $_max_repos --json sshUrl --jq '.[]|select(.sshUrl|contains("'"$_repo"'"))|.sshUrl'
+  # Get an Azure Repos Repo's clone SSH URL
+  local _org_or_user=$1
+  local _repo=$2
+  local _max_repos=1000
+  local _gh=$(which gh)
+  export GH_HOST=git.autodesk.com
+  if ! $_gh auth status --hostname $GH_HOST &> /dev/null; then
+    echo "not authenticated to: $GH_HOST"
+    $_gh auth login --hostname $GH_HOST
+  fi
+  $_gh repo list "$_org_or_user" --limit $_max_repos --json sshUrl --jq '.[]|select(.sshUrl|contains("'"$_repo"'"))|.sshUrl'
 }
 
 function getazrepocloneurl {
-   # Get an Azure Repos Repo's clone SSH URL
-   az repos list --query "[?contains(name,'$1')].sshUrl" -o tsv
+  # Get an Azure Repos Repo's clone SSH URL
+  az repos list --query "[?contains(name,'$1')].sshUrl" -o tsv
 }
 
 function mstid {
-   # Parse MS Teams URI link to channel and generate MS Teams ID, e.g.:
-   #  given a MS Teams URI:
-   #    https://teams.microsoft.com/l/channel/19%3a12345abcdef67890qwerty0812xx%40thread.tacv2/example-channel-?groupId=12345-abcd-1968-qwerty&tenantId=zxcvwert-2345
-   #  generate this ID (and `pbcopy` it):
-   #    19:12345abcdef67890qwerty0812xx@thread.tacv2
+  # Parse MS Teams URI link to channel and generate MS Teams ID, e.g.:
+  #  given a MS Teams URI:
+  #    https://teams.microsoft.com/l/channel/19%3a12345abcdef67890qwerty0812xx%40thread.tacv2/example-channel-?groupId=12345-abcd-1968-qwerty&tenantId=zxcvwert-2345
+  #  generate this ID (and `pbcopy` it):
+  #    19:12345abcdef67890qwerty0812xx@thread.tacv2
 
-   if [[ -n "$1" ]]; then
-      MS_TEAMS_URI=$1
-   else
-      if command -v pbpaste &> /dev/null; then
-         read -r MS_TEAMS_URI <<< "$(pbpaste)"
-         read -r ms_teams_id <<< "$(cut -d'/' -f6 <<< "$MS_TEAMS_URI" | sed 's/%3a/:/;s/%40/@/')"
-         echo -n "MS Teams ID: $ms_teams_id"
-         if command -v pbcopy &> /dev/null; then
-            if pbcopy &> /dev/null <<< "$ms_teams_id"; then
-               echo " (copied to clipboard)"
-            else
-               echo
-            fi
-         else
-            echo
-         fi
+  if [[ -n "$1" ]]; then
+    MS_TEAMS_URI=$1
+  else
+    if command -v pbpaste &> /dev/null; then
+      read -r MS_TEAMS_URI <<< "$(pbpaste)"
+      read -r ms_teams_id <<< "$(cut -d'/' -f6 <<< "$MS_TEAMS_URI" | sed 's/%3a/:/;s/%40/@/')"
+      echo -n "MS Teams ID: $ms_teams_id"
+      if command -v pbcopy &> /dev/null; then
+        if pbcopy &> /dev/null <<< "$ms_teams_id"; then
+          echo " (copied to clipboard)"
+        else
+          echo
+        fi
       else
-         echo "Usage: ${FUNCNAME} MS_TEAMS_URI"
+        echo
       fi
-   fi
+    else
+      echo "Usage: ${FUNCNAME} MS_TEAMS_URI"
+    fi
+  fi
 }
 
 function rde {
-   # runway: Set Deploy Environment
-   local _env=$1
-   if [ -n "$_env" ]; then
-      case $_env in
-         a) export DEPLOY_ENVIRONMENT="audit";;
-         b) export DEPLOY_ENVIRONMENT="sandbox";;
-         c) export DEPLOY_ENVIRONMENT="common";;
-         d) export DEPLOY_ENVIRONMENT="dev";;
-         i) export DEPLOY_ENVIRONMENT="int";;
-         o) export DEPLOY_ENVIRONMENT="devops";;
-         p) export DEPLOY_ENVIRONMENT="prod";;
-         P) export DEPLOY_ENVIRONMENT="production";;
-         q) export DEPLOY_ENVIRONMENT="qa";;
-         s) export DEPLOY_ENVIRONMENT="stg";;
-         S) export DEPLOY_ENVIRONMENT="staging";;
-         u) unset  DEPLOY_ENVIRONMENT;;
-         *) export DEPLOY_ENVIRONMENT="$_env";;
-      esac
-   fi
-   echo "DEPLOY_ENVIRONMENT = ${DEPLOY_ENVIRONMENT:-N/A}"
+  # runway: Set Deploy Environment
+  local _env=$1
+  if [ -n "$_env" ]; then
+    case $_env in
+      a) export DEPLOY_ENVIRONMENT="audit" ;;
+      b) export DEPLOY_ENVIRONMENT="sandbox" ;;
+      c) export DEPLOY_ENVIRONMENT="common" ;;
+      d) export DEPLOY_ENVIRONMENT="dev" ;;
+      i) export DEPLOY_ENVIRONMENT="int" ;;
+      o) export DEPLOY_ENVIRONMENT="devops" ;;
+      p) export DEPLOY_ENVIRONMENT="prod" ;;
+      P) export DEPLOY_ENVIRONMENT="production" ;;
+      q) export DEPLOY_ENVIRONMENT="qa" ;;
+      s) export DEPLOY_ENVIRONMENT="stg" ;;
+      S) export DEPLOY_ENVIRONMENT="staging" ;;
+      u) unset DEPLOY_ENVIRONMENT ;;
+      *) export DEPLOY_ENVIRONMENT="$_env" ;;
+    esac
+  fi
+  echo "DEPLOY_ENVIRONMENT = ${DEPLOY_ENVIRONMENT:-N/A}"
 }
 
 function set_pip_extra_index_url {
-   # runway: Set Deploy Environment
-   local _ado_company=$1
-   local _ado_project=$2
-   local _ado_feed=$3
-   local _ado_token
-   [[ -z "$_ado_company" ]] && [[ -n "$ADO_COMPANY" ]] && _ado_company=$ADO_COMPANY
-   [[ -z "$_ado_project" ]] && [[ -n "$ADO_PROJECT" ]] && _ado_project=$ADO_PROJECT
-   [[ -z "$_ado_feed" ]] && [[ -n "$ADO_FEED" ]] && _ado_feed=$ADO_FEED
-   [[ -z "$_ado_company" ]] && read -rp "ADO company?: " _ado_company
-   [[ -z "$_ado_project" ]] && read -rp "ADO group?: " _ado_project
-   [[ -z "$_ado_feed" ]] && read -rp "ADO feed?: " _ado_feed
-   if [[ -n "$_ado_company" ]] && [[ -n "$_ado_project" ]] && [[ -n "$_ado_feed" ]]; then
-      _ado_token=$(keyring -b artifacts_keyring.ArtifactsKeyringBackend get "https://pkgs.dev.azure.com/$_ado_company/$_ado_project/_packaging/$_ado_feed/pypi/simple/" VssSessionToken 2> /dev/null)
-   fi
-   if [ -n "$_ado_token" ]; then
-      export PIP_EXTRA_INDEX_URL="https://rwh:$_ado_token@pkgs.dev.azure.com/$_ado_company/$_ado_project/_packaging/$_ado_feed/pypi/simple"
-   else
-      echo "could not get ADO token"
-   fi
-   echo "PIP_EXTRA_INDEX_URL = ${PIP_EXTRA_INDEX_URL:-N/A}"
+  # runway: Set Deploy Environment
+  local _ado_company=$1
+  local _ado_project=$2
+  local _ado_feed=$3
+  local _ado_token
+  [[ -z "$_ado_company" ]] && [[ -n "$ADO_COMPANY" ]] && _ado_company=$ADO_COMPANY
+  [[ -z "$_ado_project" ]] && [[ -n "$ADO_PROJECT" ]] && _ado_project=$ADO_PROJECT
+  [[ -z "$_ado_feed" ]] && [[ -n "$ADO_FEED" ]] && _ado_feed=$ADO_FEED
+  [[ -z "$_ado_company" ]] && read -rp "ADO company?: " _ado_company
+  [[ -z "$_ado_project" ]] && read -rp "ADO group?: " _ado_project
+  [[ -z "$_ado_feed" ]] && read -rp "ADO feed?: " _ado_feed
+  if [[ -n "$_ado_company" ]] && [[ -n "$_ado_project" ]] && [[ -n "$_ado_feed" ]]; then
+    _ado_token=$(keyring -b artifacts_keyring.ArtifactsKeyringBackend get "https://pkgs.dev.azure.com/$_ado_company/$_ado_project/_packaging/$_ado_feed/pypi/simple/" VssSessionToken 2> /dev/null)
+  fi
+  if [ -n "$_ado_token" ]; then
+    export PIP_EXTRA_INDEX_URL="https://rwh:$_ado_token@pkgs.dev.azure.com/$_ado_company/$_ado_project/_packaging/$_ado_feed/pypi/simple"
+  else
+    echo "could not get ADO token"
+  fi
+  echo "PIP_EXTRA_INDEX_URL = ${PIP_EXTRA_INDEX_URL:-N/A}"
 }
 
+# Function to get ADO token and set PIP_EXTRA_INDEX_URL
+function set_pip_extra_index_url_from_ado_token {
+  local _ado_token
+  _ado_token=$(keyring -b artifacts_keyring.ArtifactsKeyringBackend get "https://pkgs.dev.azure.com/$_ado_company/$_ado_project/_packaging/$_ado_feed/pypi/simple/" VssSessionToken 2> /dev/null)
+
+  if [ -n "$_ado_token" ]; then
+    export PIP_EXTRA_INDEX_URL="https://rwh:$_ado_token@pkgs.dev.azure.com/$_ado_company/$_ado_project/_packaging/$_ado_feed/pypi/simple"
+  else
+    echo "could not get ADO token"
+  fi
+  echo "PIP_EXTRA_INDEX_URL = ${PIP_EXTRA_INDEX_URL:-N/A}"
+}
+
+# Function to show a company-specific bash function
 function showcof {
-   # show a company specific function
-   if [ -n "$COMPANY_SHIT" ]; then
-      local _ALIASES_FILE=$COMPANY_SHIT
-      if [[ $1 ]]; then
-         if grep -q "^function $1 " "$_ALIASES_FILE"; then
-            sed -n '/^function '"$1"' /,/^}/p' "$_ALIASES_FILE"
-         else
-            echo "function: '$1' - not found"
-         fi
+  if [ -n "$COMPANY_SHIT" ]; then
+    local _ALIASES_FILE=$COMPANY_SHIT
+    if [[ $1 ]]; then
+      if grep -q "^function $1 " "$_ALIASES_FILE"; then
+        sed -n '/^function '"$1"' /,/^}/p' "$_ALIASES_FILE"
       else
-         echo
-         echo "which function do you want to see?"
-         grep "^function .* " "$_ALIASES_FILE" | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scof\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
-         echo -ne "enter function: "
-         read -r func
-         echo
-         showcof "$func"
+        echo "function: '$1' - not found"
       fi
-   else
-      echo "company alias file not set (COMPANY_SHIT)"
-   fi
+    else
+      echo
+      echo "which function do you want to see?"
+      grep "^function .* " "$_ALIASES_FILE" | awk '{print $2}' | cut -d'(' -f1 | awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scof\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+      echo -ne "enter function: "
+      read -r func
+      echo
+      showcof "$func"
+    fi
+  else
+    echo "company alias file not set (COMPANY_SHIT)"
+  fi
+}
+
+# Function to show the merged CloudOS/Spinnaker ADF
+function showmergedadf {
+  local _repo=$1
+  local _ref=$2
+  local _path=$3
+  local _usage="${FUNCNAME[0]} GIT_REPO GIT_REF ADF_PATH"
+  local _cloudos_adf_merge_api="https://api.cloudos.adskcloud.net/v2/schema/merge/from-github"
+  # ensure all required arguments are provided
+  if [[ -z "$_repo" ]] || [[ -z "$_ref" ]] || [[ -z "$_path" ]]; then
+    echo "error: missing required arg(s)"
+    echo "usage: $_usage"
+  else
+    # make the API call and format with 'jq'
+    curl --silent --location "$_cloudos_adf_merge_api" --header "Content-Type: application/json" \
+      --data "{
+        \"git_repo\": \"$_repo\",
+        \"git_hash\": \"$_ref\",
+        \"adf_path\": \"$_path\"
+      }" | jq .
+  fi
 }
 
 # -------------------- define aliases --------------------
