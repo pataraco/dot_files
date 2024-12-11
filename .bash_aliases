@@ -127,18 +127,17 @@ function bash_prompt {
    # show status of last command
    local _last_cmd_exit_status=$?
    # PS_WHO="$PBLU\u@\h$PNRM"  # show emojis, not me, i know who i am
-   CMD_PASS_EMOJIS=(😀 😃 😄 😁 😆 😊 🙃 😋 😛 😝 😍 😜 🤗 😬 😎)
-   CMD_FAIL_EMOJIS=(😡 👿 🤔 😵 😥 😰 👎 😱 😭 😢 🖕 🤢 😤 💩 💀)
-   PS_DELIM="-"
+   local CMD_PASS_EMOJIS=(😀 😃 😄 😁 😆 😊 🙃 😋 😛 😝 😍 😜 🤗 😬 😎)
+   local CMD_FAIL_EMOJIS=(😡 👿 🤔 😵 😥 😰 👎 😱 😭 😢 🖕 🤢 😤 💩 💀)
+   local PS_DELIM="-"
    if [[ $_last_cmd_exit_status -eq 0 ]]; then
-      PS_EMOJI=${CMD_PASS_EMOJIS[$((RANDOM % ${#CMD_PASS_EMOJIS[*]}))]}
-      PS_WHO="${PS_EMOJI}${PS_DELIM}${PGRY}$(basename "$SHELL")${PNRM}${PS_DELIM}"
+      PS_EMOJI=${CMD_PASS_EMOJIS[RANDOM % ${#CMD_PASS_EMOJIS[@]}]}
       PS_COL=$PGRN
    else
-      PS_EMOJI=${CMD_FAIL_EMOJIS[$((RANDOM % ${#CMD_FAIL_EMOJIS[*]}))]}
-      PS_WHO="${PS_EMOJI}${PS_DELIM}${PGRY}$(basename "$SHELL")${PNRM}${PS_DELIM}"
+      PS_EMOJI=${CMD_FAIL_EMOJIS[RANDOM % ${#CMD_FAIL_EMOJIS[@]}]}
       PS_COL=$PRED
    fi
+   PS_WHO="${PS_EMOJI}${PS_DELIM}${PGRY}${SHELL##*/}${PNRM}${PS_DELIM}"
    # conditional show tools' versions
    local _versions_len=0
    if [[ $PS_SHOW_CV -eq 1 ]]; then  # get Chef version
@@ -297,7 +296,7 @@ function bash_prompt {
       if [[ "$ONICA_SSO_EXPIRES_TS" -gt "$_now_ts" ]]; then
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY]\007" # set the window title
          if [[ $((ONICA_SSO_EXPIRES_TS - _now_ts)) -lt 900 ]]; then
-            PS_AWS="⚠️ [${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}:${AWS_DEFAULT_REGION:-n/a}]"
+            PS_AWS="🟡[${PWHTB}${AWS_DEFAULT_PROFILE}${PNRM}:${AWS_DEFAULT_REGION:-n/a}]"
          fi
       else
          echo -ne "\033]0;$(whoami)@$(hostname)-[$ONICA_SSO_ACCOUNT_KEY](EXPIRED)\007" # set the window title
@@ -346,7 +345,7 @@ function bash_prompt {
       echo -ne "\033]0;$(whoami)@$(hostname)\007" # set the window title
    fi
    # check for/show pyenv virtual environment
-   [[ -n "$VIRTUAL_ENV" ]] && PS_PROJ="($PCYN$(basename "$VIRTUAL_ENV")$PNRM)" || PS_PROJ=""
+   [[ -n "$VIRTUAL_ENV" ]] && PS_PROJ="($PCYN${VIRTUAL_ENV##*/}$PNRM)" || PS_PROJ=""
    # check for/show jobs running in the background
    if [[ "$(jobs | wc -l | tr -d ' ')" -gt 0 ]]; then
       PS1="\n$PS_GIT$PS_CHF$PS_ANS$PS_ND$PS_PY$PS_TF$PS_PATH\n$PS_TS$PS_PROJ$PS_AWS$PS_WHO(\j)${PS_COL}⌲$PNRM "
@@ -1245,7 +1244,10 @@ function tf {
 
 function tfe {
    # set/show terraform environment
-   local _TF_ENV_DIR="$HOME/.tfenv/versions"
+   # local _TF_ENV_DIR="$HOME/.tfenv" # where [standard] tfenv stores versions
+   local _TF_ENV_DIR="/opt/homebrew/Cellar/tfenv/3.0.0" # where [homebrew installed] tfenv stores versions
+   local _TF_ENV_VERSIONS_DIR="$_TF_ENV_DIR/versions"
+   local _TF_ENV_BIN_DIR="$_TF_ENV_DIR/bin"
    local _TF_RELEASES_URL="https://releases.hashicorp.com"
    local _USER_BIN_DIR="/opt/homebrew/bin"
    local _USAGE=\
@@ -1272,7 +1274,7 @@ function tfe {
       _versions=$(basename $_USER_BIN_DIR/terraform* | grep -v '^terraform\(\.[0-9]\+\)\{0,2\}$' | sed 's/^terraform.//g')
       # add versions saved by runway
       # shellcheck disable=SC2046,SC2086
-      _versions="$_versions $(basename $(ls -d $_TF_ENV_DIR/*))"
+      _versions="$_versions $(basename $(ls -d $_TF_ENV_VERSIONS_DIR/*))"
       for _version in $_versions; do echo "$_version"; done | sort -uV | tr '\n' ',' | sed 's/,/, /g'
    elif [[ "$_cmd" =~ "use" ]]; then
       _version=$2
@@ -1280,14 +1282,17 @@ function tfe {
         export TERRAFORM_PATH="$_USER_BIN_DIR/terraform.$_version"
         rm -f $_USER_BIN_DIR/terraform
         ln -s "$TERRAFORM_PATH" $_USER_BIN_DIR/terraform
+        tfenv use "$_version"
         tfe
-      elif [[ -x "$_TF_ENV_DIR/$_version/terraform" ]]; then
-        export TERRAFORM_PATH="$_TF_ENV_DIR/$_version/terraform"
+      elif [[ -x "$_TF_ENV_VERSIONS_DIR/$_version/terraform" ]]; then
+        # export TERRAFORM_PATH="$_TF_ENV_VERSIONS_DIR/$_version/terraform"
+        export TERRAFORM_PATH="$_TF_ENV_BIN_DIR/terraform"
         rm -f $_USER_BIN_DIR/terraform
         ln -s "$TERRAFORM_PATH" $_USER_BIN_DIR/terraform
+        tfenv use "$_version"
         tfe
       else
-        echo "cannot find desired version ($_version) in '$_USER_BIN_DIR' nor '$_TF_ENV_DIR'"
+        echo "cannot find desired version ($_version) in '$_USER_BIN_DIR' nor '$_TF_ENV_VERSIONS_DIR'"
         echo "these are the installed versions:"
         echo -n "   "
         tfe versions
@@ -1318,7 +1323,7 @@ function tfe {
          _version_url="${_TF_RELEASES_URL}/terraform/${_version}/${_zip_name}"
          echo "getting zip file: $_version_url"
          if curl -s -f -o "/tmp/${_zip_name}" "${_version_url}"; then
-            unzip "/tmp/${_zip_name}" -d "$_TF_ENV_DIR/$_version"
+            unzip "/tmp/${_zip_name}" -d "$_TF_ENV_VERSIONS_DIR/$_version"
             tfe use "${_version}"
          else
             _available_versions="$(curl -s "${_TF_RELEASES_URL}/terraform/" | grep -oE 'terraform_\d+\.\d+.\d+' | sort -uV | sed 's/^terraform_//' | tr '\n' ',' | sed 's/,/, /g')"
