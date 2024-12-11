@@ -16,105 +16,107 @@ AWS_BA_FILE=".bash_aliases_aws"
 # -------------------- define functions --------------------
 
 function _get_aws_profile_setting {
-   # returns value of specified setting from a profile in AWS config
-   # usage: _get_aws_profile_setting profile setting
-   local _AWS_CFG=$HOME/.aws/config
-   local _PROFILE=$1
-   local _SETTING=$2
-   local _def
-   local _val
-   _def=$(awk -v adp="${_PROFILE}]" -v key="$_SETTING" '$2==adp {pfound="true"; next}; (pfound=="true" && $1==key) {print $0; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
-   _val=$(cut -d'=' -f2 <<< "$_def" | cut -c 2-)
-   [[ -n "$_val" ]] && echo "$_val"
+  # returns value of specified setting from a profile in AWS config
+  # usage: _get_aws_profile_setting profile setting
+  local _AWS_CFG=$HOME/.aws/config
+  local _PROFILE=$1
+  local _SETTING=$2
+  local _def
+  local _val
+  _def=$(awk -v adp="${_PROFILE}]" -v key="$_SETTING" '$2==adp {pfound="true"; next}; (pfound=="true" && $1==key) {print $0; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
+  _val=$(cut -d'=' -f2 <<<"$_def" | cut -c 2-)
+  [[ -n "$_val" ]] && echo "$_val"
 }
 
 function _get_saml_setting {
-   # returns value of specified setting from a profile in AWS config
-   # usage: _get_saml_setting profile setting
-   local _SAML_CFG=$HOME/.aws/.saml2aws
-   local _PROFILE=$1
-   local _SETTING=$2
-   local _def
-   local _val
-   _def=$(awk -v adp="[${_PROFILE}]" -v key="$_SETTING" '$1==adp {pfound="true"; next}; (pfound=="true" && $1==key) {print $0; exit}; (pfound=="true" && $1~/^\[/) {exit}' "$_SAML_CFG")
-   _val=$(cut -d'=' -f2 <<< "$_def" | cut -c 2-)
-   [[ -n "$_val" ]] && echo "$_val"
+  # returns value of specified setting from a profile in AWS config
+  # usage: _get_saml_setting profile setting
+  local _SAML_CFG=$HOME/.aws/.saml2aws
+  local _PROFILE=$1
+  local _SETTING=$2
+  local _def
+  local _val
+  _def=$(awk -v adp="[${_PROFILE}]" -v key="$_SETTING" '$1==adp {pfound="true"; next}; (pfound=="true" && $1==key) {print $0; exit}; (pfound=="true" && $1~/^\[/) {exit}' "$_SAML_CFG")
+  _val=$(cut -d'=' -f2 <<<"$_def" | cut -c 2-)
+  [[ -n "$_val" ]] && echo "$_val"
 }
 
 function _set_aws_prompt_colors {
-   # sets AWS environment related prompt attribute colors depending on env
-   local _ENV=$1
-   if [[ "$COLOR_PROMPT" == "yes" ]]; then
-     case $_ENV in
-       dev)    PS_AWS_COL="$PCYN";;
-       devops) PS_AWS_COL="$PBBG";;
-       mine)   PS_AWS_COL="$PGBG";;
-       mixed)  PS_AWS_COL="$PYLW";;
-       prod)   PS_AWS_COL="$PRBG";;
-       qa)     PS_AWS_COL="$PMBG";;
-       test)   PS_AWS_COL="$PCYN";;
-       *)      PS_AWS_COL="$PNRM";;
-     esac
-     case $_ENV in
-       dev|devops|mine|mixed|prod|qa|test)
-         PS_AWS="[${PS_AWS_COL}${AWS_DEFAULT_PROFILE}${PNRM}:${PWHTB}${AWS_DEFAULT_REGION:-n/a}${PNRM}] ";;
-       *)
-         PS_AWS="$PNRM";;
-     esac
-   fi
+  # sets AWS environment related prompt attribute colors depending on env
+  local _ENV=$1
+  if [[ "$COLOR_PROMPT" == "yes" ]]; then
+    case $_ENV in
+      dev) PS_AWS_COL="$PCYN" ;;
+      devops) PS_AWS_COL="$PBBG" ;;
+      mine) PS_AWS_COL="$PGBG" ;;
+      mixed) PS_AWS_COL="$PYLW" ;;
+      prod) PS_AWS_COL="$PRBG" ;;
+      qa) PS_AWS_COL="$PMBG" ;;
+      test) PS_AWS_COL="$PCYN" ;;
+      *) PS_AWS_COL="$PNRM" ;;
+    esac
+    case $_ENV in
+      dev | devops | mine | mixed | prod | qa | test)
+        PS_AWS="[${PS_AWS_COL}${AWS_DEFAULT_PROFILE}${PNRM}:${PWHTB}${AWS_DEFAULT_REGION:-n/a}${PNRM}] "
+        ;;
+      *)
+        PS_AWS="$PNRM"
+        ;;
+    esac
+  fi
 }
 
 function _show_aws_environment {
-   # show AWS environment [variables]
-   echo -n "--- AWS Environment "
-   [[ -n "$AWS_DEFAULT_PROFILE" ]] || { [[ -n "$AWS_ACCESS_KEY_ID" ]] && [[ -n "$AWS_SECRET_ACCESS_KEY" ]]; } && echo "Settings ---" || echo "(NOT set) ---"
-   echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
-   echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
-   # obfuscate the KEYs with some *'s
-   echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HO-QT-V3-8]:*:g'
-   echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[d-np-zF-HO-QU-V4-9+]:*:g'
-   echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
+  # show AWS environment [variables]
+  echo -n "--- AWS Environment "
+  [[ -n "$AWS_DEFAULT_PROFILE" ]] || { [[ -n "$AWS_ACCESS_KEY_ID" ]] && [[ -n "$AWS_SECRET_ACCESS_KEY" ]]; } && echo "Settings ---" || echo "(NOT set) ---"
+  echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
+  echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
+  # obfuscate the KEYs with some *'s
+  echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HO-QT-V3-8]:*:g'
+  echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[d-np-zF-HO-QU-V4-9+]:*:g'
+  echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
 }
 
 function _unset_aws_environment {
-   # unsets AWS environment related variables
-   unset AWS_ACCESS_KEY_ID
-   unset AWS_ACCOUNT_ID
-   unset AWS_ACCOUNT
-   unset AWS_CREDENTIAL_EXPIRATION
-   unset AWS_DEFAULT_PROFILE
-   unset AWS_DEFAULT_REGION
-   unset AWS_ENVIRONMENT
-   unset AWS_SECRET_ACCESS_KEY
-   unset AWS_SECURITY_TOKEN
-   unset AWS_SESSION_TOKEN
-   unset AWS_STS_EXPIRES_TS
-   unset SAML2AWS_PROFILE
-   echo "AWS environment has been unset"
+  # unsets AWS environment related variables
+  unset AWS_ACCESS_KEY_ID
+  unset AWS_ACCOUNT_ID
+  unset AWS_ACCOUNT
+  unset AWS_CREDENTIAL_EXPIRATION
+  unset AWS_DEFAULT_PROFILE
+  unset AWS_DEFAULT_REGION
+  unset AWS_ENVIRONMENT
+  unset AWS_SECRET_ACCESS_KEY
+  unset AWS_SECURITY_TOKEN
+  unset AWS_SESSION_TOKEN
+  unset AWS_STS_EXPIRES_TS
+  unset SAML2AWS_PROFILE
+  echo "AWS environment has been unset"
 }
 
 function _verify_aws_profile {
-   # verify profile exists in AWS configs
-   local _AWS_CFG=$HOME/.aws/config
-   local _PROFILE=$1
-   local _AWS_PROFILES=$(\grep '^\[profile' "$_AWS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
-   local _VALID_PROFILES=$(tr ' ' ':' <<< "${_AWS_PROFILES}unset")
-   if [[ ! $_VALID_PROFILES =~ (^|:)$_PROFILE(:|$) ]]; then
-      echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
-      return 2
-   fi
+  # verify profile exists in AWS configs
+  local _AWS_CFG=$HOME/.aws/config
+  local _PROFILE=$1
+  local _AWS_PROFILES=$(\grep '^\[profile' "$_AWS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
+  local _VALID_PROFILES=$(tr ' ' ':' <<<"${_AWS_PROFILES}unset")
+  if [[ ! $_VALID_PROFILES =~ (^|:)$_PROFILE(:|$) ]]; then
+    echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
+    return 2
+  fi
 }
 
 function _verify_saml_profile {
-   # verify profile exists in AWS configs
-   local _SAML_CFG=$HOME/.aws/.saml2aws
-   local _PROFILE=$1
-   local _AWS_PROFILES=$(\grep '^\[' "$_SAML_CFG" | awk -F'[][]' '{print $2}' | tr -s '\n' ' ')
-   local _VALID_PROFILES=$(tr ' ' ':' <<< "${_AWS_PROFILES}unset")
-   if [[ ! $_VALID_PROFILES =~ (^|:)$_PROFILE(:|$) ]]; then
-      echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
-      return 2
-   fi
+  # verify profile exists in AWS configs
+  local _SAML_CFG=$HOME/.aws/.saml2aws
+  local _PROFILE=$1
+  local _AWS_PROFILES=$(\grep '^\[' "$_SAML_CFG" | awk -F'[][]' '{print $2}' | tr -s '\n' ' ')
+  local _VALID_PROFILES=$(tr ' ' ':' <<<"${_AWS_PROFILES}renew unset")
+  if [[ ! $_VALID_PROFILES =~ (^|:)$_PROFILE(:|$) ]]; then
+    echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
+    return 2
+  fi
 }
 
 function awsacct {
@@ -124,7 +126,7 @@ function awsacct {
   if [[ -z "$_name_or_id" ]] || [[ "$_name_or_id" == "all" ]]; then
     jq -r '.[] | .name + ": " + .id' "$_AWS_ACCTS"
   fi
-  if \grep -Ewq '[0-9]+' <<< "$_name_or_id"; then
+  if \grep -Ewq '[0-9]+' <<<"$_name_or_id"; then
     local _aws_acct_name=$(jq -r '.[] | select(.id=="'"$_name_or_id"'") | .name' "$_AWS_ACCTS")
   else
     local _aws_acct_id=$(jq -r '.[] | select(.name=="'"$_name_or_id"'") | .id' "$_AWS_ACCTS")
@@ -141,25 +143,25 @@ function awsconsole {
   local _CONSOLE_DEST="$1"
   local _aws_signin_url
   if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_SESSION_TOKEN" ]]; then
-     echo "can't log in to console - AWS environment not set up"
-     return
+    echo "can't log in to console - AWS environment not set up"
+    return
   fi
   if [[ -x "$_CONSOLE_LOGIN_SCRIPT" ]]; then
-     _aws_signin_url=$($_CONSOLE_LOGIN_SCRIPT)
+    _aws_signin_url=$($_CONSOLE_LOGIN_SCRIPT)
   else
     echo "can't log in to console - console login script doesn't exist: $_CONSOLE_LOGIN_SCRIPT"
     return
   fi
   if [[ -n "$_aws_signin_url" ]]; then
     case $_CONSOLE_DEST in
-          api) _CONSOLE_DEST="apigateway";;
-          cdn) _CONSOLE_DEST="cloudfront";;
-          cfn) _CONSOLE_DEST="cloudformation";;
-          ddb) _CONSOLE_DEST="dynamodb";;
-           eb) _CONSOLE_DEST="elasticbeanstalk";;
-      secrets) _CONSOLE_DEST="secretsmanager";;
-          ssm) _CONSOLE_DEST="systems-manager/parameters";;
-          sso) _CONSOLE_DEST="singlesignon";;
+      api) _CONSOLE_DEST="apigateway" ;;
+      cdn) _CONSOLE_DEST="cloudfront" ;;
+      cfn) _CONSOLE_DEST="cloudformation" ;;
+      ddb) _CONSOLE_DEST="dynamodb" ;;
+      eb) _CONSOLE_DEST="elasticbeanstalk" ;;
+      secrets) _CONSOLE_DEST="secretsmanager" ;;
+      ssm) _CONSOLE_DEST="systems-manager/parameters" ;;
+      sso) _CONSOLE_DEST="singlesignon" ;;
     esac
     open -n -a "Google Chrome" --args "--new-window" "--profile-directory=${AWS_DEFAULT_PROFILE}" "${_aws_signin_url}${_CONSOLE_DEST}"
   else
@@ -170,10 +172,10 @@ function awsconsole {
 }
 
 function assh {
-   # ssh to an IP found by 'aws ec2 describe-instances'
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
-   local _USAGE="usage: \
+  # ssh to an IP found by 'aws ec2 describe-instances'
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
+  local _USAGE="usage: \
 assh [-h] [-e|-u] [-p PROFILE] [-r REGION] HOSTNAME [COMMAND]
   -h         - help (show this message)
   -e         - ssh as 'ec2-user'
@@ -182,53 +184,71 @@ assh [-h] [-e|-u] [-p PROFILE] [-r REGION] HOSTNAME [COMMAND]
   -r REGION  - AWS region to use (aka --region option) [default: $_DEFAULT_REGION]
   HOSTNAME   - hostname pattern to search for and get the private IP of
   COMMAND    - optional command to run on the host and return"
-   local _host=""
-   local _max_items="--max-items 40"
-   local _region="$_DEFAULT_REGION"
-   [ "$1" == "-h" ] && { echo "$_USAGE"; return; }
-   [ "$1" == "-e" ] && { local _user="ec2-user@"; shift 1; }
-   [ "$1" == "-u" ] && { local _user="ubuntu@"; shift 1; }
-   [ "$1" == "-p" ] && { local _profile="--profile=$2"; shift 2; }
-   [ "$1" == "-r" ] && { local _region="$2"; shift 2; }
-   local _tag_name=$1
-   shift
-   local _command=$*
-   [ -z "$_tag_name" ] && { echo "$_USAGE"; return; }
-   local _filters="--filters Name=tag:Name,Values=*$_tag_name* Name=instance-state-name,Values=running"
-   local _query="--query \"Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress]\""
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters $_query --output text"
-   _host=$(eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters $_query --output text")
-   if [[ "$(wc -w <<< "$_host")" -gt 2 ]]; then
-      echo "there are more than one host that matches that name tag,"
-      echo "please be more specific:"
-      echo
-      awk '{print "\t"$1}' <<< "$_host"
-   elif [[ "$(wc -w <<< "$_host")" -lt 2 ]]; then
-      echo "no matching hosts found with that name tag,"
-      echo "please try again"
-   else
-      _tag_name=$(awk '{print $1}' <<< "$_host")
-      _host=$(awk '{print $2}' <<< "$_host")
-      # echo -e "   ${CYN}< $_tag_name > ( $_host ) [ $_command ]${NRM}"
-      if [[ -n "$_command" ]]; then
-         echo -e "   ${BLU}<${GRN}$_tag_name${BLU}> (${YLW}$_host${BLU}) [${CYN}$_command${BLU}]${NRM}"
-      else
-         echo -e "   ${BLU}<${GRN}$_tag_name${BLU}> (${YLW}$_host${BLU})${NRM}"
-      fi
-      ssh "$_user$_host" "$_command"
-   fi
+  local _host=""
+  local _max_items="--max-items 40"
+  local _region="$_DEFAULT_REGION"
+  [ "$1" == "-h" ] && {
+    echo "$_USAGE"
+    return
+  }
+  [ "$1" == "-e" ] && {
+    local _user="ec2-user@"
+    shift 1
+  }
+  [ "$1" == "-u" ] && {
+    local _user="ubuntu@"
+    shift 1
+  }
+  [ "$1" == "-p" ] && {
+    local _profile="--profile=$2"
+    shift 2
+  }
+  [ "$1" == "-r" ] && {
+    local _region="$2"
+    shift 2
+  }
+  local _tag_name=$1
+  shift
+  local _command=$*
+  [ -z "$_tag_name" ] && {
+    echo "$_USAGE"
+    return
+  }
+  local _filters="--filters Name=tag:Name,Values=*$_tag_name* Name=instance-state-name,Values=running"
+  local _query="--query \"Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress]\""
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters $_query --output text"
+  _host=$(eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters $_query --output text")
+  if [[ "$(wc -w <<<"$_host")" -gt 2 ]]; then
+    echo "there are more than one host that matches that name tag,"
+    echo "please be more specific:"
+    echo
+    awk '{print "\t"$1}' <<<"$_host"
+  elif [[ "$(wc -w <<<"$_host")" -lt 2 ]]; then
+    echo "no matching hosts found with that name tag,"
+    echo "please try again"
+  else
+    _tag_name=$(awk '{print $1}' <<<"$_host")
+    _host=$(awk '{print $2}' <<<"$_host")
+    # echo -e "   ${CYN}< $_tag_name > ( $_host ) [ $_command ]${NRM}"
+    if [[ -n "$_command" ]]; then
+      echo -e "   ${BLU}<${GRN}$_tag_name${BLU}> (${YLW}$_host${BLU}) [${CYN}$_command${BLU}]${NRM}"
+    else
+      echo -e "   ${BLU}<${GRN}$_tag_name${BLU}> (${YLW}$_host${BLU})${NRM}"
+    fi
+    ssh "$_user$_host" "$_command"
+  fi
 }
 
 function awsar {
-   # list all AWS regions available to me
-   [ -n "$AWS_DEBUG" ] && echo "debug: aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName"
-   aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName
+  # list all AWS regions available to me
+  [ -n "$AWS_DEBUG" ] && echo "debug: aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName"
+  aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName
 }
 
 function awsassrole {
   # assume an AWS role
   local _USAGE="usage: awsassrole IAM_ROLE_ARN|IAM_ROLE_NAME"
-  local _DURATION=3600  # seconds
+  local _DURATION=3600 # seconds
   local _iam_arg=$1
   local _iam_role_arn
   local _iam_role_arn_default="arn:aws:iam::${AWS_ACCOUNT_ID}:role/$_iam_arg"
@@ -240,16 +260,16 @@ function awsassrole {
     _iam_role_arn=$_iam_arg
   fi
   local _iam_role_name=${_iam_role_arn#*/}
-  local _iam_role_aws_acct_id=$(cut -d':' -f5 <<< "$_iam_role_arn")
+  local _iam_role_aws_acct_id=$(cut -d':' -f5 <<<"$_iam_role_arn")
   local _iam_role_aws_acct_env=$(awsacct "$_iam_role_aws_acct_id")
   local _session
   if [[ -n "$_iam_role_arn" ]]; then
     [ -n "$AWS_DEBUG" ] && echo "debug: aws sts assume-role --region us-east-1 --role-arn $_iam_role_arn --role-session-name $_iam_role_name --duration-seconds $_DURATION"
     if _session=$(aws sts assume-role --region us-east-1 --role-arn "$_iam_role_arn" --role-session-name "$_iam_role_name" --duration-seconds "$_DURATION"); then
-      _unset_aws_environment > /dev/null
-      export AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId <<< "$_session")
-      export AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey <<< "$_session")
-      export AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken <<< "$_session")
+      _unset_aws_environment >/dev/null
+      export AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId <<<"$_session")
+      export AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey <<<"$_session")
+      export AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken <<<"$_session")
       export AWS_DEFAULT_PROFILE="role:$_iam_role_name"
       _set_aws_prompt_colors "$_iam_role_aws_acct_env"
       unset AWS_DEFAULT_PROFILE
@@ -265,183 +285,253 @@ function awsassrole {
 }
 
 function awsdr {
-   # AWS Set Default Region
-   local _area
-   local _country
-   local _region=$1
-   if [[ -n "$_region" ]]; then
-      if [[ "$(wc -c <<< "$_region")" -eq 4 ]]; then
-         case ${_region:0:1} in
-            a) _country="ap";;
-            c) _country="ca";;
-            e) _country="eu";;
-            f) _country="af";;
-            m) _country="me";;
-            s) _country="sa";;
-            u) _country="us";;
-            *) echo "unknown country (${_region:0:1}): exiting..."; return;;
-         esac
-         case ${_region:1:1} in
-            c) _area="central";;
-            e) _area="east";;
-            n) _area="north";;
-            s) _area="south";;
-            S) _area="southeast";;
-            w) _area="west";;
-            *) echo "unknown area (${_region:1:1}): exiting..."; return;;
-         esac
-         export AWS_DEFAULT_REGION="${_country}-${_area}-${_region:2:1}"
+  # AWS Set Default Region
+  local _area
+  local _country
+  local _region=$1
+  if [[ -n "$_region" ]]; then
+    if [[ "$(wc -c <<<"$_region")" -eq 4 ]]; then
+      case ${_region:0:1} in
+        a) _country="ap" ;;
+        c) _country="ca" ;;
+        e) _country="eu" ;;
+        f) _country="af" ;;
+        m) _country="me" ;;
+        s) _country="sa" ;;
+        u) _country="us" ;;
+        *)
+          echo "unknown country (${_region:0:1}): exiting..."
+          return
+          ;;
+      esac
+      case ${_region:1:1} in
+        c) _area="central" ;;
+        e) _area="east" ;;
+        n) _area="north" ;;
+        s) _area="south" ;;
+        S) _area="southeast" ;;
+        w) _area="west" ;;
+        *)
+          echo "unknown area (${_region:1:1}): exiting..."
+          return
+          ;;
+      esac
+      export AWS_DEFAULT_REGION="${_country}-${_area}-${_region:2:1}"
+    else
+      if [[ "$_region" == "unset" ]]; then
+        unset AWS_DEFAULT_REGION
       else
-         if [[ "$_region" == "unset" ]]; then
-            unset AWS_DEFAULT_REGION
-         else
-            export AWS_DEFAULT_REGION="$_region"
-         fi
+        export AWS_DEFAULT_REGION="$_region"
       fi
-   fi
-   echo "AWS_DEFAULT_REGION = ${AWS_DEFAULT_REGION:-N/A}"
+    fi
+  fi
+  echo "AWS_DEFAULT_REGION = ${AWS_DEFAULT_REGION:-N/A}"
 }
 
 function awssnsep {
-   # AWS SNS list platform application endpoints
-   local _USAGE="usage: awssnsep APPLICATION [REGION]  # can use 'all'"
-   local _app=$1
-   [ -z "$_app" ] && { echo "$_USAGE"; return; }
-   local _region=$2
-   [ -n "$_region" ] && _region="--region $_region"
-   [ -n "$AWS_DEBUG" ] && echo "debug: aws sns list-platform-applications $_region"
-   if [[ "$_app" == "all" ]]; then
-      echo "all platform applications found:"
-      aws sns list-platform-applications "$_region" | \grep PlatformApplicationArn | awk '{print $2}' | tr -d '"'
-      return
-   fi
-   local _app_arn
-   _app_arn=$(aws sns list-platform-applications "$_region" | \grep "arn:.*$_app" | awk '{print $2}' | tr -d '"')
-   [ -z "$_app_arn" ] && { echo "none found"; return; }
-   local _noa
-   _noa=$(echo "$_app_arn" | wc -l)
-   if [[ "$_noa" -gt 1 ]]; then
-      echo "found more than one app, please be more specific:"
-      echo "$_app_arn" | \grep "$_app"
-      return
-   fi
-   [ -n "$AWS_DEBUG" ] && echo "debug: aws sns list-endpoints-by-platform-application $_region --platform-application-arn $_app_arn"
-   local _app_eps
-   _app_eps=$(aws sns list-endpoints-by-platform-application "$_region" --platform-application-arn "$_app_arn")
-   local _enabled
-   _enabled=$(echo "$_app_eps" | jq .Endpoints[].Attributes.Enabled | tr -d '"')
-   local _token
-   _token=$(echo "$_app_eps" | jq .Endpoints[].Attributes.Token | tr -d '"')
-   echo "$_app | $_app_arn | $_enabled | $_token"
+  # AWS SNS list platform application endpoints
+  local _USAGE="usage: awssnsep APPLICATION [REGION]  # can use 'all'"
+  local _app=$1
+  [ -z "$_app" ] && {
+    echo "$_USAGE"
+    return
+  }
+  local _region=$2
+  [ -n "$_region" ] && _region="--region $_region"
+  [ -n "$AWS_DEBUG" ] && echo "debug: aws sns list-platform-applications $_region"
+  if [[ "$_app" == "all" ]]; then
+    echo "all platform applications found:"
+    aws sns list-platform-applications "$_region" | \grep PlatformApplicationArn | awk '{print $2}' | tr -d '"'
+    return
+  fi
+  local _app_arn
+  _app_arn=$(aws sns list-platform-applications "$_region" | \grep "arn:.*$_app" | awk '{print $2}' | tr -d '"')
+  [ -z "$_app_arn" ] && {
+    echo "none found"
+    return
+  }
+  local _noa
+  _noa=$(echo "$_app_arn" | wc -l)
+  if [[ "$_noa" -gt 1 ]]; then
+    echo "found more than one app, please be more specific:"
+    echo "$_app_arn" | \grep "$_app"
+    return
+  fi
+  [ -n "$AWS_DEBUG" ] && echo "debug: aws sns list-endpoints-by-platform-application $_region --platform-application-arn $_app_arn"
+  local _app_eps
+  _app_eps=$(aws sns list-endpoints-by-platform-application "$_region" --platform-application-arn "$_app_arn")
+  local _enabled
+  _enabled=$(echo "$_app_eps" | jq .Endpoints[].Attributes.Enabled | tr -d '"')
+  local _token
+  _token=$(echo "$_app_eps" | jq .Endpoints[].Attributes.Token | tr -d '"')
+  echo "$_app | $_app_arn | $_enabled | $_token"
 }
 
 function awsasgcp {
-   # usage:
-   #   awsasgcp
-   #     -r|--resume or -s|--suspend
-   #     [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]
-   # suspend/resume ALL AWS AutoScaling processes
-   # optional: AutoScalingGroupName or RegEx
-   #   only for a specified autoscaling group name or those matching a reg-ex
-   # defaults to "running" (i.e. run the command)
-   #   must use "--dry-run" option to NOT perform
-   local _AWS_CMD
-   local _JQ_CMD
-   local _USAGE
-   local _dryrun=running
-   local _pc_cmd
-   local _region
-   _USAGE="usage: awsasgcp -r|--resume or -s|--suspend [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]"
-   _AWS_CMD=$(command -v aws 2> /dev/null) || { echo "'aws' needed to run this function"; exit 3; }
-   _JQ_CMD=$(command -v jq 2> /dev/null) || { echo "'jq' needed to run this function"; exit 3; }
-   while true; do
-      case "$1" in
-          -r|--resume) _pc_cmd=resume-processes ; shift;;
-         -s|--suspend) _pc_cmd=suspend-processes; shift;;
-            --dry-run) _dryrun=dry-run          ; shift;;
-             --region) _region="--region $2"    ; shift 2;;
-                    *) break;;
-      esac
-   done
-   [ -z "$_pc_cmd" ] && { echo "$_USAGE"; return; }
-   local _asgn_pattern=$*
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_CMD $_region autoscaling describe-auto-scaling-groups | $_JQ_CMD -r .AutoScalingGroups[].AutoScalingGroupName | \grep \"$_asgn_pattern\""
-   asg_names=$($_AWS_CMD "$_region" autoscaling describe-auto-scaling-groups | $_JQ_CMD -r .AutoScalingGroups[].AutoScalingGroupName | \grep "$_asgn_pattern")
-   if [[ -n "$asg_names" ]]; then
-      for asg_name in $asg_names; do
-         [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_CMD $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name"
-         echo "$_dryrun: $(basename "$_AWS_CMD") $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name"
-         if [[ $_dryrun == "running" ]]; then
-            $_AWS_CMD "$_region" autoscaling $_pc_cmd --auto-scaling-group-name "$asg_name"
-         fi
-      done
-   else
-      echo "no matching AWS Auto Scaling Group names found"
-   fi
+  # usage:
+  #   awsasgcp
+  #     -r|--resume or -s|--suspend
+  #     [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]
+  # suspend/resume ALL AWS AutoScaling processes
+  # optional: AutoScalingGroupName or RegEx
+  #   only for a specified autoscaling group name or those matching a reg-ex
+  # defaults to "running" (i.e. run the command)
+  #   must use "--dry-run" option to NOT perform
+  local _AWS_CMD
+  local _JQ_CMD
+  local _USAGE
+  local _dryrun=running
+  local _pc_cmd
+  local _region
+  _USAGE="usage: awsasgcp -r|--resume or -s|--suspend [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]"
+  _AWS_CMD=$(command -v aws 2>/dev/null) || {
+    echo "'aws' needed to run this function"
+    exit 3
+  }
+  _JQ_CMD=$(command -v jq 2>/dev/null) || {
+    echo "'jq' needed to run this function"
+    exit 3
+  }
+  while true; do
+    case "$1" in
+      -r | --resume)
+        _pc_cmd=resume-processes
+        shift
+        ;;
+      -s | --suspend)
+        _pc_cmd=suspend-processes
+        shift
+        ;;
+      --dry-run)
+        _dryrun=dry-run
+        shift
+        ;;
+      --region)
+        _region="--region $2"
+        shift 2
+        ;;
+      *) break ;;
+    esac
+  done
+  [ -z "$_pc_cmd" ] && {
+    echo "$_USAGE"
+    return
+  }
+  local _asgn_pattern=$*
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_CMD $_region autoscaling describe-auto-scaling-groups | $_JQ_CMD -r .AutoScalingGroups[].AutoScalingGroupName | \grep \"$_asgn_pattern\""
+  asg_names=$($_AWS_CMD "$_region" autoscaling describe-auto-scaling-groups | $_JQ_CMD -r .AutoScalingGroups[].AutoScalingGroupName | \grep "$_asgn_pattern")
+  if [[ -n "$asg_names" ]]; then
+    for asg_name in $asg_names; do
+      [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_CMD $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name"
+      echo "$_dryrun: $(basename "$_AWS_CMD") $_region autoscaling $_pc_cmd --auto-scaling-group-name $asg_name"
+      if [[ $_dryrun == "running" ]]; then
+        $_AWS_CMD "$_region" autoscaling $_pc_cmd --auto-scaling-group-name "$asg_name"
+      fi
+    done
+  else
+    echo "no matching AWS Auto Scaling Group names found"
+  fi
 }
 
 function awsci {
-   # reboot, start, stop or terminate an instance
-   local _AWS_CMD
-   _AWS_CMD=$(command -v aws)  # doesn't work if "aws" is an alias
-   [ -z "$_AWS_CMD" ] && { echo "error: aws command not found"; return 2; }
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _USAGE="usage: awsci [-r REGION] reboot|start|stop|terminate INSTANCE_ID|INSTANCE_NAME   # default region: $_DEFAULT_REGION"
-   local _region=$1
-   [ "$_region" == "-r" ] && { _region=$2; shift 2; } || _region=$_DEFAULT_REGION
-   local _CONTROL_CMD=$1
-   local _INSTANCE_PATTERN=$2
-   [ -z "$_CONTROL_CMD" ] && { echo "error: did not specify 'reboot', 'start', 'stop' or 'terminate'"; echo "$_USAGE"; return; }
-   [ -z "$_INSTANCE_PATTERN" ] && { echo "error: did not specify an instance name or ID"; echo "$_USAGE"; return; }
-   local _instance_id
-   local _instance_name
-   _instance_name=$($_AWS_CMD ec2 describe-instances --region "$_region" --instance-ids "$_INSTANCE_PATTERN" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text 2> /dev/null)
-   # shellcheck disable=SC2181
-   if [[ $? -eq 0 ]]; then
-      _instance_id=$_INSTANCE_PATTERN
-   else
-      _instance_id=$($_AWS_CMD ec2 describe-instances --region "$_region" --filters "Name=tag:Name,Values=*${_INSTANCE_PATTERN}*" --output json | jq -r .Reservations[].Instances[].InstanceId 2> /dev/null)
-      _instance_name=$($_AWS_CMD ec2 describe-instances --region "$_region" --instance-ids "$_instance_id" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text 2> /dev/null)
-   fi
-   [ -z "$_instance_name" ] && { echo "note: did not find an instance with ID: $_instance_id"; return; }
-   [ -z "$_instance_id" ] && { echo "note: did not find instance named: $_instance_name"; return; }
-   local _no_of_ids
-   _no_of_ids=$(echo "$_instance_id" | wc -l)
-   [ "$_no_of_ids" -gt 1 ] && { echo "note: found more than one instance - please be more specific"; return; }
-   local _instance_state
-   _instance_state=$($_AWS_CMD ec2 describe-instances --region "$_region" --instance-ids "$_instance_id" --query "Reservations[].Instances[].State.Name" --output text)
-   local _aws_ec2_cmd
-   case $_CONTROL_CMD in
-      reboot)
-         [ "$_instance_state" != "running" ] && { echo "$_instance_name ($_instance_id) is NOT running"; return; }
-         _aws_ec2_cmd=reboot-instances ;;
-      start)
-         [ "$_instance_state" == "running" ] && { echo "$_instance_name ($_instance_id) is already running"; return; }
-         _aws_ec2_cmd=start-instances ;;
-      stop)
-         [ "$_instance_state" == "stopped" ] && { echo "$_instance_name ($_instance_id) is already stopped"; return; }
-         _aws_ec2_cmd=stop-instances  ;;
-      terminate)
-         _aws_ec2_cmd=terminate-instances ;;
-      *)
-         echo "unknown option: exiting..."; echo "$_USAGE"; return;;
-   esac
-   local _ans
-   echo "Instance: $_instance_name ($_instance_id) is $_instance_state"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_CMD ec2 $_aws_ec2_cmd --region $_region --instance-ids $_instance_id"
-   read -rp "Are you sure that you want to '${_CONTROL_CMD}' it [yes/no]? " _ans
-   if [[ "$_ans" == "yes" ]] || [[ "$_ans" == "YES" ]]; then
-      $_AWS_CMD ec2 $_aws_ec2_cmd --region "$_region" --instance-ids "$_instance_id"
-   else
-      echo "Did not enter 'yes'; NOT going to ${_CONTROL_CMD} the instance"
-   fi
+  # reboot, start, stop or terminate an instance
+  local _AWS_CMD
+  _AWS_CMD=$(command -v aws) # doesn't work if "aws" is an alias
+  [ -z "$_AWS_CMD" ] && {
+    echo "error: aws command not found"
+    return 2
+  }
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _USAGE="usage: awsci [-r REGION] reboot|start|stop|terminate INSTANCE_ID|INSTANCE_NAME   # default region: $_DEFAULT_REGION"
+  local _region=$1
+  [ "$_region" == "-r" ] && {
+    _region=$2
+    shift 2
+  } || _region=$_DEFAULT_REGION
+  local _CONTROL_CMD=$1
+  local _INSTANCE_PATTERN=$2
+  [ -z "$_CONTROL_CMD" ] && {
+    echo "error: did not specify 'reboot', 'start', 'stop' or 'terminate'"
+    echo "$_USAGE"
+    return
+  }
+  [ -z "$_INSTANCE_PATTERN" ] && {
+    echo "error: did not specify an instance name or ID"
+    echo "$_USAGE"
+    return
+  }
+  local _instance_id
+  local _instance_name
+  _instance_name=$($_AWS_CMD ec2 describe-instances --region "$_region" --instance-ids "$_INSTANCE_PATTERN" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text 2>/dev/null)
+  # shellcheck disable=SC2181
+  if [[ $? -eq 0 ]]; then
+    _instance_id=$_INSTANCE_PATTERN
+  else
+    _instance_id=$($_AWS_CMD ec2 describe-instances --region "$_region" --filters "Name=tag:Name,Values=*${_INSTANCE_PATTERN}*" --output json | jq -r .Reservations[].Instances[].InstanceId 2>/dev/null)
+    _instance_name=$($_AWS_CMD ec2 describe-instances --region "$_region" --instance-ids "$_instance_id" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text 2>/dev/null)
+  fi
+  [ -z "$_instance_name" ] && {
+    echo "note: did not find an instance with ID: $_instance_id"
+    return
+  }
+  [ -z "$_instance_id" ] && {
+    echo "note: did not find instance named: $_instance_name"
+    return
+  }
+  local _no_of_ids
+  _no_of_ids=$(echo "$_instance_id" | wc -l)
+  [ "$_no_of_ids" -gt 1 ] && {
+    echo "note: found more than one instance - please be more specific"
+    return
+  }
+  local _instance_state
+  _instance_state=$($_AWS_CMD ec2 describe-instances --region "$_region" --instance-ids "$_instance_id" --query "Reservations[].Instances[].State.Name" --output text)
+  local _aws_ec2_cmd
+  case $_CONTROL_CMD in
+    reboot)
+      [ "$_instance_state" != "running" ] && {
+        echo "$_instance_name ($_instance_id) is NOT running"
+        return
+      }
+      _aws_ec2_cmd=reboot-instances
+      ;;
+    start)
+      [ "$_instance_state" == "running" ] && {
+        echo "$_instance_name ($_instance_id) is already running"
+        return
+      }
+      _aws_ec2_cmd=start-instances
+      ;;
+    stop)
+      [ "$_instance_state" == "stopped" ] && {
+        echo "$_instance_name ($_instance_id) is already stopped"
+        return
+      }
+      _aws_ec2_cmd=stop-instances
+      ;;
+    terminate) _aws_ec2_cmd=terminate-instances ;;
+    *)
+      echo "unknown option: exiting..."
+      echo "$_USAGE"
+      return
+      ;;
+  esac
+  local _ans
+  echo "Instance: $_instance_name ($_instance_id) is $_instance_state"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_CMD ec2 $_aws_ec2_cmd --region $_region --instance-ids $_instance_id"
+  read -rp "Are you sure that you want to '${_CONTROL_CMD}' it [yes/no]? " _ans
+  if [[ "$_ans" == "yes" ]] || [[ "$_ans" == "YES" ]]; then
+    $_AWS_CMD ec2 $_aws_ec2_cmd --region "$_region" --instance-ids "$_instance_id"
+  else
+    echo "Did not enter 'yes'; NOT going to ${_CONTROL_CMD} the instance"
+  fi
 }
 
 function awsda {
-   # some 'aws ec2 describe-addresses' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWS_EC2_DA_CMD="aws ec2 describe-addresses"
-   local _USAGE="usage: \
+  # some 'aws ec2 describe-addresses' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWS_EC2_DA_CMD="aws ec2 describe-addresses"
+  local _USAGE="usage: \
 awsda [OPTIONS]
   -n  NAME     - filter results by this Address Name
   -t  KEY=VAL  - filter results by this tag (key=val)
@@ -454,46 +544,73 @@ awsda [OPTIONS]
   -h           - help (show this message)
 default display:
   Addy name | EIP | Instance | Priv IP"
-   local _default_queries="Tags[?Key=='Name'].Value|[0],PublicIp,InstanceId,PrivateIpAddress"
-   local _filters=""
-   local _max_items=""
-   local _pem_file=""        # PEM file used to decrypt the passwords
-   local _more_qs=""
-   local _queries="Tags[?Key=='Name'].Value|[0],PublicIp,InstanceId,PrivateIpAddress"
-   local _query="Addresses[]"
-   local _region="$_DEFAULT_REGION"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-            -n) _filters="Name=tag:Name,Values=*$2* $_filters"               ; shift 2;;
-            -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters" ; shift 2;;
-            -m) _max_items="--max-items $2"                                  ; shift 2;;
-            -r) _region=$2                                                   ; shift 2;;
-         +alid) _more_qs="$_more_qs${_more_qs:+,}AllocationId"               ; shift;;
-         +asid) _more_qs="$_more_qs${_more_qs:+,}AssociationId"              ; shift;;
-         +niid) _more_qs="$_more_qs${_more_qs:+,}NetworkInterfaceId"         ; shift;;
-            +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]" ; shift 2;;
-          -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         eval "$_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeAddresses' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-      done
-   else
-      eval "$_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeAddresses' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-   fi
+  local _default_queries="Tags[?Key=='Name'].Value|[0],PublicIp,InstanceId,PrivateIpAddress"
+  local _filters=""
+  local _max_items=""
+  local _pem_file="" # PEM file used to decrypt the passwords
+  local _more_qs=""
+  local _queries="Tags[?Key=='Name'].Value|[0],PublicIp,InstanceId,PrivateIpAddress"
+  local _query="Addresses[]"
+  local _region="$_DEFAULT_REGION"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -n)
+        _filters="Name=tag:Name,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -t)
+        _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters"
+        shift 2
+        ;;
+      -m)
+        _max_items="--max-items $2"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      +alid)
+        _more_qs="$_more_qs${_more_qs:+,}AllocationId"
+        shift
+        ;;
+      +asid)
+        _more_qs="$_more_qs${_more_qs:+,}AssociationId"
+        shift
+        ;;
+      +niid)
+        _more_qs="$_more_qs${_more_qs:+,}NetworkInterfaceId"
+        shift
+        ;;
+      +t)
+        _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"
+        shift 2
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
+      eval "$_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeAddresses' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    done
+  else
+    eval "$_AWS_EC2_DA_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeAddresses' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+  fi
 }
 
 function awsdami {
-   # some 'aws ec2 describe-images' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWSEC2DAMI_CMD="aws ec2 describe-images"
-   local _USAGE="usage: \
+  # some 'aws ec2 describe-images' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWSEC2DAMI_CMD="aws ec2 describe-images"
+  local _USAGE="usage: \
 awsdami [OPTIONS]
   -a  ARCH      - Architecture (e.g. i386, x86_64)
   -ht HYPE_TYPE - Hypervisor Type (e.g. ovm, xen)
@@ -524,64 +641,145 @@ awsdami [OPTIONS]
   -h            - help (show this message)
 default display:
   Name Tag | Image Name | Image ID | State | Region"
-   #local _owners="self"
-   local _owners=""
-   local _region="$_DEFAULT_REGION"
-   local _filters=""
-   local _queries="Tags[?Key=='Name'].Value|[0],Name"
-   local _default_queries="Tags[?Key=='Name'].Value|[0],Name,ImageId,State"
-   local _more_qs=""
-   local _query="Images[]"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -a) _filters="Name=architecture,Values=*$2* $_filters"                      ; shift 2;;
-         -ht) _filters="Name=hypervisor,Values=*$2* $_filters"                        ; shift 2;;
-          -i) _filters="Name=image-id,Values=*$2* $_filters"                          ; shift 2;;
-         -it) _filters="Name=image-type,Values=*$2* $_filters"                        ; shift 2;;
-         -nt) _filters="Name=tag:Name,Values=*$2* $_filters"                          ; shift 2;;
-          -n) _filters="Name=name,Values=*$2* $_filters"                              ; shift 2;;
-          -o) _owners="--owners $2"                                                   ; shift 2;;
-          -p) _filters="Name=tag:Project,Values=*$2* $_filters"                       ; shift 2;;
-          -s) _filters="Name=state,Values=*$2* $_filters"                             ; shift 2;;
-          -v) _filters="Name=virtualization-type,Values=*$2* $_filters"               ; shift 2;;
-         -vs) _filters="Name=block-device-mapping.volume-size,Values=*$2* $_filters"  ; shift 2;;
-         -vt) _filters="Name=block-device-mapping.volume-type,Values=*$2* $_filters"  ; shift 2;;
-          -r) _region=$2                                                              ; shift 2;;
-          +a) _more_qs="$_more_qs${_more_qs:+,}Architecture"                          ; shift;;
-         +cd) _more_qs="$_more_qs${_more_qs:+,}CreationDate"                          ; shift;;
-         +ht) _more_qs="$_more_qs${_more_qs:+,}Hypervisor"                            ; shift;;
-          +i) _more_qs="$_more_qs${_more_qs:+,}ImageId"                               ; shift;;
-         +it) _more_qs="$_more_qs${_more_qs:+,}ImageType"                             ; shift;;
-          +o) _more_qs="$_more_qs${_more_qs:+,}OwnerId"                               ; shift;;
-         +ps) _more_qs="$_more_qs${_more_qs:+,}Public"                                ; shift;;
-         +rn) _more_qs="$_more_qs${_more_qs:+,}RootDeviceName"                        ; shift;;
-         +rt) _more_qs="$_more_qs${_more_qs:+,}RootDeviceType"                        ; shift;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}State"                                 ; shift;;
-          +v) _more_qs="$_more_qs${_more_qs:+,}VirtualizationType"                    ; shift;;
-         +vs) _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeSize" ; shift;;
-         +vt) _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeType" ; shift;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         eval "$_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-      done
-   else
+  #local _owners="self"
+  local _owners=""
+  local _region="$_DEFAULT_REGION"
+  local _filters=""
+  local _queries="Tags[?Key=='Name'].Value|[0],Name"
+  local _default_queries="Tags[?Key=='Name'].Value|[0],Name,ImageId,State"
+  local _more_qs=""
+  local _query="Images[]"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -a)
+        _filters="Name=architecture,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -ht)
+        _filters="Name=hypervisor,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -i)
+        _filters="Name=image-id,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -it)
+        _filters="Name=image-type,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -nt)
+        _filters="Name=tag:Name,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -n)
+        _filters="Name=name,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -o)
+        _owners="--owners $2"
+        shift 2
+        ;;
+      -p)
+        _filters="Name=tag:Project,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -s)
+        _filters="Name=state,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -v)
+        _filters="Name=virtualization-type,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -vs)
+        _filters="Name=block-device-mapping.volume-size,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -vt)
+        _filters="Name=block-device-mapping.volume-type,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      +a)
+        _more_qs="$_more_qs${_more_qs:+,}Architecture"
+        shift
+        ;;
+      +cd)
+        _more_qs="$_more_qs${_more_qs:+,}CreationDate"
+        shift
+        ;;
+      +ht)
+        _more_qs="$_more_qs${_more_qs:+,}Hypervisor"
+        shift
+        ;;
+      +i)
+        _more_qs="$_more_qs${_more_qs:+,}ImageId"
+        shift
+        ;;
+      +it)
+        _more_qs="$_more_qs${_more_qs:+,}ImageType"
+        shift
+        ;;
+      +o)
+        _more_qs="$_more_qs${_more_qs:+,}OwnerId"
+        shift
+        ;;
+      +ps)
+        _more_qs="$_more_qs${_more_qs:+,}Public"
+        shift
+        ;;
+      +rn)
+        _more_qs="$_more_qs${_more_qs:+,}RootDeviceName"
+        shift
+        ;;
+      +rt)
+        _more_qs="$_more_qs${_more_qs:+,}RootDeviceType"
+        shift
+        ;;
+      +s)
+        _more_qs="$_more_qs${_more_qs:+,}State"
+        shift
+        ;;
+      +v)
+        _more_qs="$_more_qs${_more_qs:+,}VirtualizationType"
+        shift
+        ;;
+      +vs)
+        _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeSize"
+        shift
+        ;;
+      +vt)
+        _more_qs="$_more_qs${_more_qs:+,}BlockDeviceMappings[0].Ebs.VolumeType"
+        shift
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
       eval "$_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-   fi
+    done
+  else
+    eval "$_AWSEC2DAMI_CMD --region=$_region $_owners $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeImages' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+  fi
 }
 
 function awsdasg {
-   # some 'aws autoscaling describe-auto-scaling-groups' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWSASDASG_CMD="aws autoscaling describe-auto-scaling-groups"
-   local _USAGE="usage: \
+  # some 'aws autoscaling describe-auto-scaling-groups' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWSASDASG_CMD="aws autoscaling describe-auto-scaling-groups"
+  local _USAGE="usage: \
 awsdasg [OPTIONS]
   -n  NAME     - filter results by this Auto Scaling Group Name
   -m  MAX      - maximum number of items to display
@@ -603,61 +801,115 @@ awsdasg [OPTIONS]
   -h           - help (show this message)
 default display:
   ASG name | Launch Config Name | Instances | Desired | Min | Max | Region"
-   local _max_items=""
-   local _region="$_DEFAULT_REGION"
-   local _reg_exp=""
-   local _queries="AutoScalingGroupName"
-   local _default_queries="AutoScalingGroupName,LaunchConfigurationName,length(Instances),DesiredCapacity,MinSize,MaxSize"
-   local _more_qs=""
-   local _query="AutoScalingGroups[]"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -n) _reg_exp="$2"                 ; shift 2;;
-          -m) _max_items="--max-items $2"   ; shift 2;;
-          -p) local _profile="--profile=$2" ; shift 2;;
-          -r) _region=$2                    ; shift 2;;
-         +at) _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"; shift;;
-         +dc) _more_qs="$_more_qs${_more_qs:+,}DesiredCapacity"                              ; shift;;
-         +ht) _more_qs="$_more_qs${_more_qs:+,}HealthCheckType"                              ; shift;;
-         +ii) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', ',@)"          ; shift;;
-         +ih) _more_qs="$_more_qs${_more_qs:+,}Instances[].HealthStatus|join(', ',@)"        ; shift;;
-         +lb) _more_qs="$_more_qs${_more_qs:+,}LoadBalancerNames[]|join(', ',@)"             ; shift;;
-         +lc) _more_qs="$_more_qs${_more_qs:+,}LaunchConfigurationName"                      ; shift;;
-         +ls) _more_qs="$_more_qs${_more_qs:+,}Instances[].LifecycleState|join(', ',@)"      ; shift;;
-         +ni) _more_qs="$_more_qs${_more_qs:+,}length(Instances)"                            ; shift;;
-         +ns) _more_qs="$_more_qs${_more_qs:+,}MinSize"                                      ; shift;;
-         +xs) _more_qs="$_more_qs${_more_qs:+,}MaxSize"                                      ; shift;;
-         +sp) _more_qs="$_more_qs${_more_qs:+,}SuspendedProcesses[].ProcessName|join(', ',@)"; shift;;
-          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                   ; shift 2;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         if [[ -z "$_reg_exp" ]]; then
-            eval "$_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         else
-            eval "$_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         fi
-      done
-   else
+  local _max_items=""
+  local _region="$_DEFAULT_REGION"
+  local _reg_exp=""
+  local _queries="AutoScalingGroupName"
+  local _default_queries="AutoScalingGroupName,LaunchConfigurationName,length(Instances),DesiredCapacity,MinSize,MaxSize"
+  local _more_qs=""
+  local _query="AutoScalingGroups[]"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -n)
+        _reg_exp="$2"
+        shift 2
+        ;;
+      -m)
+        _max_items="--max-items $2"
+        shift 2
+        ;;
+      -p)
+        local _profile="--profile=$2"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      +at)
+        _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"
+        shift
+        ;;
+      +dc)
+        _more_qs="$_more_qs${_more_qs:+,}DesiredCapacity"
+        shift
+        ;;
+      +ht)
+        _more_qs="$_more_qs${_more_qs:+,}HealthCheckType"
+        shift
+        ;;
+      +ii)
+        _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', ',@)"
+        shift
+        ;;
+      +ih)
+        _more_qs="$_more_qs${_more_qs:+,}Instances[].HealthStatus|join(', ',@)"
+        shift
+        ;;
+      +lb)
+        _more_qs="$_more_qs${_more_qs:+,}LoadBalancerNames[]|join(', ',@)"
+        shift
+        ;;
+      +lc)
+        _more_qs="$_more_qs${_more_qs:+,}LaunchConfigurationName"
+        shift
+        ;;
+      +ls)
+        _more_qs="$_more_qs${_more_qs:+,}Instances[].LifecycleState|join(', ',@)"
+        shift
+        ;;
+      +ni)
+        _more_qs="$_more_qs${_more_qs:+,}length(Instances)"
+        shift
+        ;;
+      +ns)
+        _more_qs="$_more_qs${_more_qs:+,}MinSize"
+        shift
+        ;;
+      +xs)
+        _more_qs="$_more_qs${_more_qs:+,}MaxSize"
+        shift
+        ;;
+      +sp)
+        _more_qs="$_more_qs${_more_qs:+,}SuspendedProcesses[].ProcessName|join(', ',@)"
+        shift
+        ;;
+      +t)
+        _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"
+        shift 2
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
       if [[ -z "$_reg_exp" ]]; then
-         eval "$_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+        eval "$_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       else
-         eval "$_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+        eval "$_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
-   fi
+    done
+  else
+    if [[ -z "$_reg_exp" ]]; then
+      eval "$_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeAutoScalingGroups' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    else
+      eval "$_AWSASDASG_CMD $_profile --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    fi
+  fi
 }
 
 function awsdi {
-   # some 'aws ec2 describe-instances' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
-   local _USAGE="usage: \
+  # some 'aws ec2 describe-instances' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWS_EC2_DI_CMD="aws ec2 describe-instances"
+  local _USAGE="usage: \
 awsdi [OPTIONS]
   -n  NAME     - filter results by this Instance Name
   -s  STATE    - filter results by this State (e.g. running, terminated, etc.)
@@ -687,109 +939,197 @@ awsdi [OPTIONS]
   -h           - help (show this message)
 default display:
   Inst name | Private IP | Instance ID | State"
-   local _default_queries="Tags[?Key=='Name'].Value|[0],InstanceId,PrivateIpAddress,PublicIpAddress,State.Name"
-   local _filters=""
-   local _max_items=""
-   local _show_pws="false"   # show passwords
-   local _pem_file=""        # PEM file used to decrypt the passwords
-   local _more_qs=""
-   local _queries="Tags[?Key=='Name'].Value|[0],InstanceId"
-   local _query="Reservations[].Instances[]"
-   local _region="$_DEFAULT_REGION"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -n) _filters="Name=tag:Name,Values=*$2* $_filters"               ; shift 2;;
-          -s) _filters="Name=instance-state-name,Values=*$2* $_filters"    ; shift 2;;
-          -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters" ; shift 2;;
-          -m) _max_items="--max-items $2"                                  ; shift 2;;
-          -p) local _profile="--profile=$2"                                ; shift 2;;
-          -r) _region=$2                                                   ; shift 2;;
-          +a) _more_qs="$_more_qs${_more_qs:+,}ImageId"                                          ; shift;;
-         +an) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='aws:autoscaling:groupName'].Value|[0]"; shift;;
-         +at) _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"; shift;;
-         +az) _more_qs="$_more_qs${_more_qs:+,}Placement.AvailabilityZone"                       ; shift;;
-         +ip) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                 ; shift;;
-         +IP) _more_qs="$_more_qs${_more_qs:+,}IamInstanceProfile.Arn"                           ; shift;;
-         +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"                                     ; shift;;
-          +k) _more_qs="$_more_qs${_more_qs:+,}KeyName"                                          ; shift;;
-         +lt) _more_qs="$_more_qs${_more_qs:+,}LaunchTime"                                       ; shift;;
-         +np) _more_qs="$_more_qs${_more_qs:+,}NetworkInterfaces[].PrivateIpAddresses[].PrivateIpAddress|join(', ',@)" ; shift;;
-          +p) _more_qs="$_more_qs${_more_qs:+,}Platform"                                         ; shift;;
-         +pi) _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"                                  ; shift;;
-         +pt) _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"                                ; shift;;
-         +pw) _show_pws="true"; [ $# -lt 2 ]&&{ echo "missing PEM_FILE";return; }||_pem_file=$2  ; shift 2;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}State.Name"                                       ; shift;;
-         +si) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupId|join(', ',@)"            ; shift;;
-         +sn) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupName|join(', ',@)"          ; shift;;
-          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                       ; shift 2;;
-          +v) _more_qs="$_more_qs${_more_qs:+,}VpcId"                                            ; shift;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table"
-   [ -n "$AWS_DEBUG" ] && echo "debug: aws ec2 get-password-data --instance-id $_instance_id --priv-launch-key $_pem_file | jq -r .PasswordData"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      if [[ "$_show_pws" == "true" ]]; then
-         [ ! -f "$_pem_file" ] && { echo "private key file not found: '$_pem_file'"; return; }
-         local _tmp_file
-         _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
-         for _region in $_ALL_REGIONS; do
-            eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> "$_tmp_file"
-         done
-         local _instance_id
-         local _awsdi_line
-         local _pw
-         # shellcheck disable=SC2013
-         for _instance_id in $(awk '{print $3}' "$_tmp_file"); do
-            _awsdi_line=$(\grep "$_instance_id" "$_tmp_file")
-            _pw=$(aws ec2 get-password-data --instance-id "$_instance_id" --priv-launch-key "$_pem_file" | jq -r .PasswordData)
-            if [[ -n "$_pw" ]]; then
-               echo "$_awsdi_line | $_pw"
-            else
-               echo "$_awsdi_line | none"
-            fi
-         done
-         rm -f "$_tmp_file"
-      else
-         for _region in $_ALL_REGIONS; do
-            eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         done
-      fi
-   else
-      if [[ "$_show_pws" == "true" ]]; then
-         local _awsdi_line
-         local _instance_id
-         local _pw
-         local _tmp_file
-         [ ! -f "$_pem_file" ] && { echo "private key file not found: '$_pem_file'"; return; }
-         _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
-         eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> "$_tmp_file"
-         # shellcheck disable=SC2013
-         for _instance_id in $(awk '{print $3}' "$_tmp_file"); do
-            _awsdi_line=$(\grep "$_instance_id" "$_tmp_file")
-            _pw=$(aws ec2 get-password-data --instance-id "$_instance_id" --priv-launch-key "$_pem_file" | jq -r .PasswordData)
-            if [[ -n "$_pw" ]]; then
-               echo "$_awsdi_line | $_pw"
-            else
-               echo "$_awsdi_line | none"
-            fi
-         done
-         rm -f "$_tmp_file"
-      else
-         eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-      fi
-   fi
+  local _default_queries="Tags[?Key=='Name'].Value|[0],InstanceId,PrivateIpAddress,PublicIpAddress,State.Name"
+  local _filters=""
+  local _max_items=""
+  local _show_pws="false" # show passwords
+  local _pem_file=""      # PEM file used to decrypt the passwords
+  local _more_qs=""
+  local _queries="Tags[?Key=='Name'].Value|[0],InstanceId"
+  local _query="Reservations[].Instances[]"
+  local _region="$_DEFAULT_REGION"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -n)
+        _filters="Name=tag:Name,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -s)
+        _filters="Name=instance-state-name,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -t)
+        _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters"
+        shift 2
+        ;;
+      -m)
+        _max_items="--max-items $2"
+        shift 2
+        ;;
+      -p)
+        local _profile="--profile=$2"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      +a)
+        _more_qs="$_more_qs${_more_qs:+,}ImageId"
+        shift
+        ;;
+      +an)
+        _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='aws:autoscaling:groupName'].Value|[0]"
+        shift
+        ;;
+      +at)
+        _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"
+        shift
+        ;;
+      +az)
+        _more_qs="$_more_qs${_more_qs:+,}Placement.AvailabilityZone"
+        shift
+        ;;
+      +ip)
+        _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"
+        shift
+        ;;
+      +IP)
+        _more_qs="$_more_qs${_more_qs:+,}IamInstanceProfile.Arn"
+        shift
+        ;;
+      +it)
+        _more_qs="$_more_qs${_more_qs:+,}InstanceType"
+        shift
+        ;;
+      +k)
+        _more_qs="$_more_qs${_more_qs:+,}KeyName"
+        shift
+        ;;
+      +lt)
+        _more_qs="$_more_qs${_more_qs:+,}LaunchTime"
+        shift
+        ;;
+      +np)
+        _more_qs="$_more_qs${_more_qs:+,}NetworkInterfaces[].PrivateIpAddresses[].PrivateIpAddress|join(', ',@)"
+        shift
+        ;;
+      +p)
+        _more_qs="$_more_qs${_more_qs:+,}Platform"
+        shift
+        ;;
+      +pi)
+        _more_qs="$_more_qs${_more_qs:+,}PublicIpAddress"
+        shift
+        ;;
+      +pt)
+        _more_qs="$_more_qs${_more_qs:+,}Placement.Tenancy"
+        shift
+        ;;
+      +pw)
+        _show_pws="true"
+        [ $# -lt 2 ] && {
+          echo "missing PEM_FILE"
+          return
+        } || _pem_file=$2
+        shift 2
+        ;;
+      +s)
+        _more_qs="$_more_qs${_more_qs:+,}State.Name"
+        shift
+        ;;
+      +si)
+        _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupId|join(', ',@)"
+        shift
+        ;;
+      +sn)
+        _more_qs="$_more_qs${_more_qs:+,}SecurityGroups[].GroupName|join(', ',@)"
+        shift
+        ;;
+      +t)
+        _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"
+        shift 2
+        ;;
+      +v)
+        _more_qs="$_more_qs${_more_qs:+,}VpcId"
+        shift
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+  [ -n "$AWS_DEBUG" ] && echo "debug: aws ec2 get-password-data --instance-id $_instance_id --priv-launch-key $_pem_file | jq -r .PasswordData"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    if [[ "$_show_pws" == "true" ]]; then
+      [ ! -f "$_pem_file" ] && {
+        echo "private key file not found: '$_pem_file'"
+        return
+      }
+      local _tmp_file
+      _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
+      for _region in $_ALL_REGIONS; do
+        eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >>"$_tmp_file"
+      done
+      local _instance_id
+      local _awsdi_line
+      local _pw
+      # shellcheck disable=SC2013
+      for _instance_id in $(awk '{print $3}' "$_tmp_file"); do
+        _awsdi_line=$(\grep "$_instance_id" "$_tmp_file")
+        _pw=$(aws ec2 get-password-data --instance-id "$_instance_id" --priv-launch-key "$_pem_file" | jq -r .PasswordData)
+        if [[ -n "$_pw" ]]; then
+          echo "$_awsdi_line | $_pw"
+        else
+          echo "$_awsdi_line | none"
+        fi
+      done
+      rm -f "$_tmp_file"
+    else
+      for _region in $_ALL_REGIONS; do
+        eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+      done
+    fi
+  else
+    if [[ "$_show_pws" == "true" ]]; then
+      local _awsdi_line
+      local _instance_id
+      local _pw
+      local _tmp_file
+      [ ! -f "$_pem_file" ] && {
+        echo "private key file not found: '$_pem_file'"
+        return
+      }
+      _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
+      eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >>"$_tmp_file"
+      # shellcheck disable=SC2013
+      for _instance_id in $(awk '{print $3}' "$_tmp_file"); do
+        _awsdi_line=$(\grep "$_instance_id" "$_tmp_file")
+        _pw=$(aws ec2 get-password-data --instance-id "$_instance_id" --priv-launch-key "$_pem_file" | jq -r .PasswordData)
+        if [[ -n "$_pw" ]]; then
+          echo "$_awsdi_line | $_pw"
+        else
+          echo "$_awsdi_line | none"
+        fi
+      done
+      rm -f "$_tmp_file"
+    else
+      eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    fi
+  fi
 }
 
 function awsdis {
-   # some 'aws ec2 describe-instance-status' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWS_EC2_DIS_CMD="aws ec2 describe-instance-status"
-   local _USAGE="usage: \
+  # some 'aws ec2 describe-instance-status' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWS_EC2_DIS_CMD="aws ec2 describe-instance-status"
+  local _USAGE="usage: \
 awsdis [OPTIONS]
   -c  CODE       - filter by Event Code ({instance,system}-{reboot,retirement,stop,maintenance})
   -s  STATE      - filter by Instance State (pending, running, shutting-down, terminated, stopped)
@@ -802,49 +1142,76 @@ awsdis [OPTIONS]
   -h             - help (show this message)
 default display:
   Instance ID | State | Event Code | Event Description"
-   local _region="$_DEFAULT_REGION"
-   local _filters=""
-   local _queries="InstanceId"
-   #local _default_queries="InstanceId,InstanceState.Name,Events[].Code|join(', ',@),Events[].Description|join(', ',@)"
-   local _default_queries="InstanceId,InstanceState.Name,Events[0].Code,Events[0].Description"
-   local _more_qs=""
-   local _query="InstanceStatuses[]"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -c) _filters="Name=event.code,Values=*$2* $_filters"      ; shift 2;;
-          -s) _filters="Name=instance-state-name,Values=*$2* $_filters"      ; shift 2;;
-          -r) _region=$2                                               ; shift 2;;
-         +az) _more_qs="$_more_qs${_more_qs:+,}AVailabilityZone"      ; shift;;
-          #+c) _more_qs="$_more_qs${_more_qs:+,}Events[].Code|join(', ',@)"      ; shift;;
-          +c) _more_qs="$_more_qs${_more_qs:+,}Events[0].Code"      ; shift;;
-          #+d) _more_qs="$_more_qs${_more_qs:+,}Events[].Description|join(', ',@)"      ; shift;;
-          +d) _more_qs="$_more_qs${_more_qs:+,}Events[0].Description"      ; shift;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}InstanceState.Name"      ; shift;;
-          #+t) _more_qs="$_more_qs${_more_qs:+,}Events[].NotBefore|join(', ',@),Events[].NotAfter|join(', ',@)"      ; shift;;
-          +t) _more_qs="$_more_qs${_more_qs:+,}Events[0].NotBefore,Events[0].NotAfter"      ; shift;;
-         #+fp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].FromPort|join(', ',to_array(to_string(@)))"; shift;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DIS_CMD --region=$_region $_filters --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         eval "$_AWS_EC2_DIS_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstanceStatus' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-      done
-   else
+  local _region="$_DEFAULT_REGION"
+  local _filters=""
+  local _queries="InstanceId"
+  #local _default_queries="InstanceId,InstanceState.Name,Events[].Code|join(', ',@),Events[].Description|join(', ',@)"
+  local _default_queries="InstanceId,InstanceState.Name,Events[0].Code,Events[0].Description"
+  local _more_qs=""
+  local _query="InstanceStatuses[]"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -c)
+        _filters="Name=event.code,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -s)
+        _filters="Name=instance-state-name,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      +az)
+        _more_qs="$_more_qs${_more_qs:+,}AVailabilityZone"
+        shift
+        ;;
+      # +c) _more_qs="$_more_qs${_more_qs:+,}Events[].Code|join(', ',@)"      ; shift;;
+      +c)
+        _more_qs="$_more_qs${_more_qs:+,}Events[0].Code"
+        shift
+        ;;
+      # +d) _more_qs="$_more_qs${_more_qs:+,}Events[].Description|join(', ',@)"      ; shift;;
+      +d)
+        _more_qs="$_more_qs${_more_qs:+,}Events[0].Description"
+        shift
+        ;;
+      +s)
+        _more_qs="$_more_qs${_more_qs:+,}InstanceState.Name"
+        shift
+        ;;
+      # +t) _more_qs="$_more_qs${_more_qs:+,}Events[].NotBefore|join(', ',@),Events[].NotAfter|join(', ',@)"      ; shift;;
+      +t)
+        _more_qs="$_more_qs${_more_qs:+,}Events[0].NotBefore,Events[0].NotAfter"
+        shift
+        ;;
+      # +fp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].FromPort|join(', ',to_array(to_string(@)))"; shift;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DIS_CMD --region=$_region $_filters --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
       eval "$_AWS_EC2_DIS_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstanceStatus' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-   fi
+    done
+  else
+    eval "$_AWS_EC2_DIS_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstanceStatus' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+  fi
 }
 
 function awsdlb {
-   # some 'aws elb describe-load-balancer' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWSELBDLB_CMD="aws elb describe-load-balancers"
-   local _USAGE="usage: \
+  # some 'aws elb describe-load-balancer' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWSELBDLB_CMD="aws elb describe-load-balancers"
+  local _USAGE="usage: \
 awsdlb [OPTIONS]
   -n NAME      - filter results by this Launch Config Name
   -m MAX       - the maximum number of items to display
@@ -860,55 +1227,91 @@ awsdlb [OPTIONS]
   -h           - help (show this message)
 default display:
   Load Balancer name"
-   local _max_items=""
-   local _region="$_DEFAULT_REGION"
-   local _reg_exp=""
-   local _queries="LoadBalancerName"
-   local _default_queries="LoadBalancerName"
-   local _more_qs=""
-   local _query="LoadBalancerDescriptions[]"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -n) _reg_exp="$2"              ; shift 2;;
-          -m) _max_items="--max-items $2"; shift 2;;
-          -r) _region=$2                 ; shift 2;;
-         +az) _more_qs="$_more_qs${_more_qs:+,}AvailabilityZones[]|join(', '@)"   ; shift;;
-          +d) _more_qs="$_more_qs${_more_qs:+,}DNSName"                           ; shift;;
-         +hc) _more_qs="$_more_qs${_more_qs:+,}HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold"; shift;;
-          +i) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', '@)"; shift;;
-         +li) _more_qs="$_more_qs${_more_qs:+,}ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol"; shift;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}Scheme"                            ; shift;;
-         +sg) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"       ; shift;;
-         +sn) _more_qs="$_more_qs${_more_qs:+,}Subnets[]|join(', '@)"             ; shift;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         if [[ -z "$_reg_exp" ]]; then
-            eval "$_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         else
-            eval "$_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         fi
-      done
-   else
+  local _max_items=""
+  local _region="$_DEFAULT_REGION"
+  local _reg_exp=""
+  local _queries="LoadBalancerName"
+  local _default_queries="LoadBalancerName"
+  local _more_qs=""
+  local _query="LoadBalancerDescriptions[]"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -n)
+        _reg_exp="$2"
+        shift 2
+        ;;
+      -m)
+        _max_items="--max-items $2"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      +az)
+        _more_qs="$_more_qs${_more_qs:+,}AvailabilityZones[]|join(', '@)"
+        shift
+        ;;
+      +d)
+        _more_qs="$_more_qs${_more_qs:+,}DNSName"
+        shift
+        ;;
+      +hc)
+        _more_qs="$_more_qs${_more_qs:+,}HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold"
+        shift
+        ;;
+      +i)
+        _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', '@)"
+        shift
+        ;;
+      +li)
+        _more_qs="$_more_qs${_more_qs:+,}ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol"
+        shift
+        ;;
+      +s)
+        _more_qs="$_more_qs${_more_qs:+,}Scheme"
+        shift
+        ;;
+      +sg)
+        _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"
+        shift
+        ;;
+      +sn)
+        _more_qs="$_more_qs${_more_qs:+,}Subnets[]|join(', '@)"
+        shift
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
       if [[ -z "$_reg_exp" ]]; then
-         eval "$_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+        eval "$_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       else
-         eval "$_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+        eval "$_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
-   fi
+    done
+  else
+    if [[ -z "$_reg_exp" ]]; then
+      eval "$_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    else
+      eval "$_AWSELBDLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    fi
+  fi
 }
 
 function awsdlb2 {
-   # some 'aws elbv2 describe-load-balancer' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWSELBV2DLB_CMD="aws elbv2 describe-load-balancers"
-   local _USAGE="usage: \
+  # some 'aws elbv2 describe-load-balancer' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWSELBV2DLB_CMD="aws elbv2 describe-load-balancers"
+  local _USAGE="usage: \
 awsdlb [OPTIONS]
   -n NAME      - filter results by this Launch Config Name
   -m MAX       - the maximum number of items to display
@@ -925,56 +1328,95 @@ awsdlb [OPTIONS]
   -h           - help (show this message)
 default display:
   Load Balancer name"
-   local _max_items=""
-   local _region="$_DEFAULT_REGION"
-   local _reg_exp=""
-   local _queries="LoadBalancerName"
-   local _default_queries="LoadBalancerName"
-   local _more_qs=""
-   local _query="LoadBalancers[]"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -n) _reg_exp="$2"              ; shift 2;;
-          -m) _max_items="--max-items $2"; shift 2;;
-          -r) _region=$2                 ; shift 2;;
-         +az) _more_qs="$_more_qs${_more_qs:+,}AvailabilityZones[]|join(', '@)"   ; shift;;
-          +d) _more_qs="$_more_qs${_more_qs:+,}DNSName"                           ; shift;;
-         +hc) _more_qs="$_more_qs${_more_qs:+,}HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold"; shift;;
-          +i) _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', '@)"; shift;;
-         +li) _more_qs="$_more_qs${_more_qs:+,}ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol"; shift;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}Scheme"                            ; shift;;
-         +sg) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"       ; shift;;
-         +sn) _more_qs="$_more_qs${_more_qs:+,}Subnets[]|join(', '@)"             ; shift;;
-          +t) _more_qs="$_more_qs${_more_qs:+,}Type"                              ; shift;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         if [[ -z "$_reg_exp" ]]; then
-            eval "$_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         else
-            eval "$_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         fi
-      done
-   else
+  local _max_items=""
+  local _region="$_DEFAULT_REGION"
+  local _reg_exp=""
+  local _queries="LoadBalancerName"
+  local _default_queries="LoadBalancerName"
+  local _more_qs=""
+  local _query="LoadBalancers[]"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -n)
+        _reg_exp="$2"
+        shift 2
+        ;;
+      -m)
+        _max_items="--max-items $2"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      +az)
+        _more_qs="$_more_qs${_more_qs:+,}AvailabilityZones[]|join(', '@)"
+        shift
+        ;;
+      +d)
+        _more_qs="$_more_qs${_more_qs:+,}DNSName"
+        shift
+        ;;
+      +hc)
+        _more_qs="$_more_qs${_more_qs:+,}HealthCheck.HealthyThreshold,HealthCheck.Interval,HealthCheck.Target,HealthCheck.Timeout,HealthCheck.UnhealthyThreshold"
+        shift
+        ;;
+      +i)
+        _more_qs="$_more_qs${_more_qs:+,}Instances[].InstanceId|join(', '@)"
+        shift
+        ;;
+      +li)
+        _more_qs="$_more_qs${_more_qs:+,}ListenerDescriptions[0].Listener.LoadBalancerPort,ListenerDescriptions[0].Listener.Protocol,ListenerDescriptions[0].Listener.InstancePort,ListenerDescriptions[0].Listener.InstanceProtocol"
+        shift
+        ;;
+      +s)
+        _more_qs="$_more_qs${_more_qs:+,}Scheme"
+        shift
+        ;;
+      +sg)
+        _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"
+        shift
+        ;;
+      +sn)
+        _more_qs="$_more_qs${_more_qs:+,}Subnets[]|join(', '@)"
+        shift
+        ;;
+      +t)
+        _more_qs="$_more_qs${_more_qs:+,}Type"
+        shift
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
       if [[ -z "$_reg_exp" ]]; then
-         eval "$_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+        eval "$_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       else
-         eval "$_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+        eval "$_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
-   fi
+    done
+  else
+    if [[ -z "$_reg_exp" ]]; then
+      eval "$_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLoadBalancers' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    else
+      eval "$_AWSELBV2DLB_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    fi
+  fi
 }
 
 function awsdlc {
-   # some 'aws autoscaling describe-launch-configurations' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWSASDLC_CMD="aws autoscaling describe-launch-configurations"
-   local _USAGE="usage: \
+  # some 'aws autoscaling describe-launch-configurations' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWSASDLC_CMD="aws autoscaling describe-launch-configurations"
+  local _USAGE="usage: \
 awsdlc [OPTIONS]
   -n NAME      - filter results by this Launch Config Name
   -m MAX       - the maximum number of items to display
@@ -988,53 +1430,83 @@ awsdlc [OPTIONS]
   -h           - help (show this message)
 default display:
   Launch Config name | AMI ID | Instance Type | Region"
-   local _max_items=""
-   local _region="$_DEFAULT_REGION"
-   local _reg_exp=""
-   local _queries="LaunchConfigurationName"
-   local _default_queries="LaunchConfigurationName,ImageId,InstanceType"
-   local _more_qs=""
-   local _query="LaunchConfigurations[]"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -n) _reg_exp="$2"              ; shift 2;;
-          -m) _max_items="--max-items $2"; shift 2;;
-          -r) _region=$2                 ; shift 2;;
-          +i) _more_qs="$_more_qs${_more_qs:+,}ImageId"                    ; shift;;
-         +ip) _more_qs="$_more_qs${_more_qs:+,}IamInstanceProfile"         ; shift;;
-         +it) _more_qs="$_more_qs${_more_qs:+,}InstanceType"               ; shift;;
-         +kn) _more_qs="$_more_qs${_more_qs:+,}KeyName"                    ; shift;;
-         +pt) _more_qs="$_more_qs${_more_qs:+,}PlacementTenancy"           ; shift;;
-         +sg) _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"; shift;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         if [[ -z "$_reg_exp" ]]; then
-            eval "$_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         else
-            eval "$_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-         fi
-      done
-   else
+  local _max_items=""
+  local _region="$_DEFAULT_REGION"
+  local _reg_exp=""
+  local _queries="LaunchConfigurationName"
+  local _default_queries="LaunchConfigurationName,ImageId,InstanceType"
+  local _more_qs=""
+  local _query="LaunchConfigurations[]"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -n)
+        _reg_exp="$2"
+        shift 2
+        ;;
+      -m)
+        _max_items="--max-items $2"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      +i)
+        _more_qs="$_more_qs${_more_qs:+,}ImageId"
+        shift
+        ;;
+      +ip)
+        _more_qs="$_more_qs${_more_qs:+,}IamInstanceProfile"
+        shift
+        ;;
+      +it)
+        _more_qs="$_more_qs${_more_qs:+,}InstanceType"
+        shift
+        ;;
+      +kn)
+        _more_qs="$_more_qs${_more_qs:+,}KeyName"
+        shift
+        ;;
+      +pt)
+        _more_qs="$_more_qs${_more_qs:+,}PlacementTenancy"
+        shift
+        ;;
+      +sg)
+        _more_qs="$_more_qs${_more_qs:+,}SecurityGroups|join(', ',@)"
+        shift
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
       if [[ -z "$_reg_exp" ]]; then
-         eval "$_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+        eval "$_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       else
-         eval "$_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+        eval "$_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
       fi
-   fi
+    done
+  else
+    if [[ -z "$_reg_exp" ]]; then
+      eval "$_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeLaunchConfigurations' | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    else
+      eval "$_AWSASDLC_CMD --region=$_region $_max_items --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    fi
+  fi
 }
 
 function awsdni {
-   # some 'aws ec2 describe-network-interfaces' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWSEC2DNI_CMD="aws ec2 describe-network-interfaces"
-   local _USAGE="usage: \
+  # some 'aws ec2 describe-network-interfaces' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWSEC2DNI_CMD="aws ec2 describe-network-interfaces"
+  local _USAGE="usage: \
 awsdni [OPTIONS]
   -a  AZ       - filter by Availability Zone (RegEx)
   -d  DESC     - filter by Description
@@ -1056,55 +1528,112 @@ awsdni [OPTIONS]
   -h           - help (show this message)
 default display:
   ID | Description | Private IP | Status"
-   local _max_items=""
-   local _region="$_DEFAULT_REGION"
-   local _filters=""
-   local _queries="NetworkInterfaceId"
-   local _default_queries="NetworkInterfaceId,Description,PrivateIpAddress,Status"
-   local _more_qs=""
-   local _query="NetworkInterfaces[]"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -a) _filters="Name=availability-zone,Values=*$2* $_filters"           ; shift 2;;
-          -d) _filters="Name=description,Values=*$2* $_filters"                 ; shift 2;;
-          -i) _filters="Name=addresses.private-ip-address,Values=*$2* $_filters"; shift 2;;
-         -id) _filters="Name=network-interface-id,Values=*$2* $_filters"        ; shift 2;;
-          -p) _filters="Name=association.public-ip,Values=*$2* $_filters"       ; shift 2;;
-          -r) _region=$2                                                        ; shift 2;;
-          -s) _filters="Name=status,Values=*$2* $_filters"                      ; shift 2;;
-         +ai) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddresses[].PrivateIpAddress|join(', ',@)"; shift;;
-         +az) _more_qs="$_more_qs${_more_qs:+,}AvailabilityZone"                                  ; shift;;
-          +d) _more_qs="$_more_qs${_more_qs:+,}Description"                                       ; shift;;
-          +m) _more_qs="$_more_qs${_more_qs:+,}MacAddress"                                        ; shift;;
-          +p) _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"                                  ; shift;;
-         +pi) _more_qs="$_more_qs${_more_qs:+,}Association.PublicIp"                              ; shift;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}Status"                                            ; shift;;
-         +sd) _more_qs="$_more_qs${_more_qs:+,}SubnetId"                                          ; shift;;
-         +si) _more_qs="$_more_qs${_more_qs:+,}Groups[].GroupId|join(', ',@)"                     ; shift;;
-         +sn) _more_qs="$_more_qs${_more_qs:+,}Groups[].GroupName|join(', ',@)"                   ; shift;;
-          +v) _more_qs="$_more_qs${_more_qs:+,}VpcId"                                             ; shift;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         eval "$_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$/|'"$_region"'/' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-      done
-   else
-      eval "$_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$//g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-   fi
+  local _max_items=""
+  local _region="$_DEFAULT_REGION"
+  local _filters=""
+  local _queries="NetworkInterfaceId"
+  local _default_queries="NetworkInterfaceId,Description,PrivateIpAddress,Status"
+  local _more_qs=""
+  local _query="NetworkInterfaces[]"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -a)
+        _filters="Name=availability-zone,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -d)
+        _filters="Name=description,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -i)
+        _filters="Name=addresses.private-ip-address,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -id)
+        _filters="Name=network-interface-id,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -p)
+        _filters="Name=association.public-ip,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      -s)
+        _filters="Name=status,Values=*$2* $_filters"
+        shift 2
+        ;;
+      +ai)
+        _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddresses[].PrivateIpAddress|join(', ',@)"
+        shift
+        ;;
+      +az)
+        _more_qs="$_more_qs${_more_qs:+,}AvailabilityZone"
+        shift
+        ;;
+      +d)
+        _more_qs="$_more_qs${_more_qs:+,}Description"
+        shift
+        ;;
+      +m)
+        _more_qs="$_more_qs${_more_qs:+,}MacAddress"
+        shift
+        ;;
+      +p)
+        _more_qs="$_more_qs${_more_qs:+,}PrivateIpAddress"
+        shift
+        ;;
+      +pi)
+        _more_qs="$_more_qs${_more_qs:+,}Association.PublicIp"
+        shift
+        ;;
+      +s)
+        _more_qs="$_more_qs${_more_qs:+,}Status"
+        shift
+        ;;
+      +sd)
+        _more_qs="$_more_qs${_more_qs:+,}SubnetId"
+        shift
+        ;;
+      +si)
+        _more_qs="$_more_qs${_more_qs:+,}Groups[].GroupId|join(', ',@)"
+        shift
+        ;;
+      +sn)
+        _more_qs="$_more_qs${_more_qs:+,}Groups[].GroupName|join(', ',@)"
+        shift
+        ;;
+      +v)
+        _more_qs="$_more_qs${_more_qs:+,}VpcId"
+        shift
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
+      eval "$_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$/|'"$_region"'/' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    done
+  else
+    eval "$_AWSEC2DNI_CMD --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeNetworkInterfaces' | sort | sed 's/^| *//;s/ *| */|/g;s/ *|$//g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+  fi
 }
 
 function awsdsg {
-   # some 'aws ec2 describe-security-groups' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWS_EC2_DSG_CMD="aws ec2 describe-security-groups"
-   local _USAGE="usage: \
+  # some 'aws ec2 describe-security-groups' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWS_EC2_DSG_CMD="aws ec2 describe-security-groups"
+  local _USAGE="usage: \
 awsdsg [OPTIONS]
   -p  PROJECT    - filter results by this Project
   -e  ENVIRONMNT - filter results by this Environment (e.g. production, staging)
@@ -1126,54 +1655,108 @@ awsdsg [OPTIONS]
   -h             - help (show this message)
 default display:
   SG ID | SG Name | VPC ID | Description"
-   local _region="$_DEFAULT_REGION"
-   local _filters=""
-   local _queries="GroupId"
-   local _default_queries="GroupId,GroupName,VpcId,Description"
-   local _more_qs=""
-   local _query="SecurityGroups[]"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -p) _filters="Name=tag:Project,Values=*$2* $_filters"             ; shift 2;;
-          -e) _filters="Name=tag:Env,Values=*$2* $_filters"                 ; shift 2;;
-          -i) _filters="Name=group-id,Values=*$2* $_filters"                ; shift 2;;
-          -c) _filters="Name=ip-permission.cidr,Values=*$2* $_filters"      ; shift 2;;
-         -gi) _filters="Name=ip-permission.group-id,Values=*$2* $_filters"  ; shift 2;;
-         -gn) _filters="Name=ip-permission.group-name,Values=*$2* $_filters"; shift 2;;
-         -fp) _filters="Name=ip-permission.from-port,Values=*$2* $_filters" ; shift 2;;
-         -tp) _filters="Name=ip-permission.to-port,Values=*$2* $_filters"   ; shift 2;;
-         -pp) _filters="Name=ip-permission.protocol,Values=*$2* $_filters"  ; shift 2;;
-          -n) _filters="Name=group-name,Values=*$2* $_filters"              ; shift 2;;
-          -v) _filters="Name=vpc-id,Values=*$2* $_filters"                  ; shift 2;;
-          -r) _region=$2                                                    ; shift 2;;
-          +e) _more_qs="$_more_qs${_more_qs:+,}IpPermissionsEgress[].IpRanges[].CidrIp|join(', ',@)"      ; shift;;
-          +i) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpRanges[].CidrIp|join(', ',@)"            ; shift;;
-         +fp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].FromPort|join(', ',to_array(to_string(@)))"; shift;;
-         +tp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].ToPort|join(', ',to_array(to_string(@)))"  ; shift;;
-         +pp) _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpProtocol|join(',',@)"                    ; shift;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   if [[ "$_region" == "all" ]]; then
-     local _ALL_REGIONS
-     _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-     for _region in $_ALL_REGIONS; do
-       [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table"
-       eval "$_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-     done
-   else
-     [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table"
-     eval "$_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-   fi
+  local _region="$_DEFAULT_REGION"
+  local _filters=""
+  local _queries="GroupId"
+  local _default_queries="GroupId,GroupName,VpcId,Description"
+  local _more_qs=""
+  local _query="SecurityGroups[]"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -p)
+        _filters="Name=tag:Project,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -e)
+        _filters="Name=tag:Env,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -i)
+        _filters="Name=group-id,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -c)
+        _filters="Name=ip-permission.cidr,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -gi)
+        _filters="Name=ip-permission.group-id,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -gn)
+        _filters="Name=ip-permission.group-name,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -fp)
+        _filters="Name=ip-permission.from-port,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -tp)
+        _filters="Name=ip-permission.to-port,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -pp)
+        _filters="Name=ip-permission.protocol,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -n)
+        _filters="Name=group-name,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -v)
+        _filters="Name=vpc-id,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      +e)
+        _more_qs="$_more_qs${_more_qs:+,}IpPermissionsEgress[].IpRanges[].CidrIp|join(', ',@)"
+        shift
+        ;;
+      +i)
+        _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpRanges[].CidrIp|join(', ',@)"
+        shift
+        ;;
+      +fp)
+        _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].FromPort|join(', ',to_array(to_string(@)))"
+        shift
+        ;;
+      +tp)
+        _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].ToPort|join(', ',to_array(to_string(@)))"
+        shift
+        ;;
+      +pp)
+        _more_qs="$_more_qs${_more_qs:+,}IpPermissions[].IpProtocol|join(',',@)"
+        shift
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
+      [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table"
+      eval "$_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    done
+  else
+    [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table"
+    eval "$_AWS_EC2_DSG_CMD --region=$_region $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeSecurityGroups' | sort | sed 's/^| //;s/ \+|$//;s/ |$/|'"$_region"'/;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+  fi
 }
 
 function awsdvol {
-   # some 'aws ec2 describe-volumes' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWS_EC2_DV_CMD="aws ec2 describe-volumes"
-   local _USAGE="usage: \
+  # some 'aws ec2 describe-volumes' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWS_EC2_DV_CMD="aws ec2 describe-volumes"
+  local _USAGE="usage: \
 awsdvol [OPTIONS]
   -n  NAME     - filter results by this Volume Name
   -s  STATE    - filter by State (e.g. creating, avail, in-use, del, error etc.)
@@ -1197,57 +1780,117 @@ awsdvol [OPTIONS]
   -h           - help (show this message)
 default display:
   Vol name | Volume ID | Instance ID | Device | Size"
-   local _default_queries="Tags[?Key=='Name'].Value|[0],VolumeId,Attachments[].InstanceId|[0],Attachments[].Device|[0],Size"
-   local _filters=""
-   local _max_items=""
-   local _pem_file=""        # PEM file used to decrypt the passwords
-   local _more_qs=""
-   local _queries="Tags[?Key=='Name'].Value|[0],VolumeId"
-   local _query="Volumes[]"
-   local _region="$_DEFAULT_REGION"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -m) _max_items="--max-items $2"                                             ; shift 2;;
-          -n) _filters="Name=tag:Name,Values=*$2* $_filters"                          ; shift 2;;
-          -p) local _profile="--profile=$2"                                           ; shift 2;;
-          -r) _region=$2                                                              ; shift 2;;
-          -s) _filters="Name=status,Values=*$2* $_filters"               ; shift 2;;
-          -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters"            ; shift 2;;
-          +a) _more_qs="$_more_qs${_more_qs:+,}Attachments[].InstanceId|[0],Attachments[].Device|[0],Attachments[].DeleteOnTermination|[0]"                                                       ; shift;;
-         +ad) _more_qs="$_more_qs${_more_qs:+,}Attachments[].Device|[0]"              ; shift;;
-         +ai) _more_qs="$_more_qs${_more_qs:+,}Attachments[].InstanceId|[0]"          ; shift;;
-         +at) _more_qs="$_more_qs${_more_qs:+,}Attachments[].DeleteOnTermination|[0]" ; shift;;
-         +ct) _more_qs="$_more_qs${_more_qs:+,}CreateTime"                            ; shift;;
-          +e) _more_qs="$_more_qs${_more_qs:+,}Encrypted"                             ; shift;;
-          +i) _more_qs="$_more_qs${_more_qs:+,}Iops"                                  ; shift;;
-          +k) _more_qs="$_more_qs${_more_qs:+,}KmsKeyId"                              ; shift;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}State"                                 ; shift;;
-         +ss) _more_qs="$_more_qs${_more_qs:+,}SnapshotId"                            ; shift;;
-         +vs) _more_qs="$_more_qs${_more_qs:+,}Size"                                  ; shift;;
-         +vt) _more_qs="$_more_qs${_more_qs:+,}VolumeType"                            ; shift;;
-          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"                       ; shift 2;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         eval "$_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeVolumes' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
-      done
-   else
-      eval "$_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeVolumes' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
-   fi
+  local _default_queries="Tags[?Key=='Name'].Value|[0],VolumeId,Attachments[].InstanceId|[0],Attachments[].Device|[0],Size"
+  local _filters=""
+  local _max_items=""
+  local _pem_file="" # PEM file used to decrypt the passwords
+  local _more_qs=""
+  local _queries="Tags[?Key=='Name'].Value|[0],VolumeId"
+  local _query="Volumes[]"
+  local _region="$_DEFAULT_REGION"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -m)
+        _max_items="--max-items $2"
+        shift 2
+        ;;
+      -n)
+        _filters="Name=tag:Name,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -p)
+        local _profile="--profile=$2"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      -s)
+        _filters="Name=status,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -t)
+        _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters"
+        shift 2
+        ;;
+      +a)
+        _more_qs="$_more_qs${_more_qs:+,}Attachments[].InstanceId|[0],Attachments[].Device|[0],Attachments[].DeleteOnTermination|[0]"
+        shift
+        ;;
+      +ad)
+        _more_qs="$_more_qs${_more_qs:+,}Attachments[].Device|[0]"
+        shift
+        ;;
+      +ai)
+        _more_qs="$_more_qs${_more_qs:+,}Attachments[].InstanceId|[0]"
+        shift
+        ;;
+      +at)
+        _more_qs="$_more_qs${_more_qs:+,}Attachments[].DeleteOnTermination|[0]"
+        shift
+        ;;
+      +ct)
+        _more_qs="$_more_qs${_more_qs:+,}CreateTime"
+        shift
+        ;;
+      +e)
+        _more_qs="$_more_qs${_more_qs:+,}Encrypted"
+        shift
+        ;;
+      +i)
+        _more_qs="$_more_qs${_more_qs:+,}Iops"
+        shift
+        ;;
+      +k)
+        _more_qs="$_more_qs${_more_qs:+,}KmsKeyId"
+        shift
+        ;;
+      +s)
+        _more_qs="$_more_qs${_more_qs:+,}State"
+        shift
+        ;;
+      +ss)
+        _more_qs="$_more_qs${_more_qs:+,}SnapshotId"
+        shift
+        ;;
+      +vs)
+        _more_qs="$_more_qs${_more_qs:+,}Size"
+        shift
+        ;;
+      +vt)
+        _more_qs="$_more_qs${_more_qs:+,}VolumeType"
+        shift
+        ;;
+      +t)
+        _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"
+        shift 2
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
+      eval "$_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeVolumes' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
+    done
+  else
+    eval "$_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeVolumes' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
+  fi
 }
 
 function awsdvpc {
-   # some 'aws ec2 describe-vpcs' hacks
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _AWS_EC2_DV_CMD="aws ec2 describe-vpcs"
-   local _USAGE="usage: \
+  # some 'aws ec2 describe-vpcs' hacks
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _AWS_EC2_DV_CMD="aws ec2 describe-vpcs"
+  local _USAGE="usage: \
 awsdvpc [OPTIONS]
   -n  NAME     - filter results by this VPC Name
   -c  CIDR     - filter results by this CIDR block
@@ -1268,56 +1911,107 @@ awsdvpc [OPTIONS]
   -h           - help (show this message)
 default display:
   Vol name | Volume ID | Instance ID | Device | Size"
-   local _default_queries="Tags[?Key=='Name'].Value|[0],VpcId,CidrBlock"
-   local _filters=""
-   local _max_items=""
-   local _pem_file=""        # PEM file used to decrypt the passwords
-   local _more_qs=""
-   local _queries="Tags[?Key=='Name'].Value|[0],VpcId,CidrBlock"
-   local _query="Vpcs[]"
-   local _region="$_DEFAULT_REGION"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -c) _filters="Name=cidr,Values=*$2* $_filters"                              ; shift 2;;
-          -d) _filters="Name=isDefault,Values=*$2* $_filters"                              ; shift 2;;
-          # -d) _filters="Name=isDefault $_filters"                                     ; shift;;
-          -i) _filters="Name=vpc-id,Values=*$2* $_filters"                            ; shift 2;;
-          -k) _filters="Name=tag-key,Values=*$2* $_filters"                           ; shift 2;;
-          -m) _max_items="--max-items $2"                                             ; shift 2;;
-          -n) _filters="Name=tag:Name,Values=*$2* $_filters"                          ; shift 2;;
-          -p) local _profile="--profile=$2"                                           ; shift 2;;
-          -r) _region=$2                                                              ; shift 2;;
-          -s) _filters="Name=state,Values=*$2* $_filters"                             ; shift 2;;
-          -t) _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters"            ; shift 2;;
-          +c) _more_qs="$_more_qs${_more_qs:+,}CidrBlock"                             ; shift;;
-          +i) _more_qs="$_more_qs${_more_qs:+,}VpdId"                                 ; shift;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}State"                                 ; shift;;
-         +id) _more_qs="$_more_qs${_more_qs:+,}IsDefault"                             ; shift;;
-         +it) _more_qs="$_more_qs${_more_qs:+,}InstanceTenancy"                       ; shift;;
-          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"            ; shift 2;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_filters" ] && _filters="--filters ${_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         eval "$_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeVpcs' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
-      done
-   else
-      eval "$_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeVpcs' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
-   fi
+  local _default_queries="Tags[?Key=='Name'].Value|[0],VpcId,CidrBlock"
+  local _filters=""
+  local _max_items=""
+  local _pem_file="" # PEM file used to decrypt the passwords
+  local _more_qs=""
+  local _queries="Tags[?Key=='Name'].Value|[0],VpcId,CidrBlock"
+  local _query="Vpcs[]"
+  local _region="$_DEFAULT_REGION"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -c)
+        _filters="Name=cidr,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -d)
+        _filters="Name=isDefault,Values=*$2* $_filters"
+        shift 2
+        ;;
+      # -d) _filters="Name=isDefault $_filters"                                     ; shift;;
+      -i)
+        _filters="Name=vpc-id,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -k)
+        _filters="Name=tag-key,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -m)
+        _max_items="--max-items $2"
+        shift 2
+        ;;
+      -n)
+        _filters="Name=tag:Name,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -p)
+        local _profile="--profile=$2"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      -s)
+        _filters="Name=state,Values=*$2* $_filters"
+        shift 2
+        ;;
+      -t)
+        _filters="\"Name=tag:${2%%=*},Values=*${2##*=}*\" $_filters"
+        shift 2
+        ;;
+      +c)
+        _more_qs="$_more_qs${_more_qs:+,}CidrBlock"
+        shift
+        ;;
+      +i)
+        _more_qs="$_more_qs${_more_qs:+,}VpdId"
+        shift
+        ;;
+      +s)
+        _more_qs="$_more_qs${_more_qs:+,}State"
+        shift
+        ;;
+      +id)
+        _more_qs="$_more_qs${_more_qs:+,}IsDefault"
+        shift
+        ;;
+      +it)
+        _more_qs="$_more_qs${_more_qs:+,}InstanceTenancy"
+        shift
+        ;;
+      +t)
+        _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"
+        shift 2
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_filters" ] && _filters="--filters ${_filters% }"
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
+      eval "$_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeVpcs' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
+    done
+  else
+    eval "$_AWS_EC2_DV_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeVpcs' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9/]\)/ | \2/g'
+  fi
 }
 
 function awsrgtgr {
-   # some 'aws resourcegroupstaggingapi get-resources' hacks
-   local _AWS_RGT_GR_CMD="aws resourcegroupstaggingapi get-resources"
-   local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
-   local _OUTPUT_HEADER="GetResources"
-   local _USAGE="usage: \
+  # some 'aws resourcegroupstaggingapi get-resources' hacks
+  local _AWS_RGT_GR_CMD="aws resourcegroupstaggingapi get-resources"
+  local _DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
+  local _OUTPUT_HEADER="GetResources"
+  local _USAGE="usage: \
 awsrgtgr [OPTIONS]
   -m  MAX      - maximum number of items to display
   -p  PROFILE  - AWS profile (--profile option) to use
@@ -1331,52 +2025,77 @@ awsrgtgr [OPTIONS]
   -h           - help (show this message)
 default display:
   Resource ARN"
-   local _default_queries="ResourceARN"
-   local _filters=""
-   local _resource_filters=""
-   local _tag_filters=""
-   local _tag_key=""
-   local _tag_val=""
-   local _max_items=""
-   local _more_qs=""
-   local _queries="ResourceARN"
-   local _query="ResourceTagMappingList[*]"
-   local _region="$_DEFAULT_REGION"
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -m) _max_items="--max-items $2"                                  ; shift 2;;
-          -p) local _profile="--profile=$2"                                ; shift 2;;
-         -rf) _resource_filters="$2 $_resource_filters"                    ; shift 2;;
-         #-tf) _tag_filters="Key=${2%%=*},Values=${2##*=} $_tag_filters"    ; shift 2;;
-         -tf) _tag_key=${2%%=*}; _tag_val=${2##*=}
-              [[ $2 =~ = ]] \
-                 && _tag_filters="Key=$_tag_key,Values=$_tag_val $_tag_filters" \
-                 || _tag_filters="Key=$_tag_key $_tag_filters"             ; shift 2;;
-          -r) _region=$2                                                   ; shift 2;;
-          +k) _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"     ; shift  ;;
-          +t) _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]" ; shift 2;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -n "$_resource_filters" ] && _resource_filters="--resource-type-filters ${_resource_filters% }"
-   [ -n "$_tag_filters" ] && _tag_filters="--tag-filters ${_tag_filters% }"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table"
-   if [[ "$_region" == "all" ]]; then
-      local _ALL_REGIONS
-      _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
-      for _region in $_ALL_REGIONS; do
-         eval "$_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|'"$_OUTPUT_HEADER"'' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-      done
-   else
-      eval "$_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|'"$_OUTPUT_HEADER"'' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-   fi
+  local _default_queries="ResourceARN"
+  local _filters=""
+  local _resource_filters=""
+  local _tag_filters=""
+  local _tag_key=""
+  local _tag_val=""
+  local _max_items=""
+  local _more_qs=""
+  local _queries="ResourceARN"
+  local _query="ResourceTagMappingList[*]"
+  local _region="$_DEFAULT_REGION"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -m)
+        _max_items="--max-items $2"
+        shift 2
+        ;;
+      -p)
+        local _profile="--profile=$2"
+        shift 2
+        ;;
+      -rf)
+        _resource_filters="$2 $_resource_filters"
+        shift 2
+        ;;
+      #-tf) _tag_filters="Key=${2%%=*},Values=${2##*=} $_tag_filters"    ; shift 2;;
+      -tf)
+        _tag_key=${2%%=*}
+        _tag_val=${2##*=}
+        [[ $2 =~ = ]] &&
+          _tag_filters="Key=$_tag_key,Values=$_tag_val $_tag_filters" ||
+          _tag_filters="Key=$_tag_key $_tag_filters"
+        shift 2
+        ;;
+      -r)
+        _region=$2
+        shift 2
+        ;;
+      +k)
+        _more_qs="$_more_qs${_more_qs:+,}Tags[].Key|join(',',@)"
+        shift
+        ;;
+      +t)
+        _more_qs="$_more_qs${_more_qs:+,}Tags[?Key=='$2'].Value|[0]"
+        shift 2
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -n "$_resource_filters" ] && _resource_filters="--resource-type-filters ${_resource_filters% }"
+  [ -n "$_tag_filters" ] && _tag_filters="--tag-filters ${_tag_filters% }"
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table"
+  if [[ "$_region" == "all" ]]; then
+    local _ALL_REGIONS
+    _ALL_REGIONS=$(aws ec2 describe-regions --region us-east-1 | jq -r .Regions[].RegionName)
+    for _region in $_ALL_REGIONS; do
+      eval "$_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|'"$_OUTPUT_HEADER"'' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+    done
+  else
+    eval "$_AWS_RGT_GR_CMD $_profile --region=$_region $_max_items $_resource_filters $_tag_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|'"$_OUTPUT_HEADER"'' | sort | sed 's/^|  //;s/ |$//' | sed -E 's/ +\| +/\|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+  fi
 }
 
 function awsrlrrs {
-   # some 'aws route53 list-resource-record-sets' hacks
-   local _AWSRLRRS_CMD="aws route53 list-resource-record-sets"
-   local _USAGE="usage: \
+  # some 'aws route53 list-resource-record-sets' hacks
+  local _AWSRLRRS_CMD="aws route53 list-resource-record-sets"
+  local _USAGE="usage: \
 awsrlrrs [OPTIONS]
   -d DNS_NAME - the DNS Name or Hosted Zone to query
   -i ZONE_ID  - the Hosted Zone ID to query
@@ -1391,170 +2110,207 @@ awsrlrrs [OPTIONS]
   -h          - help (show this message)
 default display:
   Record Name | Type | Record Value"
-   local _max_items=""
-   local _hosted_zone_id=""
-   local _rec_type="*"
-   local _queries="Name,Type"
-   local _default_queries="Name,Type,ResourceRecords[].Value|[0]"
-   local _reg_exp=""
-   local _more_qs=""
-   while [[ $# -gt 0 ]]; do
-      case $1 in
-          -d) _dns_name="$2"             ; shift 2;;
-          -i) _hosted_zone_id="$2"       ; shift 2;;
-          -m) _max_items="--max-items $2"; shift 2;;
-          -n) _reg_exp="$2"              ; shift 2;;
-          -t) _rec_type="?Type=='$2'"    ; shift 2;;
-          +a) _more_qs="$_more_qs${_more_qs:+,}AliasTarget.DNSName"       ; shift;;
-          +s) _more_qs="$_more_qs${_more_qs:+,}SetIdentifier"; shift;;
-          +t) _more_qs="$_more_qs${_more_qs:+,}TTL"          ; shift;;
-          +v) _more_qs="$_more_qs${_more_qs:+,}ResourceRecords[].Value|[0]"       ; shift;;
-          +w) _more_qs="$_more_qs${_more_qs:+,}Weight"       ; shift;;
-        -h|*) echo "$_USAGE"; return;;
-      esac
-   done
-   [ -z "$_dns_name" ] && { echo "error: did not specify DNS_NAME"; echo "$_USAGE"; return; }
-   local _query="ResourceRecordSets[$_rec_type]"
-   [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
-   # get the Hosted Zone Id
-   [ -n "$AWS_DEBUG" ] && echo "debug: aws route53 list-hosted-zones-by-name --dns-name $_dns_name --max-items 1"
-   if [[ -z "$_hosted_zone_id" ]]; then
-      # _hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name "$_dns_name" | jq -r .HostedZones[].Id)
-      _hosted_zone_id=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name=='${_dns_name}.'].Id" | jq -r .[])
-      # if [[ "$(wc -l <<< "$_hosted_zone_id" | awk '{print $1}')" -gt 1 ]]; then
-      if [[ "$(wc -l <<< "$_hosted_zone_id")" -gt 1 ]]; then
-         echo "there is more than one hosted zone with the domain name: '$_dns_name'"
-         aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + ") " + .Config.Comment' | sort | sed 's:\./hostedzone/: (:' | \grep "$_dns_name" | awk '{print "  - "$0}'
-         echo "please use the '-i' option and specify the desired Hosted Zone ID"
-         return
-      fi
-   fi
-   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSRLRRS_CMD --hosted-zone-id $_hosted_zone_id --query \"$_query\" --output table"
-   if [[ -z "$_reg_exp" ]]; then
-      eval "$_AWSRLRRS_CMD --hosted-zone-id $_hosted_zone_id --query \"$_query\" --output table" | \grep -Ev '^[-+]|ListResourceRecordSets' | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-   else
-      eval "$_AWSRLRRS_CMD --hosted-zone-id $_hosted_zone_id --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
-   fi
+  local _max_items=""
+  local _hosted_zone_id=""
+  local _rec_type="*"
+  local _queries="Name,Type"
+  local _default_queries="Name,Type,ResourceRecords[].Value|[0]"
+  local _reg_exp=""
+  local _more_qs=""
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -d)
+        _dns_name="$2"
+        shift 2
+        ;;
+      -i)
+        _hosted_zone_id="$2"
+        shift 2
+        ;;
+      -m)
+        _max_items="--max-items $2"
+        shift 2
+        ;;
+      -n)
+        _reg_exp="$2"
+        shift 2
+        ;;
+      -t)
+        _rec_type="?Type=='$2'"
+        shift 2
+        ;;
+      +a)
+        _more_qs="$_more_qs${_more_qs:+,}AliasTarget.DNSName"
+        shift
+        ;;
+      +s)
+        _more_qs="$_more_qs${_more_qs:+,}SetIdentifier"
+        shift
+        ;;
+      +t)
+        _more_qs="$_more_qs${_more_qs:+,}TTL"
+        shift
+        ;;
+      +v)
+        _more_qs="$_more_qs${_more_qs:+,}ResourceRecords[].Value|[0]"
+        shift
+        ;;
+      +w)
+        _more_qs="$_more_qs${_more_qs:+,}Weight"
+        shift
+        ;;
+      -h | *)
+        echo "$_USAGE"
+        return
+        ;;
+    esac
+  done
+  [ -z "$_dns_name" ] && {
+    echo "error: did not specify DNS_NAME"
+    echo "$_USAGE"
+    return
+  }
+  local _query="ResourceRecordSets[$_rec_type]"
+  [ -n "$_more_qs" ] && _query="$_query.[$_queries,${_more_qs%,}]" || _query="$_query.[$_default_queries]"
+  # get the Hosted Zone Id
+  [ -n "$AWS_DEBUG" ] && echo "debug: aws route53 list-hosted-zones-by-name --dns-name $_dns_name --max-items 1"
+  if [[ -z "$_hosted_zone_id" ]]; then
+    # _hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name "$_dns_name" | jq -r .HostedZones[].Id)
+    _hosted_zone_id=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name=='${_dns_name}.'].Id" | jq -r .[])
+    # if [[ "$(wc -l <<< "$_hosted_zone_id" | awk '{print $1}')" -gt 1 ]]; then
+    if [[ "$(wc -l <<<"$_hosted_zone_id")" -gt 1 ]]; then
+      echo "there is more than one hosted zone with the domain name: '$_dns_name'"
+      aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + ") " + .Config.Comment' | sort | sed 's:\./hostedzone/: (:' | \grep "$_dns_name" | awk '{print "  - "$0}'
+      echo "please use the '-i' option and specify the desired Hosted Zone ID"
+      return
+    fi
+  fi
+  [ -n "$AWS_DEBUG" ] && echo "debug: $_AWSRLRRS_CMD --hosted-zone-id $_hosted_zone_id --query \"$_query\" --output table"
+  if [[ -z "$_reg_exp" ]]; then
+    eval "$_AWSRLRRS_CMD --hosted-zone-id $_hosted_zone_id --query \"$_query\" --output table" | \grep -Ev '^[-+]|ListResourceRecordSets' | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+  else
+    eval "$_AWSRLRRS_CMD --hosted-zone-id $_hosted_zone_id --query \"$_query\" --output table" | \grep "$_reg_exp" | sort | sed 's/^| //;s/ |$//g;s/ //g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g'
+  fi
 }
 
 function genaee {
   # generate AWS environment exports
-   echo "export AWS_ACCESS_KEY_ID='$AWS_ACCESS_KEY_ID'"
-   echo "export AWS_DEFAULT_PROFILE='$AWS_DEFAULT_PROFILE'"
-   echo "export AWS_DEFAULT_REGION='$AWS_DEFAULT_REGION'"
-   echo "export AWS_ENVIRONMENT='$AWS_ENVIRONMENT'"
-   echo "export AWS_ACCOUNT_ID='$AWS_ACCOUNT_ID'"
-   echo "export AWS_SECRET_ACCESS_KEY='$AWS_SECRET_ACCESS_KEY'"
-   echo "export AWS_SESSION_TOKEN='$AWS_SESSION_TOKEN'"
-   echo "export AWS_STS_EXPIRES_TS='$AWS_STS_EXPIRES_TS'"
+  echo "export AWS_ACCESS_KEY_ID='$AWS_ACCESS_KEY_ID'"
+  echo "export AWS_DEFAULT_PROFILE='$AWS_DEFAULT_PROFILE'"
+  echo "export AWS_DEFAULT_REGION='$AWS_DEFAULT_REGION'"
+  echo "export AWS_ENVIRONMENT='$AWS_ENVIRONMENT'"
+  echo "export AWS_ACCOUNT_ID='$AWS_ACCOUNT_ID'"
+  echo "export AWS_SECRET_ACCESS_KEY='$AWS_SECRET_ACCESS_KEY'"
+  echo "export AWS_SESSION_TOKEN='$AWS_SESSION_TOKEN'"
+  echo "export AWS_STS_EXPIRES_TS='$AWS_STS_EXPIRES_TS'"
 }
 
 function dlecr {
-   # run `docker login` command returned from `aws ecr get-login`
-   local _DEFAULT_REGION="us-east-1"
-   local _region=$1
-   if [[ -z "$_region" ]]; then
-      [ -n "$AWS_DEFAULT_REGION" ] && _region=$AWS_DEFAULT_REGION || _region=$_DEFAULT_REGION
-   fi
-   eval "$(aws ecr get-login --no-include-email --region $_region)"
+  # run `docker login` command returned from `aws ecr get-login`
+  local _DEFAULT_REGION="us-east-1"
+  local _region=$1
+  if [[ -z "$_region" ]]; then
+    [ -n "$AWS_DEFAULT_REGION" ] && _region=$AWS_DEFAULT_REGION || _region=$_DEFAULT_REGION
+  fi
+  eval "$(aws ecr get-login --no-include-email --region $_region)"
 }
 
 function elbinsts {
-   # convert instance ids to instance names that are attached to an AWS ELB
-   local _elb_name=$1
-   local _region=$2
-   local _inst_id
-   local _inst_id_states
-   local _inst_ids
-   _inst_id_states=$(aws elb describe-instance-health --region "$_region" --load-balancer-name "$_elb_name" --query "InstanceStates[].[InstanceId,State,Reasoncode]" --output table | \grep '^|.*i-[0-9a-z]' | sed 's/|  /| /g;s/^| //;s/ \+|$//')
-   _inst_ids=$(echo "$_inst_id_states" | awk '{print $1}')
-   if [[ -n "$_inst_ids" ]]; then
-      while read -r line; do
-         _inst_id=$(echo "$line" | awk '{print $3}')
-         _inst_id_state=$(echo "$_inst_id_states" | \grep "$_inst_id")
-         echo "${line//$_inst_id/$_inst_id_state}"
-      done <<< "$(aws ec2 describe-instances --region "$_region" --instance-ids "$_inst_ids" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],InstanceId]" --output table | \grep -Ev '^[-+]|Describe' | sort | sed 's/|  /| /g;s/^| //;s/ \+|$//')"
-   else
-      echo "not found"
-   fi
+  # convert instance ids to instance names that are attached to an AWS ELB
+  local _elb_name=$1
+  local _region=$2
+  local _inst_id
+  local _inst_id_states
+  local _inst_ids
+  _inst_id_states=$(aws elb describe-instance-health --region "$_region" --load-balancer-name "$_elb_name" --query "InstanceStates[].[InstanceId,State,Reasoncode]" --output table | \grep '^|.*i-[0-9a-z]' | sed 's/|  /| /g;s/^| //;s/ \+|$//')
+  _inst_ids=$(echo "$_inst_id_states" | awk '{print $1}')
+  if [[ -n "$_inst_ids" ]]; then
+    while read -r line; do
+      _inst_id=$(echo "$line" | awk '{print $3}')
+      _inst_id_state=$(echo "$_inst_id_states" | \grep "$_inst_id")
+      echo "${line//$_inst_id/$_inst_id_state}"
+    done <<<"$(aws ec2 describe-instances --region "$_region" --instance-ids "$_inst_ids" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],InstanceId]" --output table | \grep -Ev '^[-+]|Describe' | sort | sed 's/|  /| /g;s/^| //;s/ \+|$//')"
+  else
+    echo "not found"
+  fi
 }
 
 function rac {
-   # remember AWS CLI command - save the given command for later retreval
-   local _COMMAND="$*"
-   local _COMMANDS_FILE=$HOME/.aws_commands.txt
-   echo "$_COMMAND" >> "$_COMMANDS_FILE"
-   sort "$_COMMANDS_FILE" > "$_COMMANDS_FILE.sorted"
-   \cp -f "$_COMMANDS_FILE.sorted" "$_COMMANDS_FILE"
-   \rm -f "$_COMMANDS_FILE.sorted"
-   echo "added: '$_COMMAND'"
-   echo "   to: $_COMMANDS_FILE"
+  # remember AWS CLI command - save the given command for later retreval
+  local _COMMAND="$*"
+  local _COMMANDS_FILE=$HOME/.aws_commands.txt
+  echo "$_COMMAND" >>"$_COMMANDS_FILE"
+  sort "$_COMMANDS_FILE" >"$_COMMANDS_FILE.sorted"
+  \cp -f "$_COMMANDS_FILE.sorted" "$_COMMANDS_FILE"
+  \rm -f "$_COMMANDS_FILE.sorted"
+  echo "added: '$_COMMAND'"
+  echo "   to: $_COMMANDS_FILE"
 }
 
 function sae {
-   # set AWS environment variables from ~/.aws/config file and profiles in it
-   local _AWS_CFG=$HOME/.aws/config
-   local _SSO_CLI_CACHE_DIR
-   local _SSO_CLI_CACHE_FILE
-   local _PROFILE="$1"
-   local _aws_acct
-   local _aws_env
-   local _environment
-   local _sso_start_url
-   if [[ -n "$_PROFILE" ]]; then
-      _verify_aws_profile "$_PROFILE" || return $?
-      [ "$COMPANY" == "onica" ] && ssol unset > /dev/null 2>&1
-      if [[ "$_PROFILE" == "unset" ]]; then
-         _unset_aws_environment
+  # set AWS environment variables from ~/.aws/config file and profiles in it
+  local _AWS_CFG=$HOME/.aws/config
+  local _SSO_CLI_CACHE_DIR
+  local _SSO_CLI_CACHE_FILE
+  local _PROFILE="$1"
+  local _aws_acct
+  local _aws_env
+  local _environment
+  local _sso_start_url
+  if [[ -n "$_PROFILE" ]]; then
+    _verify_aws_profile "$_PROFILE" || return $?
+    [ "$COMPANY" == "onica" ] && ssol unset >/dev/null 2>&1
+    if [[ "$_PROFILE" == "unset" ]]; then
+      _unset_aws_environment
+    else
+      export AWS_ACCESS_KEY_ID
+      export AWS_SECRET_ACCESS_KEY
+      export AWS_DEFAULT_REGION
+      export DEPLOY_ENVIRONMENT
+      # unset AWS_SESSION_TOKEN
+      # unset AWS_SECURITY_TOKEN
+      export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
+      _aws_env=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
+      # _aws_acct=$(aws sts get-caller-identity --profile "$AWS_DEFAULT_PROFILE" | jq -r .Account)
+      _aws_acct=$(aws sts get-caller-identity --query Account --output text)
+      export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
+      export AWS_ACCOUNT_ID=$_aws_acct
+      _sso_start_url=$(_get_aws_profile_setting "$_PROFILE" sso_start_url)
+      if [[ -n "$_sso_start_url" ]]; then
+        # TODO: doesn't work - gotta figure this out!
+        # unset AWS_ACCESS_KEY_ID
+        # unset AWS_SECRET_ACCESS_KEY
+        _SSO_CLI_CACHE_DIR="$HOME/.aws/cli/cache"
+        # shellcheck disable=SC2012
+        _SSO_CLI_CACHE_FILE=$(ls -rt "$_SSO_CLI_CACHE_DIR" | tail -1)
+        # TODO: doesn't work - gotta figure this out!
+        # AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId "$_SSO_CLI_CACHE_DIR/$_SSO_CLI_CACHE_FILE")
+        # AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey "$_SSO_CLI_CACHE_DIR/$_SSO_CLI_CACHE_FILE")
+        # AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken "$_SSO_CLI_CACHE_DIR/$_SSO_CLI_CACHE_FILE")
       else
-         export AWS_ACCESS_KEY_ID
-         export AWS_SECRET_ACCESS_KEY
-         export AWS_DEFAULT_REGION
-         export DEPLOY_ENVIRONMENT
-         # unset AWS_SESSION_TOKEN
-         # unset AWS_SECURITY_TOKEN
-         export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
-         _aws_env=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
-         # _aws_acct=$(aws sts get-caller-identity --profile "$AWS_DEFAULT_PROFILE" | jq -r .Account)
-         _aws_acct=$(aws sts get-caller-identity --query Account --output text)
-         export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
-         export AWS_ACCOUNT_ID=$_aws_acct
-         _sso_start_url=$(_get_aws_profile_setting "$_PROFILE" sso_start_url)
-         if [[ -n "$_sso_start_url" ]]; then
-            # TODO: doesn't work - gotta figure this out!
-            # unset AWS_ACCESS_KEY_ID
-            # unset AWS_SECRET_ACCESS_KEY
-            _SSO_CLI_CACHE_DIR="$HOME/.aws/cli/cache"
-            # shellcheck disable=SC2012
-            _SSO_CLI_CACHE_FILE=$(ls -rt "$_SSO_CLI_CACHE_DIR" | tail -1)
-            # TODO: doesn't work - gotta figure this out!
-            # AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId "$_SSO_CLI_CACHE_DIR/$_SSO_CLI_CACHE_FILE")
-            # AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey "$_SSO_CLI_CACHE_DIR/$_SSO_CLI_CACHE_FILE")
-            # AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken "$_SSO_CLI_CACHE_DIR/$_SSO_CLI_CACHE_FILE")
-         else
-            AWS_ACCESS_KEY_ID=$(_get_aws_profile_setting "$_PROFILE" aws_access_key_id)
-            AWS_SECRET_ACCESS_KEY=$(_get_aws_profile_setting "$_PROFILE" aws_secret_access_key)
-         fi
-         AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" region)
-         [[ -z "$AWS_DEFAULT_REGION" ]] && AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" sso_region)
-         # _environment used for PS_PROMPT (color)
-         _environment=$(_get_aws_profile_setting "$_PROFILE" environment)
-         # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
-         DEPLOY_ENVIRONMENT=$(_get_aws_profile_setting "$_PROFILE" runway_deploy_environment)
-         [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
-         [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
-         [ -z "$AWS_DEFAULT_REGION" ] && unset AWS_DEFAULT_REGION
-         [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
-         [ -z "$AWS_SECRET_ACCESS_KEY" ] && unset AWS_SECRET_ACCESS_KEY
-         [ -z "$AWS_SECURITY_TOKEN" ] && unset AWS_SECURITY_TOKEN
-         [ -z "$AWS_SESSION_TOKEN" ] && unset AWS_SESSION_TOKEN
-         [ -z "$DEPLOY_ENVIRONMENT" ] && unset DEPLOY_ENVIRONMENT
-         echo "AWS environment set: $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
+        AWS_ACCESS_KEY_ID=$(_get_aws_profile_setting "$_PROFILE" aws_access_key_id)
+        AWS_SECRET_ACCESS_KEY=$(_get_aws_profile_setting "$_PROFILE" aws_secret_access_key)
       fi
-      _set_aws_prompt_colors "$_environment"
-   else
-      _show_aws_environment
-   fi
+      AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" region)
+      [[ -z "$AWS_DEFAULT_REGION" ]] && AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" sso_region)
+      # _environment used for PS_PROMPT (color)
+      _environment=$(_get_aws_profile_setting "$_PROFILE" environment)
+      # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
+      DEPLOY_ENVIRONMENT=$(_get_aws_profile_setting "$_PROFILE" runway_deploy_environment)
+      [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
+      [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
+      [ -z "$AWS_DEFAULT_REGION" ] && unset AWS_DEFAULT_REGION
+      [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
+      [ -z "$AWS_SECRET_ACCESS_KEY" ] && unset AWS_SECRET_ACCESS_KEY
+      [ -z "$AWS_SECURITY_TOKEN" ] && unset AWS_SECURITY_TOKEN
+      [ -z "$AWS_SESSION_TOKEN" ] && unset AWS_SESSION_TOKEN
+      [ -z "$DEPLOY_ENVIRONMENT" ] && unset DEPLOY_ENVIRONMENT
+      echo "AWS environment set: $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
+    fi
+    _set_aws_prompt_colors "$_environment"
+  else
+    _show_aws_environment
+  fi
 }
 
 function saefc {
@@ -1565,9 +2321,9 @@ function saefc {
   # do regular sae() first if profile given
   local _PROFILE="$1"
   if [[ -n "$_PROFILE" ]]; then
-    if command -V $_PASTE_CMD &> /dev/null; then
-      _unset_aws_environment > /dev/null
-      $_PASTE_CMD > $_SSO_EXPORTS
+    if command -V $_PASTE_CMD &>/dev/null; then
+      _unset_aws_environment >/dev/null
+      $_PASTE_CMD >$_SSO_EXPORTS
       source $_SSO_EXPORTS
       _set_aws_prompt_colors $(_get_saml_setting "$_PROFILE" environment)
     else
@@ -1589,7 +2345,10 @@ function saesaml {
     if [[ "$_PROFILE" == "unset" ]]; then
       _unset_aws_environment
     else
-      _unset_aws_environment > /dev/null
+      if [[ "$_PROFILE" == "renew" ]]; then
+        _PROFILE=$AWS_DEFAULT_PROFILE
+      fi
+      _unset_aws_environment >/dev/null
       # "hide" the config - temporary until fully using SAML
       mv $HOME/.aws/config{,.sso}
       if saml2aws login \
@@ -1601,14 +2360,14 @@ function saesaml {
         # un "hide" the config - temporary until fully using SAML
         mv $HOME/.aws/config{.sso,}
         # set AWS environment variables
-        export AWS_DEFAULT_PROFILE=$_PROFILE  # for `aws` CLI (instead of using --profile)
+        export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
         eval $(saml2aws script --config=$_SAML_CFG --idp-account="$_PROFILE")
         export AWS_DEFAULT_REGION=$(_get_saml_setting "$_PROFILE" region)
         export AWS_ACCOUNT_ID=$(_get_saml_setting "$_PROFILE" aws_acct_id)
         export AWS_ENVIRONMENT="$(_get_saml_setting "$_PROFILE" aws_account_desc) [$AWS_ACCOUNT_ID]"
         # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
         export DEPLOY_ENVIRONMENT=$(_get_saml_setting "$_PROFILE" runway_deploy_env)
-        export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S-07:00" "$AWS_CREDENTIAL_EXPIRATION" +"%s" 2> /dev/null)
+        export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S-07:00" "$AWS_CREDENTIAL_EXPIRATION" +"%s" 2>/dev/null)
         # environment used for PS_PROMPT (color)
         _set_aws_prompt_colors $(_get_saml_setting "$_PROFILE" environment)
         echo "AWS environment set (via SAML): $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
@@ -1625,91 +2384,91 @@ function saesaml {
 }
 
 function saesso {
-   # Set AWS environment using SSO and assuming the role in .aws/configs
-   local _PROFILE="$1"
-   local _SSO_CACHE_DIR="$HOME/.aws/sso/cache"
-   local _aws_acct_desc
-   local _aws_signin_url
-   local _current_time_ts
-   local _environment
-   local _sso_access_token
-   local _sso_account_id
-   local _sso_cache_file
-   local _sso_exp_time
-   local _sso_exp_time_ts
-   local _sso_role_creds
-   local _sso_role_name
+  # Set AWS environment using SSO and assuming the role in .aws/configs
+  local _PROFILE="$1"
+  local _SSO_CACHE_DIR="$HOME/.aws/sso/cache"
+  local _aws_acct_desc
+  local _aws_signin_url
+  local _current_time_ts
+  local _environment
+  local _sso_access_token
+  local _sso_account_id
+  local _sso_cache_file
+  local _sso_exp_time
+  local _sso_exp_time_ts
+  local _sso_role_creds
+  local _sso_role_name
 
-   if [[ -n "$_PROFILE" ]]; then
-      _verify_aws_profile "$_PROFILE" || return $?
-      if [[ "$_PROFILE" == "unset" ]]; then
-         _unset_aws_environment
-      else
-         for _sso_cache_file in $(ls -1t "$_SSO_CACHE_DIR"); do
-            if \grep -qo 'accessToken' "$_SSO_CACHE_DIR/$_sso_cache_file"; then
-               _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
-               break
-            else
-               unset _sso_cache_file
-            fi
-         done
-         if [[ -z "$_sso_cache_file" ]]; then
-            echo "no SSO creds found, running 'aws sso login --profile $_PROFILE'..."
-            aws sso login --profile "$_PROFILE"
-            _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
-            _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
-         fi
-         _sso_exp_time=$(jq -r .expiresAt "$_sso_cache_file" 2> /dev/null)
-         _sso_exp_time_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "$_sso_exp_time" +"%s" 2> /dev/null)
-         _current_time_ts=$(date +"%s")
-         if [[ -x "$_sso_exp_time" ]] || [[ $_current_time_ts -ge $_sso_exp_time_ts ]]; then
-            echo "no expiration time found or expired, running 'aws sso login --profile $_PROFILE'..."
-            aws sso login --profile "$_PROFILE"
-            _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
-            _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
-         fi
-         # need region for 'aws sso get-role-credentials'
-         export AWS_DEFAULT_REGION
-         AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" sso_region)
-         _sso_account_id=$(_get_aws_profile_setting "$_PROFILE" sso_account_id)
-         _sso_role_name=$(_get_aws_profile_setting "$_PROFILE" sso_role_name)
-         _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
-         if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2> /dev/null); then
-            echo "SSO creds are expired, running 'aws sso login --profile $_PROFILE'..."
-            aws sso login --profile "$_PROFILE"
-            _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
-            _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
-            _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
-            if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2> /dev/null); then
-               echo "can't get SSO role Credentials"
-               _unset_aws_environment
-               return 3
-            fi
-         fi
-         export AWS_ACCESS_KEY_ID
-         export AWS_SECRET_ACCESS_KEY
-         export AWS_SESSION_TOKEN
-         export AWS_STS_EXPIRES_TS
-         # this AWS_STS_EXPIRES_TS def (w/cut) only works til: Sat Nov 20 09:46:39 PST 2286
-         AWS_ACCESS_KEY_ID=$(jq -r .roleCredentials.accessKeyId <<< "$_sso_role_creds")
-         AWS_SECRET_ACCESS_KEY=$(jq -r .roleCredentials.secretAccessKey <<< "$_sso_role_creds")
-         AWS_SESSION_TOKEN=$(jq -r .roleCredentials.sessionToken <<< "$_sso_role_creds")
-         AWS_STS_EXPIRES_TS=$(jq -r .roleCredentials.expiration <<< "$_sso_role_creds" | cut -c -10)
-         export AWS_DEFAULT_PROFILE=$_PROFILE  # for `aws` CLI (instead of using --profile)
-         _aws_acct_desc=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
-         export AWS_ENVIRONMENT="$_aws_acct_desc [$_sso_account_id]"
-         export AWS_ACCOUNT_ID=$_sso_account_id
-         # _environment used for PS_PROMPT (color)
-         _environment=$(_get_aws_profile_setting "$_PROFILE" environment)
-         # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
-         export DEPLOY_ENVIRONMENT
-         DEPLOY_ENVIRONMENT=$(_get_aws_profile_setting "$_PROFILE" runway_deploy_environment)
-         echo "AWS environment set (IAM Role assumed): $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE) [$_sso_role_name]"
+  if [[ -n "$_PROFILE" ]]; then
+    _verify_aws_profile "$_PROFILE" || return $?
+    if [[ "$_PROFILE" == "unset" ]]; then
+      _unset_aws_environment
+    else
+      for _sso_cache_file in $(ls -1t "$_SSO_CACHE_DIR"); do
+        if \grep -qo 'accessToken' "$_SSO_CACHE_DIR/$_sso_cache_file"; then
+          _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
+          break
+        else
+          unset _sso_cache_file
+        fi
+      done
+      if [[ -z "$_sso_cache_file" ]]; then
+        echo "no SSO creds found, running 'aws sso login --profile $_PROFILE'..."
+        aws sso login --profile "$_PROFILE"
+        _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
+        _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
       fi
-      _set_aws_prompt_colors "$_environment"
-   else
-      _show_aws_environment
-   fi
+      _sso_exp_time=$(jq -r .expiresAt "$_sso_cache_file" 2>/dev/null)
+      _sso_exp_time_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "$_sso_exp_time" +"%s" 2>/dev/null)
+      _current_time_ts=$(date +"%s")
+      if [[ -x "$_sso_exp_time" ]] || [[ $_current_time_ts -ge $_sso_exp_time_ts ]]; then
+        echo "no expiration time found or expired, running 'aws sso login --profile $_PROFILE'..."
+        aws sso login --profile "$_PROFILE"
+        _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
+        _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
+      fi
+      # need region for 'aws sso get-role-credentials'
+      export AWS_DEFAULT_REGION
+      AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" sso_region)
+      _sso_account_id=$(_get_aws_profile_setting "$_PROFILE" sso_account_id)
+      _sso_role_name=$(_get_aws_profile_setting "$_PROFILE" sso_role_name)
+      _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
+      if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2>/dev/null); then
+        echo "SSO creds are expired, running 'aws sso login --profile $_PROFILE'..."
+        aws sso login --profile "$_PROFILE"
+        _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
+        _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
+        _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
+        if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2>/dev/null); then
+          echo "can't get SSO role Credentials"
+          _unset_aws_environment
+          return 3
+        fi
+      fi
+      export AWS_ACCESS_KEY_ID
+      export AWS_SECRET_ACCESS_KEY
+      export AWS_SESSION_TOKEN
+      export AWS_STS_EXPIRES_TS
+      # this AWS_STS_EXPIRES_TS def (w/cut) only works til: Sat Nov 20 09:46:39 PST 2286
+      AWS_ACCESS_KEY_ID=$(jq -r .roleCredentials.accessKeyId <<<"$_sso_role_creds")
+      AWS_SECRET_ACCESS_KEY=$(jq -r .roleCredentials.secretAccessKey <<<"$_sso_role_creds")
+      AWS_SESSION_TOKEN=$(jq -r .roleCredentials.sessionToken <<<"$_sso_role_creds")
+      AWS_STS_EXPIRES_TS=$(jq -r .roleCredentials.expiration <<<"$_sso_role_creds" | cut -c -10)
+      export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
+      _aws_acct_desc=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
+      export AWS_ENVIRONMENT="$_aws_acct_desc [$_sso_account_id]"
+      export AWS_ACCOUNT_ID=$_sso_account_id
+      # _environment used for PS_PROMPT (color)
+      _environment=$(_get_aws_profile_setting "$_PROFILE" environment)
+      # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
+      export DEPLOY_ENVIRONMENT
+      DEPLOY_ENVIRONMENT=$(_get_aws_profile_setting "$_PROFILE" runway_deploy_environment)
+      echo "AWS environment set (IAM Role assumed): $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE) [$_sso_role_name]"
+    fi
+    _set_aws_prompt_colors "$_environment"
+  else
+    _show_aws_environment
+  fi
 }
 
 function saevl {
@@ -1723,22 +2482,22 @@ function saevl {
     if [[ "$_PROFILE" == "unset" ]]; then
       _unset_aws_environment
     else
-      _unset_aws_environment > /dev/null
+      _unset_aws_environment >/dev/null
       export AWS_ACCOUNT_ID=$(_get_saml_setting "$_PROFILE" aws_acct_id)
-      if _vault_data=$(vault write account/$AWS_ACCOUNT_ID/sts/Owner ttl=4h -format=json 2> /dev/null); then
+      if _vault_data=$(vault write account/$AWS_ACCOUNT_ID/sts/Owner ttl=4h -format=json 2>/dev/null); then
         # set AWS environment variables
-        export AWS_ACCESS_KEY_ID=$(jq -r .data.access_key <<< "$_vault_data")
-        export AWS_SECRET_ACCESS_KEY=$(jq -r .data.secret_key <<< "$_vault_data")
-        export AWS_SESSION_TOKEN=$(jq -r .data.security_token <<< "$_vault_data")
-        export AWS_DEFAULT_PROFILE=$_PROFILE  # for `aws` CLI (instead of using --profile)
-        export AWS_ACCOUNT=$_PROFILE  # for serverless (shouldn't be here, but :shrug:)
+        export AWS_ACCESS_KEY_ID=$(jq -r .data.access_key <<<"$_vault_data")
+        export AWS_SECRET_ACCESS_KEY=$(jq -r .data.secret_key <<<"$_vault_data")
+        export AWS_SESSION_TOKEN=$(jq -r .data.security_token <<<"$_vault_data")
+        export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
+        export AWS_ACCOUNT=$_PROFILE         # for serverless (shouldn't be here, but :shrug:)
         export AWS_DEFAULT_REGION=$(_get_saml_setting "$_PROFILE" region)
         export AWS_ENVIRONMENT="$(_get_saml_setting "$_PROFILE" aws_account_desc) [$AWS_ACCOUNT_ID]"
         # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
         export DEPLOY_ENVIRONMENT=$(_get_saml_setting "$_PROFILE" runway_deploy_env)
-        export AWS_STS_EXPIRES_TS=$(($(date +%s)+14400))
+        export AWS_STS_EXPIRES_TS=$(($(date +%s) + 14400))
       else
-        _unset_aws_environment > /dev/null
+        _unset_aws_environment >/dev/null
         _set_aws_prompt_colors
         echo "error: can't get AWS creds, are you on the correct VPN?"
         return 2
@@ -1753,95 +2512,97 @@ function saevl {
 }
 
 function sar {
-   # aws sts assume-role from ~/.aws/config file
-   local _PROFILE="$1"
-   local _AWS_CFG=$HOME/.aws/config
-   local _AWS_STS_CREDS
-   local _STS_DURATION=3600
-   local _environment
-   _AWS_STS_CREDS=$HOME/.aws/${_PROFILE}_mfa_credentials
-   if [[ -n "$_PROFILE" ]]; then
-      _verify_aws_profile "$_PROFILE" || return $?
-      if [[ "$_PROFILE" == "unset" ]]; then
-         _unset_aws_environment
-      else
-         unset AWS_SECURITY_TOKEN
-         export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
-         local _role_arn
-         local _role_name
-         local _aws_acct
-         _role_arn=$(_get_aws_profile_setting "$_PROFILE" role_arn)
-         _role_name=$(cut -d'/' -f2- <<< "$_role_arn")
-         _aws_acct=$(cut -d':' -f5 <<< "$_role_arn")
-         if aws sts assume-role --role-arn "$_role_arn" --role-session-name "$_PROFILE" --duration-seconds "$_STS_DURATION" > "$_AWS_STS_CREDS"; then
-           export AWS_ACCESS_KEY_ID
-           export AWS_SECRET_ACCESS_KEY
-           export AWS_SESSION_TOKEN
-           export AWS_DEFAULT_REGION
-           AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId "$_AWS_STS_CREDS")
-           AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey "$_AWS_STS_CREDS")
-           AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken "$_AWS_STS_CREDS")
-           AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" region)
-           [[ -z "$AWS_DEFAULT_REGION" ]] && AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" sso_region)
-           _environment=$(_get_aws_profile_setting "$_PROFILE" environment)
-           # local _aws_acct=$(aws sts get-caller-identity | jq -r .Account)
-           local _aws_env
-           _aws_env=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
-           export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
-           export AWS_ACCOUNT_ID=$_aws_acct
-           local _exp_time
-           _exp_time=$(jq -r .Credentials.Expiration "$_AWS_STS_CREDS")
-           # export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
-           export AWS_STS_EXPIRES_TS
-           AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S" "${_exp_time%+*}" +"%s")
-           echo "AWS IAM Role assumed: $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE) [$_role_name]"
-           [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
-           [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
-           [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
-           [ -z "$AWS_SECRET_ACCESS_KEY" ] && unset AWS_SECRET_ACCESS_KEY
-           [ -z "$AWS_DEFAULT_REGION" ] && unset AWS_DEFAULT_REGION
-           _set_aws_prompt_colors "$_environment"
-         fi
+  # aws sts assume-role from ~/.aws/config file
+  local _PROFILE="$1"
+  local _AWS_CFG=$HOME/.aws/config
+  local _AWS_STS_CREDS
+  local _STS_DURATION=3600
+  local _environment
+  _AWS_STS_CREDS=$HOME/.aws/${_PROFILE}_mfa_credentials
+  if [[ -n "$_PROFILE" ]]; then
+    _verify_aws_profile "$_PROFILE" || return $?
+    if [[ "$_PROFILE" == "unset" ]]; then
+      _unset_aws_environment
+    else
+      unset AWS_SECURITY_TOKEN
+      export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
+      local _role_arn
+      local _role_name
+      local _aws_acct
+      _role_arn=$(_get_aws_profile_setting "$_PROFILE" role_arn)
+      _role_name=$(cut -d'/' -f2- <<<"$_role_arn")
+      _aws_acct=$(cut -d':' -f5 <<<"$_role_arn")
+      if aws sts assume-role --role-arn "$_role_arn" --role-session-name "$_PROFILE" --duration-seconds "$_STS_DURATION" >"$_AWS_STS_CREDS"; then
+        export AWS_ACCESS_KEY_ID
+        export AWS_SECRET_ACCESS_KEY
+        export AWS_SESSION_TOKEN
+        export AWS_DEFAULT_REGION
+        AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId "$_AWS_STS_CREDS")
+        AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey "$_AWS_STS_CREDS")
+        AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken "$_AWS_STS_CREDS")
+        AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" region)
+        [[ -z "$AWS_DEFAULT_REGION" ]] && AWS_DEFAULT_REGION=$(_get_aws_profile_setting "$_PROFILE" sso_region)
+        _environment=$(_get_aws_profile_setting "$_PROFILE" environment)
+        # local _aws_acct=$(aws sts get-caller-identity | jq -r .Account)
+        local _aws_env
+        _aws_env=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
+        export AWS_ENVIRONMENT="$_aws_env [$_aws_acct]"
+        export AWS_ACCOUNT_ID=$_aws_acct
+        local _exp_time
+        _exp_time=$(jq -r .Credentials.Expiration "$_AWS_STS_CREDS")
+        # export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%SZ" $_exp_time +"%s")
+        export AWS_STS_EXPIRES_TS
+        AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S" "${_exp_time%+*}" +"%s")
+        echo "AWS IAM Role assumed: $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE) [$_role_name]"
+        [ -z "$AWS_DEFAULT_PROFILE" ] && unset AWS_DEFAULT_PROFILE
+        [ -z "$AWS_ENVIRONMENT" ] && unset AWS_ENVIRONMENT
+        [ -z "$AWS_ACCESS_KEY_ID" ] && unset AWS_ACCESS_KEY_ID
+        [ -z "$AWS_SECRET_ACCESS_KEY" ] && unset AWS_SECRET_ACCESS_KEY
+        [ -z "$AWS_DEFAULT_REGION" ] && unset AWS_DEFAULT_REGION
+        _set_aws_prompt_colors "$_environment"
       fi
-   else
-      _show_aws_environment
-   fi
+    fi
+  else
+    _show_aws_environment
+  fi
 }
 
 function showaf {
-   # show a function defined in in this file
-   ALIASES_FILE="$HOME/$AWS_BA_FILE"
-   if [[ $1 ]]; then
-      if \grep -q "^function $1 " "$ALIASES_FILE"; then
-         sed -n '/^function '"$1"' /,/^}/p' "$ALIASES_FILE"
-      else
-         echo "function: '$1' - not found"
-      fi
-   else
-      echo
-      echo "which function do you want to see?"
-      \grep "^function .* " "$ALIASES_FILE" | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`saf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
-      echo -ne "enter function: "
-      read -r func
-      echo
-      showaf "$func"
-   fi
+  # show a function defined in in this file
+  ALIASES_FILE="$HOME/$AWS_BA_FILE"
+  if [[ $1 ]]; then
+    if \grep -q "^function $1 " "$ALIASES_FILE"; then
+      sed -n '/^function '"$1"' /,/^}/p' "$ALIASES_FILE"
+    else
+      echo "function: '$1' - not found"
+    fi
+  else
+    echo
+    echo "which function do you want to see?"
+    \grep "^function .* " "$ALIASES_FILE" | awk '{print $2}' | cut -d'(' -f1 | awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`saf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+    echo -ne "enter function: "
+    read -r func
+    echo
+    showaf "$func"
+  fi
 }
 
 function wtac {
-   # what's that AWS command - retrieve the given command for use
-   local _COMMAND_PATTERN="$*"
-   local _COMMANDS_FILE=$HOME/.aws_commands.txt
-   \grep --colour=always "$_COMMAND_PATTERN" "$_COMMANDS_FILE"
-   while read -r _line; do
-      history -s "$_line"
-   done <<< "$(\grep "$_COMMAND_PATTERN" "$_COMMANDS_FILE" | sed 's:\\:\\\\:g')"
+  # what's that AWS command - retrieve the given command for use
+  local _COMMAND_PATTERN="$*"
+  local _COMMANDS_FILE=$HOME/.aws_commands.txt
+  \grep --colour=always "$_COMMAND_PATTERN" "$_COMMANDS_FILE"
+  while read -r _line; do
+    history -s "$_line"
+  done <<<"$(\grep "$_COMMAND_PATTERN" "$_COMMANDS_FILE" | sed 's:\\:\\\\:g')"
 }
 
 # -------------------- define aliases --------------------
 
 alias aaid="echo \$AWS_ACCOUNT_ID"
-alias awsacctsfrompolicies='_f() { for id in $(cat "$1"); do id=$(cut -d "-" -f3 <<< "$id"); echo -n "$id: "; awsacct $id; echo;  done; }; _f'
+alias asmgsv='_f() { local _c="aws secretsmanager get-secret-value --secret-id \"$1\" --query SecretString --output text"; echo "$_c"; local _o=$(eval "$_c"); if grep -q "^{" <<< "$_o"; then jq . <<< "$_o"; else echo -e "${GRN}$_o"; fi; }; _f'
+alias assmgp='_f() { local _c="aws ssm get-parameter --name \"$1\" --with-decryption --query Parameter.Value --output text"; echo "$_c"; local _o=$(eval "$_c"); echo -e "${GRN}$_o"; }; _f'
+alias awsacctsfrompolicies='_f() { local _id; for _id in $(cat "$1"); do _id=$(cut -d "-" -f3 <<< "$_id"); echo -n "$_id: "; awsacct $_id; echo;  done; }; _f'
 alias awscl="aws configure list"
 alias awsclp="aws configure list-profiles"
 alias awsga="aws sts get-caller-identity --output text --query Account"
