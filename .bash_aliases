@@ -1676,6 +1676,7 @@ else
   alias ls='ls -CFh --color=auto'
 fi
 alias less="less -FrX"
+alias macrmquarantine='xattr -d com.apple.quarantine'
 alias mv='mv -i'
 alias myip='curl http://ipecho.net/plain; echo'
 alias nn='echo n'
