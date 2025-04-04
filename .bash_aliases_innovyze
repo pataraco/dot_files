@@ -219,12 +219,14 @@ function showmergedadf {
     echo "usage: $_usage"
   else
     # make the API call and format with 'jq'
-    curl --silent --location "$_cloudos_adf_merge_api" --header "Content-Type: application/json" \
+    if ! curl --silent --location "$_cloudos_adf_merge_api" --header "Content-Type: application/json" \
       --data "{
         \"git_repo\": \"$_repo\",
         \"git_hash\": \"$_ref\",
         \"adf_path\": \"$_path\"
-      }" | jq .
+      }" | jq .; then
+      echo "error: can't get merged ADF"
+    fi
   fi
 }
 

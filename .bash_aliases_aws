@@ -24,7 +24,7 @@ function _get_aws_profile_setting {
   local _def
   local _val
   _def=$(awk -v adp="${_PROFILE}]" -v key="$_SETTING" '$2==adp {pfound="true"; next}; (pfound=="true" && $1==key) {print $0; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_AWS_CFG")
-  _val=$(cut -d'=' -f2 <<<"$_def" | cut -c 2-)
+  _val=$(cut -d'=' -f2 <<< "$_def" | cut -c 2-)
   [[ -n "$_val" ]] && echo "$_val"
 }
 
@@ -37,7 +37,7 @@ function _get_saml_setting {
   local _def
   local _val
   _def=$(awk -v adp="[${_PROFILE}]" -v key="$_SETTING" '$1==adp {pfound="true"; next}; (pfound=="true" && $1==key) {print $0; exit}; (pfound=="true" && $1~/^\[/) {exit}' "$_SAML_CFG")
-  _val=$(cut -d'=' -f2 <<<"$_def" | cut -c 2-)
+  _val=$(cut -d'=' -f2 <<< "$_def" | cut -c 2-)
   [[ -n "$_val" ]] && echo "$_val"
 }
 
@@ -51,7 +51,9 @@ function _set_aws_prompt_colors {
       mine) PS_AWS_COL="$PGBG" ;;
       mixed) PS_AWS_COL="$PYLW" ;;
       prod) PS_AWS_COL="$PRBG" ;;
+      prd) PS_AWS_COL="$PRBG" ;;
       qa) PS_AWS_COL="$PMBG" ;;
+      stg) PS_AWS_COL="$PMBG" ;;
       test) PS_AWS_COL="$PCYN" ;;
       *) PS_AWS_COL="$PNRM" ;;
     esac
@@ -72,6 +74,7 @@ function _show_aws_environment {
   [[ -n "$AWS_DEFAULT_PROFILE" ]] || { [[ -n "$AWS_ACCESS_KEY_ID" ]] && [[ -n "$AWS_SECRET_ACCESS_KEY" ]]; } && echo "Settings ---" || echo "(NOT set) ---"
   echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
   echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
+  echo "AWS_ACCOUNT_ID        = ${AWS_ACCOUNT_ID:-N/A}"
   # obfuscate the KEYs with some *'s
   echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HO-QT-V3-8]:*:g'
   echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[d-np-zF-HO-QU-V4-9+]:*:g'
@@ -100,9 +103,20 @@ function _verify_aws_profile {
   local _AWS_CFG=$HOME/.aws/config
   local _PROFILE=$1
   local _AWS_PROFILES=$(\grep '^\[profile' "$_AWS_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
-  local _VALID_PROFILES=$(tr ' ' ':' <<<"${_AWS_PROFILES}unset")
+  local _VALID_PROFILES=$(tr ' ' ':' <<< "${_AWS_PROFILES}unset")
   if [[ ! $_VALID_PROFILES =~ (^|:)$_PROFILE(:|$) ]]; then
     echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
+    return 2
+  fi
+}
+
+function _verify_adsk_profile {
+  # verify profile exists in ADSK Accounts json
+  local _ADSK_ACCTS=$1
+  local _PROFILE=$2
+  if [[ $(jq '.accounts|has("'"$_PROFILE"'")' "$_ADSK_ACCTS") == "false" ]]; then
+    echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n"
+    jq -r '.accounts|keys|join(", ")' "$_ADSK_ACCTS" | tr ', ' '\n' | column
     return 2
   fi
 }
@@ -112,7 +126,7 @@ function _verify_saml_profile {
   local _SAML_CFG=$HOME/.aws/.saml2aws
   local _PROFILE=$1
   local _AWS_PROFILES=$(\grep '^\[' "$_SAML_CFG" | awk -F'[][]' '{print $2}' | tr -s '\n' ' ')
-  local _VALID_PROFILES=$(tr ' ' ':' <<<"${_AWS_PROFILES}renew unset")
+  local _VALID_PROFILES=$(tr ' ' ':' <<< "${_AWS_PROFILES}renew unset")
   if [[ ! $_VALID_PROFILES =~ (^|:)$_PROFILE(:|$) ]]; then
     echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_AWS_PROFILES"
     return 2
@@ -123,13 +137,20 @@ function awsacct {
   # get AWS account name by ID or ID by name
   local _AWS_ACCTS="$HOME/.aws/accounts.json"
   local _name_or_id=$1
+  local _aws_acct_id
+  local _aws_acct_name
+  if [[ -z "$_name_or_id" ]]; then
+    if [[ -n "$AWS_ACCOUNT_ID" ]]; then
+      _name_or_id=$(jq -r '.[] | select(.id=="'"$AWS_ACCOUNT_ID"'") | .name' "$_AWS_ACCTS")
+    fi
+  fi
   if [[ -z "$_name_or_id" ]] || [[ "$_name_or_id" == "all" ]]; then
     jq -r '.[] | .name + ": " + .id' "$_AWS_ACCTS"
   fi
-  if \grep -Ewq '[0-9]+' <<<"$_name_or_id"; then
-    local _aws_acct_name=$(jq -r '.[] | select(.id=="'"$_name_or_id"'") | .name' "$_AWS_ACCTS")
+  if \grep -Ewq '[0-9]+' <<< "$_name_or_id"; then
+    _aws_acct_name=$(jq -r '.[] | select(.id=="'"$_name_or_id"'") | .name' "$_AWS_ACCTS")
   else
-    local _aws_acct_id=$(jq -r '.[] | select(.name=="'"$_name_or_id"'") | .id' "$_AWS_ACCTS")
+    _aws_acct_id=$(jq -r '.[] | select(.name=="'"$_name_or_id"'") | .id' "$_AWS_ACCTS")
   fi
   if [[ -n "$_aws_acct_name" ]] || [[ -n "$_aws_acct_id" ]]; then
     echo -n "${_aws_acct_name}${_aws_acct_id}" | pbcopy
@@ -143,8 +164,15 @@ function awsconsole {
   local _CONSOLE_DEST="$1"
   local _aws_signin_url
   if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_SESSION_TOKEN" ]]; then
-    echo "can't log in to console - AWS environment not set up"
-    return
+    if [[ -n "$AWS_DEFAULT_PROFILE" ]]; then
+      # Set the environment variables
+      export AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
+      export AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
+      export AWS_SESSION_TOKEN=$(aws configure get aws_session_token)
+    else
+      echo "can't log in to console - AWS environment not set up"
+      return
+    fi
   fi
   if [[ -x "$_CONSOLE_LOGIN_SCRIPT" ]]; then
     _aws_signin_url=$($_CONSOLE_LOGIN_SCRIPT)
@@ -169,6 +197,47 @@ function awsconsole {
     return 3
   fi
   return
+}
+
+function awsconsolecm {
+  # fire up AWS Console if AWS Environment Variables are all set
+  local _CONSOLE_LOGIN_CMD="cloudmate -c -a $AWS_DEFAULT_PROFILE | grep https"
+  local _CONSOLE_DEST="$1"
+  local _aws_signin_url
+  if [[ -z "$AWS_DEFAULT_PROFILE" ]]; then
+    echo "can't log in to console - AWS_DEFAULT_PROFILE environment variable not set"
+    return
+  fi
+  _aws_signin_url=$(eval $_CONSOLE_LOGIN_CMD)
+  if [[ -n "$_aws_signin_url" ]]; then
+    case $_CONSOLE_DEST in
+      api) _CONSOLE_DEST="apigateway" ;;
+      cdn) _CONSOLE_DEST="cloudfront" ;;
+      cfn) _CONSOLE_DEST="cloudformation" ;;
+      ddb) _CONSOLE_DEST="dynamodb" ;;
+      eb) _CONSOLE_DEST="elasticbeanstalk" ;;
+      secrets) _CONSOLE_DEST="secretsmanager" ;;
+      ssm) _CONSOLE_DEST="systems-manager/parameters" ;;
+      sso) _CONSOLE_DEST="singlesignon" ;;
+    esac
+    open -n -a "Google Chrome" --args "--new-window" "--profile-directory=${AWS_DEFAULT_PROFILE}" "${_aws_signin_url}${_CONSOLE_DEST}"
+  else
+    echo "can't log in to console - could not generate signin URL"
+    return 3
+  fi
+  return
+}
+
+function awssetenvvars {
+  # set AWS environment variables based on profile
+  if [[ -n "$AWS_DEFAULT_PROFILE" ]]; then
+    # Set the environment variables
+    export AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
+    export AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
+    export AWS_SESSION_TOKEN=$(aws configure get aws_session_token)
+  else
+    echo "can't set AWS environment - AWS_DEFAULT_PROFILE not set"
+  fi
 }
 
 function assh {
@@ -218,17 +287,17 @@ assh [-h] [-e|-u] [-p PROFILE] [-r REGION] HOSTNAME [COMMAND]
   local _query="--query \"Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],PrivateIpAddress]\""
   [ -n "$AWS_DEBUG" ] && echo "debug: $_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters $_query --output text"
   _host=$(eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters $_query --output text")
-  if [[ "$(wc -w <<<"$_host")" -gt 2 ]]; then
+  if [[ "$(wc -w <<< "$_host")" -gt 2 ]]; then
     echo "there are more than one host that matches that name tag,"
     echo "please be more specific:"
     echo
-    awk '{print "\t"$1}' <<<"$_host"
-  elif [[ "$(wc -w <<<"$_host")" -lt 2 ]]; then
+    awk '{print "\t"$1}' <<< "$_host"
+  elif [[ "$(wc -w <<< "$_host")" -lt 2 ]]; then
     echo "no matching hosts found with that name tag,"
     echo "please try again"
   else
-    _tag_name=$(awk '{print $1}' <<<"$_host")
-    _host=$(awk '{print $2}' <<<"$_host")
+    _tag_name=$(awk '{print $1}' <<< "$_host")
+    _host=$(awk '{print $2}' <<< "$_host")
     # echo -e "   ${CYN}< $_tag_name > ( $_host ) [ $_command ]${NRM}"
     if [[ -n "$_command" ]]; then
       echo -e "   ${BLU}<${GRN}$_tag_name${BLU}> (${YLW}$_host${BLU}) [${CYN}$_command${BLU}]${NRM}"
@@ -260,16 +329,16 @@ function awsassrole {
     _iam_role_arn=$_iam_arg
   fi
   local _iam_role_name=${_iam_role_arn#*/}
-  local _iam_role_aws_acct_id=$(cut -d':' -f5 <<<"$_iam_role_arn")
+  local _iam_role_aws_acct_id=$(cut -d':' -f5 <<< "$_iam_role_arn")
   local _iam_role_aws_acct_env=$(awsacct "$_iam_role_aws_acct_id")
   local _session
   if [[ -n "$_iam_role_arn" ]]; then
     [ -n "$AWS_DEBUG" ] && echo "debug: aws sts assume-role --region us-east-1 --role-arn $_iam_role_arn --role-session-name $_iam_role_name --duration-seconds $_DURATION"
     if _session=$(aws sts assume-role --region us-east-1 --role-arn "$_iam_role_arn" --role-session-name "$_iam_role_name" --duration-seconds "$_DURATION"); then
-      _unset_aws_environment >/dev/null
-      export AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId <<<"$_session")
-      export AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey <<<"$_session")
-      export AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken <<<"$_session")
+      _unset_aws_environment > /dev/null
+      export AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId <<< "$_session")
+      export AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey <<< "$_session")
+      export AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken <<< "$_session")
       export AWS_DEFAULT_PROFILE="role:$_iam_role_name"
       _set_aws_prompt_colors "$_iam_role_aws_acct_env"
       unset AWS_DEFAULT_PROFILE
@@ -290,7 +359,7 @@ function awsdr {
   local _country
   local _region=$1
   if [[ -n "$_region" ]]; then
-    if [[ "$(wc -c <<<"$_region")" -eq 4 ]]; then
+    if [[ "$(wc -c <<< "$_region")" -eq 4 ]]; then
       case ${_region:0:1} in
         a) _country="ap" ;;
         c) _country="ca" ;;
@@ -384,11 +453,11 @@ function awsasgcp {
   local _pc_cmd
   local _region
   _USAGE="usage: awsasgcp -r|--resume or -s|--suspend [--region REGION] [--dry-run] [AutoScalingGroupName|RegEx]"
-  _AWS_CMD=$(command -v aws 2>/dev/null) || {
+  _AWS_CMD=$(command -v aws 2> /dev/null) || {
     echo "'aws' needed to run this function"
     exit 3
   }
-  _JQ_CMD=$(command -v jq 2>/dev/null) || {
+  _JQ_CMD=$(command -v jq 2> /dev/null) || {
     echo "'jq' needed to run this function"
     exit 3
   }
@@ -462,13 +531,13 @@ function awsci {
   }
   local _instance_id
   local _instance_name
-  _instance_name=$($_AWS_CMD ec2 describe-instances --region "$_region" --instance-ids "$_INSTANCE_PATTERN" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text 2>/dev/null)
+  _instance_name=$($_AWS_CMD ec2 describe-instances --region "$_region" --instance-ids "$_INSTANCE_PATTERN" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text 2> /dev/null)
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     _instance_id=$_INSTANCE_PATTERN
   else
-    _instance_id=$($_AWS_CMD ec2 describe-instances --region "$_region" --filters "Name=tag:Name,Values=*${_INSTANCE_PATTERN}*" --output json | jq -r .Reservations[].Instances[].InstanceId 2>/dev/null)
-    _instance_name=$($_AWS_CMD ec2 describe-instances --region "$_region" --instance-ids "$_instance_id" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text 2>/dev/null)
+    _instance_id=$($_AWS_CMD ec2 describe-instances --region "$_region" --filters "Name=tag:Name,Values=*${_INSTANCE_PATTERN}*" --output json | jq -r .Reservations[].Instances[].InstanceId 2> /dev/null)
+    _instance_name=$($_AWS_CMD ec2 describe-instances --region "$_region" --instance-ids "$_instance_id" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value]" --output text 2> /dev/null)
   fi
   [ -z "$_instance_name" ] && {
     echo "note: did not find an instance with ID: $_instance_id"
@@ -1075,7 +1144,7 @@ default display:
       local _tmp_file
       _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
       for _region in $_ALL_REGIONS; do
-        eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >>"$_tmp_file"
+        eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$/|'"$_region"'/;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> "$_tmp_file"
       done
       local _instance_id
       local _awsdi_line
@@ -1107,7 +1176,7 @@ default display:
         return
       }
       _tmp_file=$(mktemp /tmp/awsdi_pws.XXXX)
-      eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >>"$_tmp_file"
+      eval "$_AWS_EC2_DI_CMD $_profile --region=$_region $_max_items $_filters --query \"$_query\" --output table" | \grep -Ev '^[-+]|DescribeInstances' | sort | sed 's/^|  //;s/ |$//;s/ *| */|/g' | column -s'|' -t | sed 's/\(  \)\([a-zA-Z0-9]\)/ | \2/g' >> "$_tmp_file"
       # shellcheck disable=SC2013
       for _instance_id in $(awk '{print $3}' "$_tmp_file"); do
         _awsdi_line=$(\grep "$_instance_id" "$_tmp_file")
@@ -2178,7 +2247,7 @@ default display:
     # _hosted_zone_id=$(aws route53 list-hosted-zones-by-name --dns-name "$_dns_name" | jq -r .HostedZones[].Id)
     _hosted_zone_id=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name=='${_dns_name}.'].Id" | jq -r .[])
     # if [[ "$(wc -l <<< "$_hosted_zone_id" | awk '{print $1}')" -gt 1 ]]; then
-    if [[ "$(wc -l <<<"$_hosted_zone_id")" -gt 1 ]]; then
+    if [[ "$(wc -l <<< "$_hosted_zone_id")" -gt 1 ]]; then
       echo "there is more than one hosted zone with the domain name: '$_dns_name'"
       aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name + .Id + ") " + .Config.Comment' | sort | sed 's:\./hostedzone/: (:' | \grep "$_dns_name" | awk '{print "  - "$0}'
       echo "please use the '-i' option and specify the desired Hosted Zone ID"
@@ -2229,7 +2298,7 @@ function elbinsts {
       _inst_id=$(echo "$line" | awk '{print $3}')
       _inst_id_state=$(echo "$_inst_id_states" | \grep "$_inst_id")
       echo "${line//$_inst_id/$_inst_id_state}"
-    done <<<"$(aws ec2 describe-instances --region "$_region" --instance-ids "$_inst_ids" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],InstanceId]" --output table | \grep -Ev '^[-+]|Describe' | sort | sed 's/|  /| /g;s/^| //;s/ \+|$//')"
+    done <<< "$(aws ec2 describe-instances --region "$_region" --instance-ids "$_inst_ids" --query "Reservations[].Instances[].[Tags[?Key=='Name'].Value|[0],InstanceId]" --output table | \grep -Ev '^[-+]|Describe' | sort | sed 's/|  /| /g;s/^| //;s/ \+|$//')"
   else
     echo "not found"
   fi
@@ -2239,8 +2308,8 @@ function rac {
   # remember AWS CLI command - save the given command for later retreval
   local _COMMAND="$*"
   local _COMMANDS_FILE=$HOME/.aws_commands.txt
-  echo "$_COMMAND" >>"$_COMMANDS_FILE"
-  sort "$_COMMANDS_FILE" >"$_COMMANDS_FILE.sorted"
+  echo "$_COMMAND" >> "$_COMMANDS_FILE"
+  sort "$_COMMANDS_FILE" > "$_COMMANDS_FILE.sorted"
   \cp -f "$_COMMANDS_FILE.sorted" "$_COMMANDS_FILE"
   \rm -f "$_COMMANDS_FILE.sorted"
   echo "added: '$_COMMAND'"
@@ -2259,7 +2328,7 @@ function sae {
   local _sso_start_url
   if [[ -n "$_PROFILE" ]]; then
     _verify_aws_profile "$_PROFILE" || return $?
-    [ "$COMPANY" == "onica" ] && ssol unset >/dev/null 2>&1
+    [ "$COMPANY" == "onica" ] && ssol unset > /dev/null 2>&1
     if [[ "$_PROFILE" == "unset" ]]; then
       _unset_aws_environment
     else
@@ -2313,6 +2382,46 @@ function sae {
   fi
 }
 
+function saecm {
+  # Set AWS environment using cloudmate
+  local _PROFILE="$1"
+  local _ADSK_ACCTS=$HOME/.adsk-accounts.json
+  local _ADSK_CFG=$HOME/.aws/.adsk-accounts-config.json
+  local _cm_env
+
+  if [[ -n "$_PROFILE" ]]; then
+    if [[ "$_PROFILE" == "unset" ]]; then
+      _unset_aws_environment
+    else
+      if [[ "$_PROFILE" == "renew" ]]; then
+        _PROFILE=$AWS_DEFAULT_PROFILE
+      fi
+      _verify_adsk_profile $_ADSK_ACCTS "$_PROFILE" || return $?
+      _unset_aws_environment > /dev/null
+      _cm_env=$(jq -r '.accounts."'"$_PROFILE"'".env' "$_ADSK_ACCTS")
+      if cloudmate -ve "$_cm_env" > /dev/null; then
+        # set AWS environment variables
+        export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
+        export AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
+        export AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
+        export AWS_SESSION_TOKEN=$(aws configure get aws_session_token)
+        export AWS_DEFAULT_REGION=$(jq -r '.accounts."'"$_PROFILE"'".region' "$_ADSK_ACCTS")
+        export AWS_ACCOUNT_ID=$(jq -r '.accounts."'"$_PROFILE"'".id' "$_ADSK_ACCTS")
+        export AWS_ENVIRONMENT="$(jq -r '.accounts."'"$_PROFILE"'".aws_account_desc' "$_ADSK_ACCTS") [$AWS_ACCOUNT_ID]"
+        export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S-07:00" "$AWS_CREDENTIAL_EXPIRATION" +"%s" 2> /dev/null)
+        # environment used for PS_PROMPT (color)
+        _set_aws_prompt_colors $(jq -r '.accounts."'"$_PROFILE"'".env_color' "$_ADSK_ACCTS")
+        echo "AWS environment set (via cloudmate): $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
+      else
+        _set_aws_prompt_colors
+        echo "could not set AWS environment (via cloudmate)"
+      fi
+    fi
+  else
+    _show_aws_environment
+  fi
+}
+
 function saefc {
   # Set AWS environment from values in clipboard
   local _PASTE_CMD="pbpaste"
@@ -2321,9 +2430,9 @@ function saefc {
   # do regular sae() first if profile given
   local _PROFILE="$1"
   if [[ -n "$_PROFILE" ]]; then
-    if command -V $_PASTE_CMD &>/dev/null; then
-      _unset_aws_environment >/dev/null
-      $_PASTE_CMD >$_SSO_EXPORTS
+    if command -V $_PASTE_CMD &> /dev/null; then
+      _unset_aws_environment > /dev/null
+      $_PASTE_CMD > $_SSO_EXPORTS
       source $_SSO_EXPORTS
       _set_aws_prompt_colors $(_get_saml_setting "$_PROFILE" environment)
     else
@@ -2348,7 +2457,7 @@ function saesaml {
       if [[ "$_PROFILE" == "renew" ]]; then
         _PROFILE=$AWS_DEFAULT_PROFILE
       fi
-      _unset_aws_environment >/dev/null
+      _unset_aws_environment > /dev/null
       # "hide" the config - temporary until fully using SAML
       mv $HOME/.aws/config{,.sso}
       if saml2aws login \
@@ -2367,7 +2476,7 @@ function saesaml {
         export AWS_ENVIRONMENT="$(_get_saml_setting "$_PROFILE" aws_account_desc) [$AWS_ACCOUNT_ID]"
         # DEPLOY_ENVIRONMENT used for Runway (docs.onica.com/projects/runway)
         export DEPLOY_ENVIRONMENT=$(_get_saml_setting "$_PROFILE" runway_deploy_env)
-        export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S-07:00" "$AWS_CREDENTIAL_EXPIRATION" +"%s" 2>/dev/null)
+        export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S-07:00" "$AWS_CREDENTIAL_EXPIRATION" +"%s" 2> /dev/null)
         # environment used for PS_PROMPT (color)
         _set_aws_prompt_colors $(_get_saml_setting "$_PROFILE" environment)
         echo "AWS environment set (via SAML): $AWS_ENVIRONMENT ($AWS_DEFAULT_PROFILE)"
@@ -2418,8 +2527,8 @@ function saesso {
         _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
         _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
       fi
-      _sso_exp_time=$(jq -r .expiresAt "$_sso_cache_file" 2>/dev/null)
-      _sso_exp_time_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "$_sso_exp_time" +"%s" 2>/dev/null)
+      _sso_exp_time=$(jq -r .expiresAt "$_sso_cache_file" 2> /dev/null)
+      _sso_exp_time_ts=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "$_sso_exp_time" +"%s" 2> /dev/null)
       _current_time_ts=$(date +"%s")
       if [[ -x "$_sso_exp_time" ]] || [[ $_current_time_ts -ge $_sso_exp_time_ts ]]; then
         echo "no expiration time found or expired, running 'aws sso login --profile $_PROFILE'..."
@@ -2433,13 +2542,13 @@ function saesso {
       _sso_account_id=$(_get_aws_profile_setting "$_PROFILE" sso_account_id)
       _sso_role_name=$(_get_aws_profile_setting "$_PROFILE" sso_role_name)
       _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
-      if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2>/dev/null); then
+      if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2> /dev/null); then
         echo "SSO creds are expired, running 'aws sso login --profile $_PROFILE'..."
         aws sso login --profile "$_PROFILE"
         _sso_cache_file=$(ls -1tr "$_SSO_CACHE_DIR" | tail -1)
         _sso_cache_file=$_SSO_CACHE_DIR/$_sso_cache_file
         _sso_access_token=$(jq -r .accessToken "$_sso_cache_file")
-        if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2>/dev/null); then
+        if ! _sso_role_creds=$(aws sso get-role-credentials --role-name "$_sso_role_name" --access-token "$_sso_access_token" --account-id "$_sso_account_id" 2> /dev/null); then
           echo "can't get SSO role Credentials"
           _unset_aws_environment
           return 3
@@ -2450,10 +2559,10 @@ function saesso {
       export AWS_SESSION_TOKEN
       export AWS_STS_EXPIRES_TS
       # this AWS_STS_EXPIRES_TS def (w/cut) only works til: Sat Nov 20 09:46:39 PST 2286
-      AWS_ACCESS_KEY_ID=$(jq -r .roleCredentials.accessKeyId <<<"$_sso_role_creds")
-      AWS_SECRET_ACCESS_KEY=$(jq -r .roleCredentials.secretAccessKey <<<"$_sso_role_creds")
-      AWS_SESSION_TOKEN=$(jq -r .roleCredentials.sessionToken <<<"$_sso_role_creds")
-      AWS_STS_EXPIRES_TS=$(jq -r .roleCredentials.expiration <<<"$_sso_role_creds" | cut -c -10)
+      AWS_ACCESS_KEY_ID=$(jq -r .roleCredentials.accessKeyId <<< "$_sso_role_creds")
+      AWS_SECRET_ACCESS_KEY=$(jq -r .roleCredentials.secretAccessKey <<< "$_sso_role_creds")
+      AWS_SESSION_TOKEN=$(jq -r .roleCredentials.sessionToken <<< "$_sso_role_creds")
+      AWS_STS_EXPIRES_TS=$(jq -r .roleCredentials.expiration <<< "$_sso_role_creds" | cut -c -10)
       export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
       _aws_acct_desc=$(_get_aws_profile_setting "$_PROFILE" aws_account_desc)
       export AWS_ENVIRONMENT="$_aws_acct_desc [$_sso_account_id]"
@@ -2482,13 +2591,13 @@ function saevl {
     if [[ "$_PROFILE" == "unset" ]]; then
       _unset_aws_environment
     else
-      _unset_aws_environment >/dev/null
+      _unset_aws_environment > /dev/null
       export AWS_ACCOUNT_ID=$(_get_saml_setting "$_PROFILE" aws_acct_id)
-      if _vault_data=$(vault write account/$AWS_ACCOUNT_ID/sts/Owner ttl=4h -format=json 2>/dev/null); then
+      if _vault_data=$(vault write account/$AWS_ACCOUNT_ID/sts/Owner ttl=4h -format=json 2> /dev/null); then
         # set AWS environment variables
-        export AWS_ACCESS_KEY_ID=$(jq -r .data.access_key <<<"$_vault_data")
-        export AWS_SECRET_ACCESS_KEY=$(jq -r .data.secret_key <<<"$_vault_data")
-        export AWS_SESSION_TOKEN=$(jq -r .data.security_token <<<"$_vault_data")
+        export AWS_ACCESS_KEY_ID=$(jq -r .data.access_key <<< "$_vault_data")
+        export AWS_SECRET_ACCESS_KEY=$(jq -r .data.secret_key <<< "$_vault_data")
+        export AWS_SESSION_TOKEN=$(jq -r .data.security_token <<< "$_vault_data")
         export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
         export AWS_ACCOUNT=$_PROFILE         # for serverless (shouldn't be here, but :shrug:)
         export AWS_DEFAULT_REGION=$(_get_saml_setting "$_PROFILE" region)
@@ -2497,7 +2606,7 @@ function saevl {
         export DEPLOY_ENVIRONMENT=$(_get_saml_setting "$_PROFILE" runway_deploy_env)
         export AWS_STS_EXPIRES_TS=$(($(date +%s) + 14400))
       else
-        _unset_aws_environment >/dev/null
+        _unset_aws_environment > /dev/null
         _set_aws_prompt_colors
         echo "error: can't get AWS creds, are you on the correct VPN?"
         return 2
@@ -2530,9 +2639,9 @@ function sar {
       local _role_name
       local _aws_acct
       _role_arn=$(_get_aws_profile_setting "$_PROFILE" role_arn)
-      _role_name=$(cut -d'/' -f2- <<<"$_role_arn")
-      _aws_acct=$(cut -d':' -f5 <<<"$_role_arn")
-      if aws sts assume-role --role-arn "$_role_arn" --role-session-name "$_PROFILE" --duration-seconds "$_STS_DURATION" >"$_AWS_STS_CREDS"; then
+      _role_name=$(cut -d'/' -f2- <<< "$_role_arn")
+      _aws_acct=$(cut -d':' -f5 <<< "$_role_arn")
+      if aws sts assume-role --role-arn "$_role_arn" --role-session-name "$_PROFILE" --duration-seconds "$_STS_DURATION" > "$_AWS_STS_CREDS"; then
         export AWS_ACCESS_KEY_ID
         export AWS_SECRET_ACCESS_KEY
         export AWS_SESSION_TOKEN
@@ -2594,7 +2703,7 @@ function wtac {
   \grep --colour=always "$_COMMAND_PATTERN" "$_COMMANDS_FILE"
   while read -r _line; do
     history -s "$_line"
-  done <<<"$(\grep "$_COMMAND_PATTERN" "$_COMMANDS_FILE" | sed 's:\\:\\\\:g')"
+  done <<< "$(\grep "$_COMMAND_PATTERN" "$_COMMANDS_FILE" | sed 's:\\:\\\\:g')"
 }
 
 # -------------------- define aliases --------------------

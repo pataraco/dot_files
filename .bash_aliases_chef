@@ -19,23 +19,23 @@ CHEF_BA_FILE=".bash_aliases_chef"
 # -------------------- define functions --------------------
 
 function showcf {
-   # show an environment specific function
-   local _ALIASES_FILE="$HOME/$CHEF_BA_FILE"
-   if [[ $1 ]]; then
-      if grep -q "^function $1 " "$_ALIASES_FILE"; then
-         sed -n '/^function '"$1"' /,/^}/p' "$_ALIASES_FILE"
-      else
-         echo "function: '$1' - not found"
-      fi
-   else
-      echo
-      echo "which function do you want to see?"
-      grep "^function .* " "$_ALIASES_FILE" | awk '{print $2}' | cut -d'(' -f1 |  awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
-      echo -ne "enter function: "
-      read -r func
-      echo
-      showcf "$func"
-   fi
+  # show an environment specific function
+  local _ALIASES_FILE="$HOME/$CHEF_BA_FILE"
+  if [[ $1 ]]; then
+    if grep -q "^function $1 " "$_ALIASES_FILE"; then
+      sed -n '/^function '"$1"' /,/^}/p' "$_ALIASES_FILE"
+    else
+      echo "function: '$1' - not found"
+    fi
+  else
+    echo
+    echo "which function do you want to see?"
+    grep "^function .* " "$_ALIASES_FILE" | awk '{print $2}' | cut -d'(' -f1 | awk -v c=4 'BEGIN{print "\n\t--- Functions (use \`scf\` to show details) ---"}{if(NR%c){printf "  %-18s",$1}else{printf "  %-18s\n",$1}}END{print CR}'
+    echo -ne "enter function: "
+    read -r func
+    echo
+    showcf "$func"
+  fi
 }
 
 # OLD Stuff - saving for posterity
@@ -85,79 +85,79 @@ function showcf {
 # }
 
 function fric {
-   # find roles that I've changed
-   local _cookbook_dir
-   local _owd
-   _owd=$(pwd)
-   cd "$CHEF_REPO/cookbooks" || return
-   for _cookbook_dir in *; do
-      if [ -d "$_cookbook_dir" ]; then
-         echo " ------- $_cookbook_dir -------"
-         cd "$_cookbook_dir" || return
-         hg stat
-         hg shelve -l
-      fi
-   done
-   cd "$_owd" || return
+  # find roles that I've changed
+  local _cookbook_dir
+  local _owd
+  _owd=$(pwd)
+  cd "$CHEF_REPO/cookbooks" || return
+  for _cookbook_dir in *; do
+    if [ -d "$_cookbook_dir" ]; then
+      echo " ------- $_cookbook_dir -------"
+      cd "$_cookbook_dir" || return
+      hg stat
+      hg shelve -l
+    fi
+  done
+  cd "$_owd" || return
 }
 
 function fsic {
-   # find stuff that I've changed in the sub dirs of the cwd
-   local _owd
-   _owd=$(pwd)
-   local _sub_dir
-   for _sub_dir in *; do
-      if [ -d "$_sub_dir" ]; then
-         echo " ------- $_sub_dir -------"
-         cd "$_sub_dir" || return
-         hg stat
-         hg shelve -l
-      fi
-   done
-   cd "$_owd" || return
+  # find stuff that I've changed in the sub dirs of the cwd
+  local _owd
+  _owd=$(pwd)
+  local _sub_dir
+  for _sub_dir in *; do
+    if [ -d "$_sub_dir" ]; then
+      echo " ------- $_sub_dir -------"
+      cd "$_sub_dir" || return
+      hg stat
+      hg shelve -l
+    fi
+  done
+  cd "$_owd" || return
 }
 
 function fsip {
-   # find stuff that I've pushed in the sub dirs of the cwd
-   local _owd
-   _owd=$(pwd)
-   local _sub_dir
-   for _sub_dir in *; do
-      if [ -d "$_sub_dir" ]; then
-         echo " ------- $_sub_dir -------"
-         cd "$_sub_dir" || return
-         hg slog | grep Raco
-      fi
-   done
-   cd "$_owd" || return
+  # find stuff that I've pushed in the sub dirs of the cwd
+  local _owd
+  _owd=$(pwd)
+  local _sub_dir
+  for _sub_dir in *; do
+    if [ -d "$_sub_dir" ]; then
+      echo " ------- $_sub_dir -------"
+      cd "$_sub_dir" || return
+      hg slog | grep Raco
+    fi
+  done
+  cd "$_owd" || return
 }
 
 function hgd {
-   # show mercurial diff
-   local _rev=$1
-   echo "hg diff -r $((--_rev)) -r $((++_rev))"
-   hg diff -r $((--_rev)) -r $((++_rev))
+  # show mercurial diff
+  local _rev=$1
+  echo "hg diff -r $((--_rev)) -r $((++_rev))"
+  hg diff -r $((--_rev)) -r $((++_rev))
 }
 
 function kcl {
-   # preform a client node list (and optionally grep for a pattern)
-   if knife_env_set; then
-      if [ -n "$1" ]; then
-         chef_clients=$($KNIFE_CMD client list | grep "$@")
-         if [ -n "$chef_clients" ]; then
-            echo "$chef_clients"
-         else
-            echo "did not find any nodes matching '$1' in the client list"
-         fi
+  # preform a client node list (and optionally grep for a pattern)
+  if knife_env_set; then
+    if [ -n "$1" ]; then
+      chef_clients=$($KNIFE_CMD client list | grep "$@")
+      if [ -n "$chef_clients" ]; then
+        echo "$chef_clients"
       else
-         chef_clients_nc=$($KNIFE_CMD client list)
-         if [ -n "$chef_clients_nc" ]; then
-            echo "$chef_clients_nc"
-         else
-            echo "could not find any clients to list"
-         fi
+        echo "did not find any nodes matching '$1' in the client list"
       fi
-   fi
+    else
+      chef_clients_nc=$($KNIFE_CMD client list)
+      if [ -n "$chef_clients_nc" ]; then
+        echo "$chef_clients_nc"
+      else
+        echo "could not find any clients to list"
+      fi
+    fi
+  fi
 }
 
 # OLD - saving for posterity
@@ -249,214 +249,215 @@ function kcl {
 # }
 
 function kcssh {
-   # cssh to servers matching PATTERN provided by user
-   # via `knife ssh` and internal FQDN's
-   if knife_env_set; then
-      source_ssh_env
-      servers=$1
-      eval "$KNIFE_CMD" ssh "name:*${servers}*" -a internal_fqdn cssh
-   fi
+  # cssh to servers matching PATTERN provided by user
+  # via `knife ssh` and internal FQDN's
+  if knife_env_set; then
+    source_ssh_env
+    servers=$1
+    eval "$KNIFE_CMD" ssh "name:*${servers}*" -a internal_fqdn cssh
+  fi
 }
 
 function kcssha {
-   # cssh to servers matching multiple PATTERNs provided
-   # via `knife node list` and `cssh`
- local fqdn_srvr_list
-   if knife_env_set; then
-      knife_node_list=$(mktemp /tmp/knl.XXXX)
-      $KNIFE_CMD node list > "$knife_node_list"
-      for server_pattern in "$@"; do
-         echo "looking for servers matching '$server_pattern'"
-         # shellcheck disable=SC2013
-         for actual_server in $(\grep "$server_pattern" "$knife_node_list"); do
-            actual_server_ifqdn=$($KNIFE_CMD node show -a internal_fqdn "$actual_server" | \grep fqdn | awk '{print $2}')
-            echo "found: $actual_server ($actual_server_ifqdn)"
-            fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
-         done
+  # cssh to servers matching multiple PATTERNs provided
+  # via `knife node list` and `cssh`
+  local fqdn_srvr_list
+  if knife_env_set; then
+    knife_node_list=$(mktemp /tmp/knl.XXXX)
+    $KNIFE_CMD node list > "$knife_node_list"
+    for server_pattern in "$@"; do
+      echo "looking for servers matching '$server_pattern'"
+      # shellcheck disable=SC2013
+      for actual_server in $(\grep "$server_pattern" "$knife_node_list"); do
+        actual_server_ifqdn=$($KNIFE_CMD node show -a internal_fqdn "$actual_server" | \grep fqdn | awk '{print $2}')
+        echo "found: $actual_server ($actual_server_ifqdn)"
+        fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
       done
-      if [ -n "$fqdn_srvr_list" ]; then
-         # get rid of dups
-         # shellcheck disable=SC2086
-         fqdn_srvr_list=$(for fqdns in $fqdn_srvr_list;do echo $fqdns;done|sort -u)
-         cssh "$fqdn_srvr_list" &
-      else
-         echo "no servers found"
-      fi
-      rm -f "$knife_node_list"
-   fi
+    done
+    if [ -n "$fqdn_srvr_list" ]; then
+      # get rid of dups
+      # shellcheck disable=SC2086
+      fqdn_srvr_list=$(for fqdns in $fqdn_srvr_list; do echo $fqdns; done | sort -u)
+      cssh "$fqdn_srvr_list" &
+    else
+      echo "no servers found"
+    fi
+    rm -f "$knife_node_list"
+  fi
 }
 
 function kcsshau {
-   # cssh to servers matching multiple PATTERNs provided
-   # via `knife node list` and `cssh`
-   local fqdn_srvr_list
-   if knife_env_set; then
-      knife_node_list=$(mktemp /tmp/knl.XXXX)
-      $KNIFE_CMD node list > "$knife_node_list"
-      for server_pattern in "$@"; do
-         echo "looking for servers matching '$server_pattern'"
-         # shellcheck disable=SC2013
-         for actual_server in $(\grep "$server_pattern" "$knife_node_list"); do
-            actual_server_ifqdn=$($KNIFE_CMD node show -a internal_fqdn "$actual_server" | \grep fqdn | awk '{print $2}')
-            echo "found: $actual_server ($actual_server_ifqdn)"
-            fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
-         done
+  # cssh to servers matching multiple PATTERNs provided
+  # via `knife node list` and `cssh`
+  local fqdn_srvr_list
+  if knife_env_set; then
+    knife_node_list=$(mktemp /tmp/knl.XXXX)
+    $KNIFE_CMD node list > "$knife_node_list"
+    for server_pattern in "$@"; do
+      echo "looking for servers matching '$server_pattern'"
+      # shellcheck disable=SC2013
+      for actual_server in $(\grep "$server_pattern" "$knife_node_list"); do
+        actual_server_ifqdn=$($KNIFE_CMD node show -a internal_fqdn "$actual_server" | \grep fqdn | awk '{print $2}')
+        echo "found: $actual_server ($actual_server_ifqdn)"
+        fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
       done
-      case $KNIFTLA in
-         ccd|pek|w11|w12|w13) ssh_identy_file=~/.ssh/China.pem     ;;
-                           *) ssh_identy_file=~/.ssh/Community.pem ;;
-      esac
-      if [ -n "$fqdn_srvr_list" ]; then
-         # shellcheck disable=SC2086
-         fqdn_srvr_list=$(for fqdns in $fqdn_srvr_list;do echo $fqdns;done|sort -u)
-         cssh -l ubuntu -o "-i $ssh_identy_file" "$fqdn_srvr_list" &
-      else
-         echo "no servers found"
-      fi
-      rm -f "$knife_node_list"
-   fi
+    done
+    case $KNIFTLA in
+      ccd | pek | w11 | w12 | w13) ssh_identy_file=~/.ssh/China.pem ;;
+      *) ssh_identy_file=~/.ssh/Community.pem ;;
+    esac
+    if [ -n "$fqdn_srvr_list" ]; then
+      # shellcheck disable=SC2086
+      fqdn_srvr_list=$(for fqdns in $fqdn_srvr_list; do echo $fqdns; done | sort -u)
+      cssh -l ubuntu -o "-i $ssh_identy_file" "$fqdn_srvr_list" &
+    else
+      echo "no servers found"
+    fi
+    rm -f "$knife_node_list"
+  fi
 }
 
 function kcsshi {
-   # cssh to servers matching PATTERN provided by user
-   # via `knife ssh` and IP addresses
-   if knife_env_set; then
-      source_ssh_env
-      servers=$1
-      eval "$KNIFE_CMD" ssh "name:*${servers}*" -a ipaddress cssh
-   fi
+  # cssh to servers matching PATTERN provided by user
+  # via `knife ssh` and IP addresses
+  if knife_env_set; then
+    source_ssh_env
+    servers=$1
+    eval "$KNIFE_CMD" ssh "name:*${servers}*" -a ipaddress cssh
+  fi
 }
 
 function kcsshu {
-   # cssh to servers matching PATTERN provided by user
-   # via `knife ssh` and as ubuntu
-   if knife_env_set; then
-      source_ssh_env
-      servers=$1
-      case $KNIFTLA in
-         ccd|pek|w11|w12|w13) ssh_identy_file=~/.ssh/China.pem     ;;
-                         sna) ssh_identy_file=~/.ssh/Community.pem ;;
-                         dts) ssh_identy_file=~/.ssh/DevTest.pem   ;;
-                           *) ssh_identy_file=~/.ssh/Community.pem ;;
-      esac
-      eval "$KNIFE_CMD" ssh "name:*${servers}*" -u ubuntu -i $ssh_identy_file -a ipaddress cssh
-   fi
+  # cssh to servers matching PATTERN provided by user
+  # via `knife ssh` and as ubuntu
+  if knife_env_set; then
+    source_ssh_env
+    servers=$1
+    case $KNIFTLA in
+      ccd | pek | w11 | w12 | w13) ssh_identy_file=~/.ssh/China.pem ;;
+      sna) ssh_identy_file=~/.ssh/Community.pem ;;
+      dts) ssh_identy_file=~/.ssh/DevTest.pem ;;
+      *) ssh_identy_file=~/.ssh/Community.pem ;;
+    esac
+    eval "$KNIFE_CMD" ssh "name:*${servers}*" -u ubuntu -i $ssh_identy_file -a ipaddress cssh
+  fi
 }
 
 function kcurla {
-   # curl to servers matching multiple PATTERNs provided
-   # via `knife node list` to check their health/build status
-   # usage: kcurla PATTERN
-   local fqdn_srvr_list
-   if knife_env_set; then
-      knife_node_list=$(mktemp /tmp/knl.XXXX)
-      $KNIFE_CMD node list > "$knife_node_list"
-      for server_pattern in "$@"; do
-         # echo "debug: looking for servers matching '$server_pattern'"
-         # shellcheck disable=SC2013
-         for actual_server in $(\grep "$server_pattern" "$knife_node_list"); do
-            actual_server_ifqdn=$($KNIFE_CMD node show -a internal_fqdn "$actual_server" | \grep fqdn | awk '{print $2}')
-            # echo "debug: found: $actual_server ($actual_server_ifqdn)"
-            fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
-         done
+  # curl to servers matching multiple PATTERNs provided
+  # via `knife node list` to check their health/build status
+  # usage: kcurla PATTERN
+  local fqdn_srvr_list
+  if knife_env_set; then
+    knife_node_list=$(mktemp /tmp/knl.XXXX)
+    $KNIFE_CMD node list > "$knife_node_list"
+    for server_pattern in "$@"; do
+      # echo "debug: looking for servers matching '$server_pattern'"
+      # shellcheck disable=SC2013
+      for actual_server in $(\grep "$server_pattern" "$knife_node_list"); do
+        actual_server_ifqdn=$($KNIFE_CMD node show -a internal_fqdn "$actual_server" | \grep fqdn | awk '{print $2}')
+        # echo "debug: found: $actual_server ($actual_server_ifqdn)"
+        fqdn_srvr_list="$fqdn_srvr_list $actual_server_ifqdn"
       done
-      if [ -n "$fqdn_srvr_list" ]; then
-         # shellcheck disable=SC2086
-         fqdn_srvr_list=$(for fqdns in $fqdn_srvr_list;do echo $fqdns;done|sort -u)
-         for srvr in $fqdn_srvr_list; do
-            echo -n "$srvr: "
-            eval curl -qs "$fqdn_srvr_list/health" | sed 's/<.*>//'
-            echo -n ": "
-            eval curl -qs "$fqdn_srvr_list/build_info" | sed 's/<.*>//'; echo
-         done
-      else
-         echo "no servers found"
-      fi
-      rm -f "$knife_node_list"
-   fi
+    done
+    if [ -n "$fqdn_srvr_list" ]; then
+      # shellcheck disable=SC2086
+      fqdn_srvr_list=$(for fqdns in $fqdn_srvr_list; do echo $fqdns; done | sort -u)
+      for srvr in $fqdn_srvr_list; do
+        echo -n "$srvr: "
+        eval curl -qs "$fqdn_srvr_list/health" | sed 's/<.*>//'
+        echo -n ": "
+        eval curl -qs "$fqdn_srvr_list/build_info" | sed 's/<.*>//'
+        echo
+      done
+    else
+      echo "no servers found"
+    fi
+    rm -f "$knife_node_list"
+  fi
 }
 
 function kesd {
-   # knife ec2 server delete
-   if knife_env_set; then
-      ans="n"
-      if [ -n "$1" ]; then
-         if [ "$1" == "-y" ]; then
-            ans="y"
-            shift
-            if [ -n "$1" ]; then
-               server=$1
-            else
-               echo "you need to specify a server to delete"
-               return 1
-            fi
-         else
-            server=$1
-         fi
-         inst_id=$($KNIFE_CMD node show "$server" -a ec2.instance_id | \grep -F "instance_id:" | awk '{print $2}')
-         if [ -z "$inst_id" ]; then
-            inst=$(cut -d- -f3 <<< "$server")
-            inst_id="i-$inst"
-         fi
-         echo "here's the command:"
-         echo "   $KNIFE_CMD ec2 server delete -y -R --purge --node $server $inst_id"
-         [ "$ans" == "n" ] && read -rp "is this correct? " ans
-         if [ "$ans" = "y" ]; then
-            echo "ok, running the command"
-            $KNIFE_CMD ec2 server delete -y -R --purge --node "$server" "$inst_id"
-         else
-            echo "ok, NOT running the command"
-         fi
+  # knife ec2 server delete
+  if knife_env_set; then
+    ans="n"
+    if [ -n "$1" ]; then
+      if [ "$1" == "-y" ]; then
+        ans="y"
+        shift
+        if [ -n "$1" ]; then
+          server=$1
+        else
+          echo "you need to specify a server to delete"
+          return 1
+        fi
       else
-         echo "you need to specify a server to delete"
+        server=$1
       fi
-   fi
+      inst_id=$($KNIFE_CMD node show "$server" -a ec2.instance_id | \grep -F "instance_id:" | awk '{print $2}')
+      if [ -z "$inst_id" ]; then
+        inst=$(cut -d- -f3 <<< "$server")
+        inst_id="i-$inst"
+      fi
+      echo "here's the command:"
+      echo "   $KNIFE_CMD ec2 server delete -y -R --purge --node $server $inst_id"
+      [ "$ans" == "n" ] && read -rp "is this correct? " ans
+      if [ "$ans" = "y" ]; then
+        echo "ok, running the command"
+        $KNIFE_CMD ec2 server delete -y -R --purge --node "$server" "$inst_id"
+      else
+        echo "ok, NOT running the command"
+      fi
+    else
+      echo "you need to specify a server to delete"
+    fi
+  fi
 }
 
 function kf {
-   # `knife` command wrapper to use my dynamically set knife.rb file
-   if knife_env_set; then
-      eval "$KNIFE_CMD" '$*'
-   fi
+  # `knife` command wrapper to use my dynamically set knife.rb file
+  if knife_env_set; then
+    eval "$KNIFE_CMD" '$*'
+  fi
 }
 
 function knife_env_set {
-   # check if knife environment set (specifically the knife.rb file)
-   if [ -z "$CHEF_PROFILE" ]; then
-      echo "[chef] knife environment NOT set - use 'ske'"
-      return 1
-   else
-      return 0
-   fi
+  # check if knife environment set (specifically the knife.rb file)
+  if [ -z "$CHEF_PROFILE" ]; then
+    echo "[chef] knife environment NOT set - use 'ske'"
+    return 1
+  else
+    return 0
+  fi
 }
 
 function knl {
-   # preform a knife node list (and optionally grep for a pattern)
-   local _chef_nodes_nc
-   if knife_env_set; then
-      if [ -n "$1" ]; then
-         chef_nodes=$($KNIFE_CMD node list | grep "$*")
-         if [ -n "$chef_nodes" ]; then
-            echo "$chef_nodes"
-         else
-            echo "did not find any nodes matching '$1' in the node list"
-         fi
+  # preform a knife node list (and optionally grep for a pattern)
+  local _chef_nodes_nc
+  if knife_env_set; then
+    if [ -n "$1" ]; then
+      chef_nodes=$($KNIFE_CMD node list | grep "$*")
+      if [ -n "$chef_nodes" ]; then
+        echo "$chef_nodes"
       else
-         _chef_nodes_nc=$($KNIFE_CMD node list)
-         if [ -n "$_chef_nodes_nc" ]; then
-            echo "$_chef_nodes_nc"
-         else
-            echo "could not find any nodes to list"
-         fi
+        echo "did not find any nodes matching '$1' in the node list"
       fi
-   fi
+    else
+      _chef_nodes_nc=$($KNIFE_CMD node list)
+      if [ -n "$_chef_nodes_nc" ]; then
+        echo "$_chef_nodes_nc"
+      else
+        echo "could not find any nodes to list"
+      fi
+    fi
+  fi
 }
 
 function kns {
-   # perform knife node show for one or more node and
-   # optionally specify an attribute
-   # you can give -a option to show only one attribute
-   local _USAGE="usage: \
+  # perform knife node show for one or more node and
+  # optionally specify an attribute
+  # you can give -a option to show only one attribute
+  local _USAGE="usage: \
 kns [-h | -l] [-a ATTRIBUTE] [NODE]
 description: knife node show
 options:
@@ -470,441 +471,469 @@ options:
         ip   ipaddress
         os   hostnamectl.operating_system
         rl   run_list"
-   if knife_env_set; then
-      local _attrib
-      local _chef_node
-      local _chef_nodes_nc  # chef nodes no-color (from grep)
-      local _l_opt
-      while [[ "$1" =~ ^"-" ]]; do
-         case $1 in
-            -a)
-               case $2 in
-                   az) _attrib=ec2.availability_zone ;;
-                   fq) _attrib=fqdn ;;
-                   id) _attrib=ec2.instance_id ;;
-                   ip) _attrib=ipaddress ;;
-                   rl) _attrib=run_list ;;
-                  ifq) _attrib=internal_fqdn ;;
-                    *) _attrib=$2 ;;
-               esac
-               shift 2 ;;
-            -l) _l_opt="$1"; shift ;;
-            -h) echo "$_USAGE"; return ;;
-         esac
+  if knife_env_set; then
+    local _attrib
+    local _chef_node
+    local _chef_nodes_nc # chef nodes no-color (from grep)
+    local _l_opt
+    while [[ "$1" =~ ^"-" ]]; do
+      case $1 in
+        -a)
+          case $2 in
+            az) _attrib=ec2.availability_zone ;;
+            fq) _attrib=fqdn ;;
+            id) _attrib=ec2.instance_id ;;
+            ip) _attrib=ipaddress ;;
+            rl) _attrib=run_list ;;
+            ifq) _attrib=internal_fqdn ;;
+            *) _attrib=$2 ;;
+          esac
+          shift 2
+          ;;
+        -l)
+          _l_opt="$1"
+          shift
+          ;;
+        -h)
+          echo "$_USAGE"
+          return
+          ;;
+      esac
+    done
+    if [ -n "$1" ]; then
+      _chef_nodes_nc=$($KNIFE_CMD node list | \grep "$1")
+    else
+      _chef_nodes_nc=$($KNIFE_CMD node list)
+    fi
+    if [ -n "$_chef_nodes_nc" ]; then
+      for _chef_node in $_chef_nodes_nc; do
+        echo -e "\t\t\t-----  ${GRN}$_chef_node${NRM}  -----"
+        if [ -n "$_attrib" ]; then
+          $KNIFE_CMD node show "$_chef_node" -a "$_attrib"
+        else
+          $KNIFE_CMD node show "$_chef_node" "$_l_opt"
+        fi
       done
+    else
       if [ -n "$1" ]; then
-         _chef_nodes_nc=$($KNIFE_CMD node list | \grep "$1")
+        echo "did not find any nodes matching '$1' to show"
       else
-         _chef_nodes_nc=$($KNIFE_CMD node list)
+        echo "could not find any nodes to show"
       fi
-      if [ -n "$_chef_nodes_nc" ]; then
-         for _chef_node in $_chef_nodes_nc; do
-            echo -e "\t\t\t-----  ${GRN}$_chef_node${NRM}  -----"
-            if [ -n "$_attrib" ]; then
-               $KNIFE_CMD node show "$_chef_node" -a "$_attrib"
-            else
-               $KNIFE_CMD node show "$_chef_node" "$_l_opt"
-            fi
-         done
-      else
-         if [ -n "$1" ]; then
-            echo "did not find any nodes matching '$1' to show"
-         else
-            echo "could not find any nodes to show"
-         fi
-      fi
-   fi
+    fi
+  fi
 }
 
 function knsc {
-   # find the creator of one or more nodes
-   if knife_env_set; then
-      for srvr in $($KNIFE_CMD node list | \grep "$1"); do
-         echo -n "$srvr: "
-         $KNIFE_CMD node show "$srvr" -a Creator
-      done
-   fi
+  # find the creator of one or more nodes
+  if knife_env_set; then
+    for srvr in $($KNIFE_CMD node list | \grep "$1"); do
+      echo -n "$srvr: "
+      $KNIFE_CMD node show "$srvr" -a Creator
+    done
+  fi
 }
 
 function kosd {
-   # knife openstack server delete
-   if knife_env_set; then
-      if [ -n "$1" ]; then
-         server=$1
-         echo -n "run this?: '$KNIFE_CMD openstack server delete $server -y --purge' [y/n]: "
-         read -r ans
-         if [ "$ans" = "y" ]; then
-            echo "ok, running the command"
-            $KNIFE_CMD openstack server delete "$server" -y --purge
-         else
-            echo "ok, NOT running the command"
-         fi
+  # knife openstack server delete
+  if knife_env_set; then
+    if [ -n "$1" ]; then
+      server=$1
+      echo -n "run this?: '$KNIFE_CMD openstack server delete $server -y --purge' [y/n]: "
+      read -r ans
+      if [ "$ans" = "y" ]; then
+        echo "ok, running the command"
+        $KNIFE_CMD openstack server delete "$server" -y --purge
       else
-         echo "you need to specify a server to delete"
+        echo "ok, NOT running the command"
       fi
-   fi
+    else
+      echo "you need to specify a server to delete"
+    fi
+  fi
 }
 
 function kscp {
-   # perform `scp` using knife to get IP's of hosts given via a pattern
-   declare -A from_servers_ips
-   declare -A to_servers_ips
-   local multiple_froms=false
-   local multiple_tos=false
-   if knife_env_set; then
-      if [[ $* =~ : ]]; then
-         knife_node_list=$(mktemp /tmp/knl.XXXX)
-         $KNIFE_CMD node list > "$knife_node_list"
-      fi
-      if [ -n "$1" ] &&  [ -n "$2" ]; then
-         if [[ $1 =~ : ]]; then
-            fromserver=$(cut -d: -f1 <<< "$1")
-            from_server_nc=$(\grep "$fromserver" "$knife_node_list" | awk '{print $1}')
-            nos=$(echo "$from_server_nc" | wc -w)
-            if [ "$nos" -gt 1 ]; then
-               multiple_froms=true
-               for _fs in $from_server_nc; do
-                  from_servers_ips[$_fs]=$($KNIFE_CMD node show -a ipaddress "$_fs" | \grep ipaddress | awk '{print $2}')
-               done
-            else
-               multiple_froms=false
-               from_server=$from_server_nc
-               from_server_ip=$($KNIFE_CMD node show -a ipaddress "$from_server" | \grep ipaddress | awk '{print $2}')
-            fi
-            from_file=$(cut -d: -f2 <<< "$1")
-            ffc=":"
-         else
-            from_server=""
-            from_server_ip=""
-            from_file="$1"
-            ffc=""
-         fi
-         if [[ $2 =~ : ]]; then
-            toserver=$(cut -d: -f1 <<< "$2")
-            to_server_nc=$(\grep "$toserver" "$knife_node_list" | awk '{print $1}')
-            nos=$(wc -l <<< "$to_server_nc")
-            if [ "$nos" -gt 1 ]; then
-               multiple_tos=true
-               for _ts in $to_server_nc; do
-                  to_servers_ips[$_ts]=$($KNIFE_CMD node show -a ipaddress "$_ts" | \grep ipaddress | awk '{print $2}')
-               done
-            else
-               multiple_tos=false
-               to_server=$to_server_nc
-               to_server_ip=$($KNIFE_CMD node show -a ipaddress "$to_server" | \grep ipaddress | awk '{print $2}')
-            fi
-            to_file=$(cut -d: -f2 <<< "$2")
-            tfc=":"
-         else
-            to_server=""
-            to_server_ip=""
-            to_file="$2"
-            tfc=""
-         fi
-         if [ "$multiple_froms" = "true" ] &&  [ "$multiple_tos" = "true" ]; then
-            for _fs in $from_server_nc; do
-               for _ts in $to_server_nc; do
-                  echo "scp $_fs(${from_servers_ips[$_fs]}):$from_file $_ts(${to_servers_ips[$_ts]}):$to_file.$_fs" | grep -E "$fromserver|$toserver"
-                  scp "${from_servers_ips[$_fs]}:$from_file" "${to_servers_ips[$_ts]}:$to_file.$_fs"
-               done
-            done
-         elif [ "$multiple_froms" = "true" ]; then
-            for _fs in $from_server_nc; do
-               if [ -n "$to_server" ]; then
-                  echo "scp $_fs(${from_servers_ips[$_fs]}):$from_file $to_server($to_server_ip):$to_file.$_fs" | grep -E "$fromserver|$toserver"
-                  scp "${from_servers_ips[$_fs]}:$from_file" "$to_server_ip:$to_file.$_fs"
-               else
-                  echo "scp $_fs(${from_servers_ips[$_fs]}):$from_file $to_file.$_fs" | grep "$fromserver"
-                  scp "${from_servers_ips[$_fs]}:$from_file" "$to_file.$_fs"
-               fi
-            done
-         elif [ "$multiple_tos" = "true" ]; then
-            for _ts in $to_server_nc; do
-               if [ -n "$from_server" ]; then
-                  echo "scp $from_server($from_server_ip):$from_file $_ts(${to_servers_ips[$_ts]}):$to_file" | grep -E "$toserver|$toserver"
-                  scp "$from_server_ip:$from_file" "${to_servers_ips[$_ts]}:$to_file"
-               else
-                  echo "scp $from_file $_ts(${to_servers_ips[$_ts]}):$to_file" | grep "$toserver"
-                  scp "$from_file" "${to_servers_ips[$_ts]}:$to_file"
-               fi
-            done
-         else
-            if [ -n "$from_server" ] &&  [ -n "$to_server" ]; then
-               echo "scp $from_server($from_server_ip):$from_file $to_server($to_server_ip):$to_file" | grep -E "$fromserver|$toserver"
-            elif [ -n "$from_server" ]; then
-               echo "scp $from_server($from_server_ip):$from_file $to_file" | grep "$fromserver"
-            elif [ -n "$to_server" ]; then
-               echo "scp $from_file $to_server($to_server_ip):$to_file" | grep "$toserver"
-            else
-               echo "scp $from_file $to_file"
-            fi
-            scp "$from_server_ip$ffc$from_file" "$to_server_ip$tfc$to_file"
-         fi
-         rm -f "$knife_node_list"
+  # perform `scp` using knife to get IP's of hosts given via a pattern
+  declare -A from_servers_ips
+  declare -A to_servers_ips
+  local multiple_froms=false
+  local multiple_tos=false
+  if knife_env_set; then
+    if [[ $* =~ : ]]; then
+      knife_node_list=$(mktemp /tmp/knl.XXXX)
+      $KNIFE_CMD node list > "$knife_node_list"
+    fi
+    if [ -n "$1" ] && [ -n "$2" ]; then
+      if [[ $1 =~ : ]]; then
+        fromserver=$(cut -d: -f1 <<< "$1")
+        from_server_nc=$(\grep "$fromserver" "$knife_node_list" | awk '{print $1}')
+        nos=$(echo "$from_server_nc" | wc -w)
+        if [ "$nos" -gt 1 ]; then
+          multiple_froms=true
+          for _fs in $from_server_nc; do
+            from_servers_ips[$_fs]=$($KNIFE_CMD node show -a ipaddress "$_fs" | \grep ipaddress | awk '{print $2}')
+          done
+        else
+          multiple_froms=false
+          from_server=$from_server_nc
+          from_server_ip=$($KNIFE_CMD node show -a ipaddress "$from_server" | \grep ipaddress | awk '{print $2}')
+        fi
+        from_file=$(cut -d: -f2 <<< "$1")
+        ffc=":"
       else
-         echo "error: you have to specify a SOURCE and DEST"
+        from_server=""
+        from_server_ip=""
+        from_file="$1"
+        ffc=""
       fi
+      if [[ $2 =~ : ]]; then
+        toserver=$(cut -d: -f1 <<< "$2")
+        to_server_nc=$(\grep "$toserver" "$knife_node_list" | awk '{print $1}')
+        nos=$(wc -l <<< "$to_server_nc")
+        if [ "$nos" -gt 1 ]; then
+          multiple_tos=true
+          for _ts in $to_server_nc; do
+            to_servers_ips[$_ts]=$($KNIFE_CMD node show -a ipaddress "$_ts" | \grep ipaddress | awk '{print $2}')
+          done
+        else
+          multiple_tos=false
+          to_server=$to_server_nc
+          to_server_ip=$($KNIFE_CMD node show -a ipaddress "$to_server" | \grep ipaddress | awk '{print $2}')
+        fi
+        to_file=$(cut -d: -f2 <<< "$2")
+        tfc=":"
+      else
+        to_server=""
+        to_server_ip=""
+        to_file="$2"
+        tfc=""
+      fi
+      if [ "$multiple_froms" = "true" ] && [ "$multiple_tos" = "true" ]; then
+        for _fs in $from_server_nc; do
+          for _ts in $to_server_nc; do
+            echo "scp $_fs(${from_servers_ips[$_fs]}):$from_file $_ts(${to_servers_ips[$_ts]}):$to_file.$_fs" | grep -E "$fromserver|$toserver"
+            scp "${from_servers_ips[$_fs]}:$from_file" "${to_servers_ips[$_ts]}:$to_file.$_fs"
+          done
+        done
+      elif [ "$multiple_froms" = "true" ]; then
+        for _fs in $from_server_nc; do
+          if [ -n "$to_server" ]; then
+            echo "scp $_fs(${from_servers_ips[$_fs]}):$from_file $to_server($to_server_ip):$to_file.$_fs" | grep -E "$fromserver|$toserver"
+            scp "${from_servers_ips[$_fs]}:$from_file" "$to_server_ip:$to_file.$_fs"
+          else
+            echo "scp $_fs(${from_servers_ips[$_fs]}):$from_file $to_file.$_fs" | grep "$fromserver"
+            scp "${from_servers_ips[$_fs]}:$from_file" "$to_file.$_fs"
+          fi
+        done
+      elif [ "$multiple_tos" = "true" ]; then
+        for _ts in $to_server_nc; do
+          if [ -n "$from_server" ]; then
+            echo "scp $from_server($from_server_ip):$from_file $_ts(${to_servers_ips[$_ts]}):$to_file" | grep -E "$toserver|$toserver"
+            scp "$from_server_ip:$from_file" "${to_servers_ips[$_ts]}:$to_file"
+          else
+            echo "scp $from_file $_ts(${to_servers_ips[$_ts]}):$to_file" | grep "$toserver"
+            scp "$from_file" "${to_servers_ips[$_ts]}:$to_file"
+          fi
+        done
+      else
+        if [ -n "$from_server" ] && [ -n "$to_server" ]; then
+          echo "scp $from_server($from_server_ip):$from_file $to_server($to_server_ip):$to_file" | grep -E "$fromserver|$toserver"
+        elif [ -n "$from_server" ]; then
+          echo "scp $from_server($from_server_ip):$from_file $to_file" | grep "$fromserver"
+        elif [ -n "$to_server" ]; then
+          echo "scp $from_file $to_server($to_server_ip):$to_file" | grep "$toserver"
+        else
+          echo "scp $from_file $to_file"
+        fi
+        scp "$from_server_ip$ffc$from_file" "$to_server_ip$tfc$to_file"
+      fi
+      rm -f "$knife_node_list"
+    else
+      echo "error: you have to specify a SOURCE and DEST"
+    fi
   fi
 }
 
 function kssh {
-   # ssh into a server matching a pattern or run a command on it if given
-   if knife_env_set; then
-      serverpattern=$1
-      shift
-      cmd="$*"
-      source_ssh_env
-      server=$($KNIFE_CMD node list | \grep "$serverpattern")
-      if [ $? -eq 1 ]; then
-         echo "server not found (via 'knife node list')"
-         return 2
-      fi
-      nos=$(wc -l <<< "$server")
-      if [ "$nos" -gt 1 ]; then
-         sai=0
-         echo "which server?"
-         for srvr in $server; do
-            ((sai++))
-            echo "   $sai: $srvr"
-            server_array[$sai]=$srvr
-         done
-         echo "   a: all | n-m: range | x,y: select"
-         read -rp "enter choice (1-$sai|a|n-m|x,y): " choice
-         if [ -n "$choice" ]; then
-            if [ "$choice" = a ]; then
-               kssha -l "$server" "$cmd"
-               return 0
-            elif [[ $choice =~ ^[0-9]+-[0-9]+$ ]]; then
-               s_n=${choice%-*}
-               s_m=${choice#*-}
-               tsl=""  # the server list
-               for i in $(seq "$s_n" "$s_m"); do
-                  [ -z "$tsl" ] && tsl="${server_array[$i]}" || tsl="$tsl ${server_array[$i]}"
-               done
-               #echo "debug: 'kssha -l \"$tsl\" \"\$cmd\"'"
-               kssha -l "$tsl" "$cmd"
-               ## couldn't get this to work
-               ## choice=":$(tr '-' ':' <<< "$choice")"
-               ## echo "debug: 'kssha -l \"${server_array[@]choice}\" \"$cmd\"'"
-               ## kssha -l "${server_array[@]:choice}" "$cmd"
-               return 0
-            elif [[ $choice =~ ^[0-9]+(,[0-9]+)+ ]]; then
-               tsl=""   # the server list
-               for i in $(tr ',' ' ' <<< "$choice"); do
-                  [ -z "$tsl" ] && tsl="${server_array[$i]}" || tsl="$tsl ${server_array[$i]}"
-               done
-               # echo "debug: 'kssha -l \"$tsl\" \"\$cmd\"'"
-               kssha -l "$tsl" "$cmd"
-               return 0
-            elif grep -q "[b-zA-Z]" <<< "$choice"; then
-               echo "seriously?"
-               return 3
-            elif [ "$choice" -gt 0 ] && [ "$choice" -le "$sai" ]; then
-               server=${server_array[$choice]}
-            else
-               echo "seriously?"
-               return 3
-            fi
-         else
-            echo "later..."
-            return 5
-         fi
-      fi
-      # shellcheck disable=SC2116,SC2086
-      server=$(echo $server)  # get rid of leading whitespace and color
-      # echo "debug: server='$server'"
-      server_ifqdn=$($KNIFE_CMD node show "$server" -a internal_fqdn | grep internal_fqdn | awk '{print $NF}')
-      # echo "debug: server_ifqdn='$server_ifqdn'"
-      server_ip=$(host "$server_ifqdn" 2>/dev/null| awk '{print $NF}')
-      # echo "debug: server_ip='$server_ip'"
-      if [[ ! $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-         # echo "debug: couldn't get IP with 'host' (DNS) for < $server > - using 'knife'"
-         # server_ip=$($KNIFE_CMD node show $server -a ipaddress -c $KNIFERB | \grep ipaddress | awk '{print $2}')
-         server_ip=$($KNIFE_CMD node show "$server" -a ipaddress | \grep ipaddress | awk '{print $2}')
-      fi
-      if [[ $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-         # don't do this for now - maybe later or with a smaller version of .bash_aliases
-         ## if [ -z "$cmd" ]; then
-         ##    scp -q ~/.{vim,bash}{rc,_aliases,_profile} $server_ip:/home/praco 2> /dev/null
-         ## fi
-         # [ -z "$cmd" ] && echo -e "   ${CYN}< $server > [ $server_ip ]${NRM}" || echo -e "   ${CYN}< $server > [ $server_ip ] ( $cmd )${NRM}"
-         # [ -z "$cmd" ] && echo -e "   ${CYN}$server ($server_ip)${NRM}" || echo -e "   ${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
-         if [ -z "$cmd" ] || [ "$cmd" == "." ]; then
-            echo -e "   ${CYN}$server ($server_ip)${NRM}"
-            if [ "$cmd" == "." ]; then
-               ssh -q "$server_ip"
-            else
-               $XTERM -e 'eval ssh -q '"$server_ip"'' &
-            fi
-         else
-            echo -e "   ${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
-            eval ssh -q "$server_ip" \'"$cmd"\'
-         fi
-         echo -ne "\033]0;$(whoami)@$(hostname)\007"
+  # ssh into a server matching a pattern or run a command on it if given
+  if knife_env_set; then
+    serverpattern=$1
+    shift
+    cmd="$*"
+    source_ssh_env
+    server=$($KNIFE_CMD node list | \grep "$serverpattern")
+    if [ $? -eq 1 ]; then
+      echo "server not found (via 'knife node list')"
+      return 2
+    fi
+    nos=$(wc -l <<< "$server")
+    if [ "$nos" -gt 1 ]; then
+      sai=0
+      echo "which server?"
+      for srvr in $server; do
+        ((sai++))
+        echo "   $sai: $srvr"
+        server_array[$sai]=$srvr
+      done
+      echo "   a: all | n-m: range | x,y: select"
+      read -rp "enter choice (1-$sai|a|n-m|x,y): " choice
+      if [ -n "$choice" ]; then
+        if [ "$choice" = a ]; then
+          kssha -l "$server" "$cmd"
+          return 0
+        elif [[ $choice =~ ^[0-9]+-[0-9]+$ ]]; then
+          s_n=${choice%-*}
+          s_m=${choice#*-}
+          tsl="" # the server list
+          for i in $(seq "$s_n" "$s_m"); do
+            [ -z "$tsl" ] && tsl="${server_array[$i]}" || tsl="$tsl ${server_array[$i]}"
+          done
+          #echo "debug: 'kssha -l \"$tsl\" \"\$cmd\"'"
+          kssha -l "$tsl" "$cmd"
+          ## couldn't get this to work
+          ## choice=":$(tr '-' ':' <<< "$choice")"
+          ## echo "debug: 'kssha -l \"${server_array[@]choice}\" \"$cmd\"'"
+          ## kssha -l "${server_array[@]:choice}" "$cmd"
+          return 0
+        elif [[ $choice =~ ^[0-9]+(,[0-9]+)+ ]]; then
+          tsl="" # the server list
+          for i in $(tr ',' ' ' <<< "$choice"); do
+            [ -z "$tsl" ] && tsl="${server_array[$i]}" || tsl="$tsl ${server_array[$i]}"
+          done
+          # echo "debug: 'kssha -l \"$tsl\" \"\$cmd\"'"
+          kssha -l "$tsl" "$cmd"
+          return 0
+        elif grep -q "[b-zA-Z]" <<< "$choice"; then
+          echo "seriously?"
+          return 3
+        elif [ "$choice" -gt 0 ] && [ "$choice" -le "$sai" ]; then
+          server=${server_array[$choice]}
+        else
+          echo "seriously?"
+          return 3
+        fi
       else
-         echo "error: cannot get IP for server: < $server >"
+        echo "later..."
+        return 5
       fi
-   fi
+    fi
+    # shellcheck disable=SC2116,SC2086
+    server=$(echo $server) # get rid of leading whitespace and color
+    # echo "debug: server='$server'"
+    server_ifqdn=$($KNIFE_CMD node show "$server" -a internal_fqdn | grep internal_fqdn | awk '{print $NF}')
+    # echo "debug: server_ifqdn='$server_ifqdn'"
+    server_ip=$(host "$server_ifqdn" 2> /dev/null | awk '{print $NF}')
+    # echo "debug: server_ip='$server_ip'"
+    if [[ ! $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+      # echo "debug: couldn't get IP with 'host' (DNS) for < $server > - using 'knife'"
+      # server_ip=$($KNIFE_CMD node show $server -a ipaddress -c $KNIFERB | \grep ipaddress | awk '{print $2}')
+      server_ip=$($KNIFE_CMD node show "$server" -a ipaddress | \grep ipaddress | awk '{print $2}')
+    fi
+    if [[ $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+      # don't do this for now - maybe later or with a smaller version of .bash_aliases
+      ## if [ -z "$cmd" ]; then
+      ##    scp -q ~/.{vim,bash}{rc,_aliases,_profile} $server_ip:/home/praco 2> /dev/null
+      ## fi
+      # [ -z "$cmd" ] && echo -e "   ${CYN}< $server > [ $server_ip ]${NRM}" || echo -e "   ${CYN}< $server > [ $server_ip ] ( $cmd )${NRM}"
+      # [ -z "$cmd" ] && echo -e "   ${CYN}$server ($server_ip)${NRM}" || echo -e "   ${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
+      if [ -z "$cmd" ] || [ "$cmd" == "." ]; then
+        echo -e "   ${CYN}$server ($server_ip)${NRM}"
+        if [ "$cmd" == "." ]; then
+          ssh -q "$server_ip"
+        else
+          $XTERM -e 'eval ssh -q '"$server_ip"'' &
+        fi
+      else
+        echo -e "   ${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
+        eval ssh -q "$server_ip" \'"$cmd"\'
+      fi
+      echo -ne "\033]0;$(whoami)@$(hostname)\007"
+    else
+      echo "error: cannot get IP for server: < $server >"
+    fi
+  fi
 }
 
 function kssha {
-   # run a command on multiple servers matching a given pattern
-   # options
-   #   -a   run on all servers
-   #   -l   run on this list of servers
-   #   -q   run quietly - less verbose - output on single lines
-   if [ "$1" == "-q" ]; then
-      QUIET=true
-      shift
-   else
-      QUIET=false
-   fi
-   if [ "$1" == "-a" ]; then
-      local _ALL=true
-      shift
-   else
-      local _ALL=false
-   fi
-   if [ "$1" == "-l" ]; then
-      shift
-      server_list=$1
-      shift
-   else
-      server_list=""
-   fi
-   if knife_env_set; then
-      source_ssh_env
-      if [ -z "$server_list" ]; then
-         if [ "$_ALL" = "true" ]; then
-            # server_list=$($KNIFE_CMD node list -c $KNIFERB)
-            server_list=$($KNIFE_CMD node list)
-         else
-            serverpattern="$1"
-            shift
-            # server_list=$($KNIFE_CMD node list -c $KNIFERB | \grep $serverpattern)
-            server_list=$($KNIFE_CMD node list | \grep "$serverpattern")
-         fi
-      fi
-      cmd="$*"
-      # echo "debug(kssha): server_list='$server_list'"
-      # echo "debug(kssha): cmd='$cmd'"
-      if [ -n "$cmd" ]; then
-         for server in $server_list; do
-            # shellcheck disable=SC2116,SC2086
-            server=$(echo $server)  # get rid of leading whitespace and color
-            # server_ifqdn=$($KNIFE_CMD node show $server -a internal_fqdn -c $KNIFERB | grep internal_fqdn | awk '{print $NF}')
-            server_ifqdn=$($KNIFE_CMD node show "$server" -a internal_fqdn | grep internal_fqdn | awk '{print $NF}')
-            server_ip=$(host "$server"_ifqdn 2>/dev/null | awk '{print $NF}')
-            if [[ ! $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-               echo "debug: couldn't get IP with 'host' (DNS) for < $server > - using 'knife'"
-               # server_ip=$($KNIFE_CMD node show $server -a ipaddress -c $KNIFERB | \grep ipaddress | awk '{print $2}')
-               server_ip=$($KNIFE_CMD node show "$server" -a ipaddress | \grep ipaddress | awk '{print $2}')
-            fi
-            if [[ $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-               if [ $QUIET == "true" ]; then
-                  echo -ne "${CYN}$server ($server_ip)${NRM}: "
-               else
-                  echo -e "   ${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
-               fi
-               eval ssh -q "$server_ip" "$cmd" && echo
-            else
-               echo "error: cannot get IP for server: < $server >"
-            fi
-         done
+  # run a command on multiple servers matching a given pattern
+  # options
+  #   -a   run on all servers
+  #   -l   run on this list of servers
+  #   -q   run quietly - less verbose - output on single lines
+  if [ "$1" == "-q" ]; then
+    QUIET=true
+    shift
+  else
+    QUIET=false
+  fi
+  if [ "$1" == "-a" ]; then
+    local _ALL=true
+    shift
+  else
+    local _ALL=false
+  fi
+  if [ "$1" == "-l" ]; then
+    shift
+    server_list=$1
+    shift
+  else
+    server_list=""
+  fi
+  if knife_env_set; then
+    source_ssh_env
+    if [ -z "$server_list" ]; then
+      if [ "$_ALL" = "true" ]; then
+        # server_list=$($KNIFE_CMD node list -c $KNIFERB)
+        server_list=$($KNIFE_CMD node list)
       else
-         kcssha "$server_list"
-         return 0
+        serverpattern="$1"
+        shift
+        # server_list=$($KNIFE_CMD node list -c $KNIFERB | \grep $serverpattern)
+        server_list=$($KNIFE_CMD node list | \grep "$serverpattern")
       fi
-   fi
+    fi
+    cmd="$*"
+    # echo "debug(kssha): server_list='$server_list'"
+    # echo "debug(kssha): cmd='$cmd'"
+    if [ -n "$cmd" ]; then
+      for server in $server_list; do
+        # shellcheck disable=SC2116,SC2086
+        server=$(echo $server) # get rid of leading whitespace and color
+        # server_ifqdn=$($KNIFE_CMD node show $server -a internal_fqdn -c $KNIFERB | grep internal_fqdn | awk '{print $NF}')
+        server_ifqdn=$($KNIFE_CMD node show "$server" -a internal_fqdn | grep internal_fqdn | awk '{print $NF}')
+        server_ip=$(host "$server"_ifqdn 2> /dev/null | awk '{print $NF}')
+        if [[ ! $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+          echo "debug: couldn't get IP with 'host' (DNS) for < $server > - using 'knife'"
+          # server_ip=$($KNIFE_CMD node show $server -a ipaddress -c $KNIFERB | \grep ipaddress | awk '{print $2}')
+          server_ip=$($KNIFE_CMD node show "$server" -a ipaddress | \grep ipaddress | awk '{print $2}')
+        fi
+        if [[ $server_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+          if [ $QUIET == "true" ]; then
+            echo -ne "${CYN}$server ($server_ip)${NRM}: "
+          else
+            echo -e "   ${CYN}< $server > ( $server_ip ) [ $cmd ]${NRM}"
+          fi
+          eval ssh -q "$server_ip" "$cmd" && echo
+        else
+          echo "error: cannot get IP for server: < $server >"
+        fi
+      done
+    else
+      kcssha "$server_list"
+      return 0
+    fi
+  fi
 }
 
 function ksshu {
-   # ssh as ubuntu into a server using knife to get the IP
-   if knife_env_set; then
-      source_ssh_env
-      # server=$($KNIFE_CMD node list -c $KNIFERB | \grep $1)
-      server=$($KNIFE_CMD node list | \grep "$1")
-      nos=$(wc -l <<< "$server")
-      if [ "$nos" -gt 1 ]; then
-         echo "please be more specific:"
-         grep "$1" <<< "$server"
-         return
-      fi
-      # shellcheck disable=SC2116,SC2086
-      server=$(echo $server)        # get rid of leading whitespace and color
-      server_ip=$($KNIFE_CMD node show -a ipaddress "$server" | \grep ipaddress | awk '{print $2}'|tr -d '\n')
-      shift
-      cmd="$*"
-      case $KNIFTLA in
-         ccd|pek|w11|w12|w13) ssh_identy_file=~/.ssh/China.pem      ;;
-                         dts) ssh_identy_file=~/.ssh/DevTest.pem    ;;
-                         sna) ssh_identy_file=~/.ssh/PublicTest.pem ;;
-                           *) ssh_identy_file=~/.ssh/Community.pem  ;;
-      esac
-      echo "ssh -i $ssh_identy_file ubuntu@$server_ip \"$cmd\""
-      ssh -q -i $ssh_identy_file "ubuntu@$server_ip" "$cmd"
-      echo -ne "\033]0;$(whoami)@$(hostname)\007"
-   fi
+  # ssh as ubuntu into a server using knife to get the IP
+  if knife_env_set; then
+    source_ssh_env
+    # server=$($KNIFE_CMD node list -c $KNIFERB | \grep $1)
+    server=$($KNIFE_CMD node list | \grep "$1")
+    nos=$(wc -l <<< "$server")
+    if [ "$nos" -gt 1 ]; then
+      echo "please be more specific:"
+      grep "$1" <<< "$server"
+      return
+    fi
+    # shellcheck disable=SC2116,SC2086
+    server=$(echo $server) # get rid of leading whitespace and color
+    server_ip=$($KNIFE_CMD node show -a ipaddress "$server" | \grep ipaddress | awk '{print $2}' | tr -d '\n')
+    shift
+    cmd="$*"
+    case $KNIFTLA in
+      ccd | pek | w11 | w12 | w13) ssh_identy_file=~/.ssh/China.pem ;;
+      dts) ssh_identy_file=~/.ssh/DevTest.pem ;;
+      sna) ssh_identy_file=~/.ssh/PublicTest.pem ;;
+      *) ssh_identy_file=~/.ssh/Community.pem ;;
+    esac
+    echo "ssh -i $ssh_identy_file ubuntu@$server_ip \"$cmd\""
+    ssh -q -i $ssh_identy_file "ubuntu@$server_ip" "$cmd"
+    echo -ne "\033]0;$(whoami)@$(hostname)\007"
+  fi
 }
 
 function ske {
-   # set [Chef] knife environment
-   local _CHEF_CREDS=$HOME/.chef/credentials
-   [ ! -e "$_CHEF_CREDS" ] && { echo "error: chef credentials file does not exist: $_CHEF_CREDS"; return 1; }
-   local _CHEF_PROFILES
-   _CHEF_PROFILES=$(grep '^\[[a-zA-Z]*\]$' "$_CHEF_CREDS" | cut -d'[' -f2 | tr -s ']\n' ' ')
-   local _VALID_ARGS
-   _VALID_ARGS=$(tr ' ' ':' <<< "${_CHEF_PROFILES}unset")
-   local _environment
-   local _arg="$1"
-   if [ -n "$_arg" ]; then
-      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
-         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_CHEF_PROFILES"
-         return 2
-      fi
-      if [ "$_arg" == "unset" ]; then
-         unset CHEF_PROFILE
-         echo "s3cfg environment has been unset"
-      else
-         export CHEF_PROFILE=$_arg
-         _environment=$(awk '$1~/['"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_CHEF_CREDS")
-         echo "chef environment has been set to --> $CHEF_PROFILE ($_environment)"
-         [ -z "$CHEF_PROFILE" ] && unset CHEF_PROFILE
-      fi
-      if [ "$COLOR_PROMPT" == "yes" ]; then
-         case $_environment in
-              dev) PS_COL="$PCYN"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
-             test) PS_COL="$PMAG"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
-            mixed) PS_COL="$PYLW"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
-             prod) PS_COL="$PRED"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
-             mine) PS_COL="$PGRN"; PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM" ;;
-                *) PS_COL="$PNRM"; PS_AWS="$PNRM"                       ;;
-         esac
-      fi
-   else
-      echo -n "--- Chef (Knife) Environment "
-      [ -n "$CHEF_PROFILE" ] && echo "Settings ---" || echo "(NOT set) ---"
-      echo "CHEF_PROFILE   = ${CHEF_PROFILE:-N/A}"
-   fi
+  # set [Chef] knife environment
+  local _CHEF_CREDS=$HOME/.chef/credentials
+  [ ! -e "$_CHEF_CREDS" ] && {
+    echo "error: chef credentials file does not exist: $_CHEF_CREDS"
+    return 1
+  }
+  local _CHEF_PROFILES
+  _CHEF_PROFILES=$(grep '^\[[a-zA-Z]*\]$' "$_CHEF_CREDS" | cut -d'[' -f2 | tr -s ']\n' ' ')
+  local _VALID_ARGS
+  _VALID_ARGS=$(tr ' ' ':' <<< "${_CHEF_PROFILES}unset")
+  local _environment
+  local _arg="$1"
+  if [ -n "$_arg" ]; then
+    if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+      echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " "$_CHEF_PROFILES"
+      return 2
+    fi
+    if [ "$_arg" == "unset" ]; then
+      unset CHEF_PROFILE
+      echo "s3cfg environment has been unset"
+    else
+      export CHEF_PROFILE=$_arg
+      _environment=$(awk '$1~/['"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_CHEF_CREDS")
+      echo "chef environment has been set to --> $CHEF_PROFILE ($_environment)"
+      [ -z "$CHEF_PROFILE" ] && unset CHEF_PROFILE
+    fi
+    if [ "$COLOR_PROMPT" == "yes" ]; then
+      case $_environment in
+        dev)
+          PS_COL="$PCYN"
+          PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM"
+          ;;
+        test)
+          PS_COL="$PMAG"
+          PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM"
+          ;;
+        mixed)
+          PS_COL="$PYLW"
+          PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM"
+          ;;
+        prod)
+          PS_COL="$PRED"
+          PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM"
+          ;;
+        mine)
+          PS_COL="$PGRN"
+          PS_AWS="$PS_COL{$CHEF_PROFILE}$PNRM"
+          ;;
+        *)
+          PS_COL="$PNRM"
+          PS_AWS="$PNRM"
+          ;;
+      esac
+    fi
+  else
+    echo -n "--- Chef (Knife) Environment "
+    [ -n "$CHEF_PROFILE" ] && echo "Settings ---" || echo "(NOT set) ---"
+    echo "CHEF_PROFILE   = ${CHEF_PROFILE:-N/A}"
+  fi
 }
 
 function son {
-   # ssh as ubuntu to an server via IP supplied by user
-   nip=$1
-   if [ -n "$nip" ]; then
-      snauc=$(ssh "ubuntu@$nip" -i ~/.ssh/China.pem)
-      echo "here's the command:"
-      echo "   $snauc"
-      read -rp "is this correct? " ans
-      if [ "$ans" = "y" ]; then
-         echo "ok, running the command"
-         eval "$snauc"
-      else
-         echo "ok, NOT running the command"
-      fi
-   else
-      echo "need to specify an ip"
-   fi
+  # ssh as ubuntu to an server via IP supplied by user
+  nip=$1
+  if [ -n "$nip" ]; then
+    snauc=$(ssh "ubuntu@$nip" -i ~/.ssh/China.pem)
+    echo "here's the command:"
+    echo "   $snauc"
+    read -rp "is this correct? " ans
+    if [ "$ans" = "y" ]; then
+      echo "ok, running the command"
+      eval "$snauc"
+    else
+      echo "ok, NOT running the command"
+    fi
+  else
+    echo "need to specify an ip"
+  fi
 }
 
 # OLD - not needed?
@@ -940,55 +969,59 @@ function son {
 # }
 
 function swe {
-   # set spiceweasel (github.com/mattray/spiceweasel) environment
-   local _SW_CFG=$HOME/.spiceweasel/config
-   [ ! -e "$_SW_CFG" ] && { echo "error: spiceweasel config file does not exist: $_SW_CFG"; return 1; }
-   local _SW_PROFILES
-   _SW_PROFILES=$(grep '^\[profile' "$_SW_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
-   local _VALID_ARGS
-   _VALID_ARGS=$(tr ' ' ':' <<< "${_SW_PROFILES}unset")
-   local _environment
-   local _arg="$1"
-   if [ -n "$_arg" ]; then
-      if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
-         echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $$_SW_PROFILES
-         return 2
-      fi
-      if [ "$_arg" == "unset" ]; then
-         unset SW_YAML_FILE
-         echo "s3cfg environment has been unset"
-      else
-         export SW_YAML_FILE
-         SW_YAML_FILE=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_SW_CFG")
-         _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_SW_CFG")
-         echo "s3cfg environment has been set to --> $_environment ($SW_YAML_FILE)"
-         [ -z "$SW_YAML_FILE" ] && unset SW_YAML_FILE
-      fi
-   else
-      echo -n "--- Spiceweasel Environment "
-      [ -n "$SW_YAML_FILE" ] && echo "Settings ---" || echo "(NOT set) ---"
-      echo "SW_YAML_FILE   = ${SW_YAML_FILE:-N/A}"
-   fi
+  # set spiceweasel (github.com/mattray/spiceweasel) environment
+  local _SW_CFG=$HOME/.spiceweasel/config
+  [ ! -e "$_SW_CFG" ] && {
+    echo "error: spiceweasel config file does not exist: $_SW_CFG"
+    return 1
+  }
+  local _SW_PROFILES
+  _SW_PROFILES=$(grep '^\[profile' "$_SW_CFG" | awk '{print $2}' | tr -s ']\n' ' ')
+  local _VALID_ARGS
+  _VALID_ARGS=$(tr ' ' ':' <<< "${_SW_PROFILES}unset")
+  local _environment
+  local _arg="$1"
+  if [ -n "$_arg" ]; then
+    if [[ ! $_VALID_ARGS =~ ^$_arg:|:$_arg:|:$_arg$ ]]; then
+      echo -e "WTF? Try again... Only these profiles exist (or use 'unset'):\n   " $$_SW_PROFILES
+      return 2
+    fi
+    if [ "$_arg" == "unset" ]; then
+      unset SW_YAML_FILE
+      echo "s3cfg environment has been unset"
+    else
+      export SW_YAML_FILE
+      SW_YAML_FILE=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/config/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_SW_CFG")
+      _environment=$(awk '$2~/'"$_arg"']/ {pfound="true"; next}; (pfound=="true" && $1~/environment/) {print $NF; exit}; (pfound=="true" && $1~/profile/) {exit}' "$_SW_CFG")
+      echo "s3cfg environment has been set to --> $_environment ($SW_YAML_FILE)"
+      [ -z "$SW_YAML_FILE" ] && unset SW_YAML_FILE
+    fi
+  else
+    echo -n "--- Spiceweasel Environment "
+    [ -n "$SW_YAML_FILE" ] && echo "Settings ---" || echo "(NOT set) ---"
+    echo "SW_YAML_FILE   = ${SW_YAML_FILE:-N/A}"
+  fi
 }
 
 function update_spiceweasel_repo {
-   # set which spiceweasel YAML file to use
-   SPICEWEASELREPO=$REPO_DIR/spiceweasel
-   cd "$SPICEWEASELREPO" > /dev/null || return
-   if hg incoming > /dev/null; then
-      echo -n "updating spiceweasel repo... "
-      hg pu > /dev/null
-      echo "done... "
-   else
-      echo "spiceweasel repo is up to date"
-   fi
-   cd - > /dev/null || return
-   [ ! -e "$SW_YAML_FILE" ] && echo "No such file: $SW_YAML_FILE"
+  # set which spiceweasel YAML file to use
+  SPICEWEASELREPO=$REPO_DIR/spiceweasel
+  cd "$SPICEWEASELREPO" > /dev/null || return
+  if hg incoming > /dev/null; then
+    echo -n "updating spiceweasel repo... "
+    hg pu > /dev/null
+    echo "done... "
+  else
+    echo "spiceweasel repo is up to date"
+  fi
+  cd - > /dev/null || return
+  [ ! -e "$SW_YAML_FILE" ] && echo "No such file: $SW_YAML_FILE"
 }
 
 # -------------------- define aliases --------------------
 
 alias cf="grep '^function .* ' ~/$CHEF_BA_FILE | awk '{print $2}' | cut -d'(' -f1 | sort | awk -v c=4 'BEGIN{print \"\n\t--- Functions (use \`scf\` to show details) ---\"}{if(NR%c){printf \"  %-18s\",\$2}else{printf \"  %-18s\n\",\$2}}END{print CR}'"
+alias costfplan="~/repos/autodesk/aec-water/wlc-devops-tools/scripts/cloudos-terraform-plan.sh"
 alias scba='source $CHEF_SHIT'
 alias scf=showcf
 alias vcba='[ -f $CHEF_SHIT ] && { echo "editing: $CHEF_SHIT"; vi $CHEF_SHIT; sba; }'
