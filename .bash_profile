@@ -37,6 +37,11 @@ export CHEF_SHIT=$HOME/.bash_aliases_chef
 export COMPANY="innovyze"
 export COMPANY_SHIT=$HOME/.bash_aliases_$COMPANY
 
+# set up Serverless Framework v4 license key from secure file
+if [[ -f "$HOME/.ssh/.serverless_license" ]]; then
+    export SERVERLESS_LICENSE_KEY="$(cat "$HOME/.ssh/.serverless_license")"
+fi
+
 # the default umask is set in /etc/profile; for setting the umask
 # for ssh logins, install and configure the libpam-umask package.
 #umask 022

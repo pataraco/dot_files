@@ -201,7 +201,7 @@ function awsconsole {
 
 function awsconsolecm {
   # fire up AWS Console if AWS Environment Variables are all set
-  local _CONSOLE_LOGIN_CMD="cloudmate -c -a $AWS_DEFAULT_PROFILE | grep https"
+  local _CONSOLE_LOGIN_CMD="cloudmate -q aws console -a $AWS_DEFAULT_PROFILE -u"
   local _CONSOLE_DEST="$1"
   local _aws_signin_url
   if [[ -z "$AWS_DEFAULT_PROFILE" ]]; then
@@ -2399,7 +2399,7 @@ function saecm {
       _verify_adsk_profile $_ADSK_ACCTS "$_PROFILE" || return $?
       _unset_aws_environment > /dev/null
       _cm_env=$(jq -r '.accounts."'"$_PROFILE"'".env' "$_ADSK_ACCTS")
-      if cloudmate -ve "$_cm_env" > /dev/null; then
+      if cloudmate aws auth -e "$_cm_env"; then
         # set AWS environment variables
         export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
         export AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
