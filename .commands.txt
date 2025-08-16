@@ -9,19 +9,16 @@
 /sbin/fuser -v[m] MOUNTPOINT			# e.g. /maint
 /sbin/lvextend -L [+-]N[GB|MB] VOLUME_GROUP	# e.g. /dev/mapper/vg01-lvol9
 /sbin/resize2fs VOLUME_GROUP			# e.g. /dev/mapper/vg01-lvol9
-ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling resume-processes --auto-scaling-group-name $asgn; done
-ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling suspend-processes --auto-scaling-group-name $asgn; done
-RACK_ENV=ENVIRONMENT bundle exec rake db:migrate # run from "/var/apps/APP/current"
-ansible -i inventory/project/VPC/hosts_CLUSTER "REGEX.*" -a "bash -x /root/scripts/ansible_pull.sh force" --vault-password-file ~/.vault --become
 ansible -i inventory/project/VPC/hosts_CLUSTER "all:\!aws" -m service -a "name=crond state=stopped" --vault-password-file=~/.vault --become
+ansible -i inventory/project/VPC/hosts_CLUSTER "REGEX.*" -a "bash -x /root/scripts/ansible_pull.sh force" --vault-password-file ~/.vault --become
 ansible -i inventory/vagrant all -a "touch /tmp/test" --private-key ~/.ssh/vagrant
 ansible -i inventory/vagrant all -m file -a "src=/tmp/test dest=/tmp/testdir/test state=link" --private-key ~/.ssh/vagrant
-ansible-playbook -i IP_ADDR, [--tags "qa"|--skip-tags "cmc,dev,qa,nb,scm"] playbooks/util/manage_users.yml
 ansible-playbook -i inventory/project/VPC/HOSTS_CLUSTER --skip-tags "cmc,qa,nb,scm" --limit '!aws' --vault-password-file=~/.vault playbooks/util/manage_users.yml
 ansible-playbook -i inventory/project/VPC/hosts_CLUSTER --skip-tags "dev,cmc,qa,nb,scm" --limit '!aws' -e '{"disable_users": ["jdoe","fsmith","mjane"]}' --vault-password-file=~/.vault playbooks/util/manage_users.yml
 ansible-playbook -i inventory/project/VPC/hosts_HOSTS [--limit 'PATTERN*'] -e 'c=add|rem u=USER' --vault-password-file=~/.vault ~/ansible/playbooks/PLAY_BOOK_NAME.yml
 ansible-playbook -i inventory/project/VPC/hosts_local -e "bn=BRANCH_NEW cn=CLUST_NEW us=UPDATE_SCRIPT dt=no" --vault-password-file=~/.vault playbooks/project/PLAY_BOOK_NAME.yml
 ansible-playbook -i inventory/vagrant --private-key=~/.ssh/vagrant playbooks/util/manage_users.yml
+ansible-playbook -i IP_ADDR, [--tags "qa"|--skip-tags "cmc,dev,qa,nb,scm"] playbooks/util/manage_users.yml
 ansible-vault decrypt encrypted --output=decrypted --vault-password-file=~/.vault
 ansible-vault encrypt decrypted --output=encrypted --vault-password-file=~/.vault
 arc diff --reviewers sbenjamin,tholcomb,akulkarni,pfreeman main
@@ -53,19 +50,19 @@ crontab -r; service procmond stop; rm -rf /tmp/*download*; sleep 10; umount /r5/
 cssh -l ubuntu -o "-i ~/.ssh/Red5China.pem" 10.248.4.2 10.248.4.5 10.248.4.6 10.248.4.7
 curl --data "Hello from Slackbot" $'https://r5s.slack.com/services/hooks/slackbot?token=nbvhEDf2Dov4mwn&channel=%23techops'
 curl -L -sD - -o /dev/null URL # display response headers
+curl -s https://api.github.com/users/pataraco/repos|grep clone_url|awk '{print $2}'|tr -d '",'
 curl -X GET -fsSL  # fail silently, be slient, show failures, re-do on redirect
 curl -X POST --data-urlencode "payload=$DATA" $SLACK_WEBHOOK
-curl -X POST -H 'Content-type: application/json' --data "$DATA" $SLACK_WEBHOOK
 curl -X POST -H 'Content-type: application/json' --data '{"user": "'"$EMAIL"'", "pass": "'"$PASSWD"'"}' $HARVI_LOGIN
-curl -s https://api.github.com/users/pataraco/repos|grep clone_url|awk '{print $2}'|tr -d '",'
+curl -X POST -H 'Content-type: application/json' --data "$DATA" $SLACK_WEBHOOK
 curl http://169.254.169.254/latest/meta-data/; echo    # AWS EC2 instance info
 curl http://ipecho.net/plain; echo                   # get my IP
 curl https://checkip.amazonaws.commit                # get my IP
 curl https://webkeys.vpc02.wux01.r5external.com/firefall-china_prod-build-1913/aes-pass.bin --cacert /r5/certificates/red5-rootcert.crt --cert /r5/certificates/1913.crt --key /r5/certificates/1913_nopass.key --ssl
 curl ifconfig.co/port/22; echo	# show if my port is reachable
-date +%s%N | sha512sum
-date --date=@1447474147
 date --date=@`printf "%d\n" 0x5646b3e3`
+date --date=@1447474147
+date +%s%N | sha512sum
 dbaccess dev 
 dbaccess dev $tempsql
 defaults write com.apple.finder AppleShowAllFiles YES  # Max OS: Finder - show all/hidden files
@@ -83,9 +80,9 @@ docker ps -a
 docker ps -a --format "table {{.ID}} {{.Image}}\t{{.Status}}\t{{.Ports}}"
 docker pull AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/REPO:TAG
 docker pull AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/REPO@DIGEST
-docker rm $(docker-entrypoint.sh ps --all -q -f status=exited)
 docker rm -v $(docker ps -q -f status=exited)
 docker rm -v NAME
+docker rm $(docker-entrypoint.sh ps --all -q -f status=exited)
 docker rmi [--force] $(docker images -a -q)
 docker run --rm --name NAME -it IMAGE COMMAND
 docker run -it --rm -P IMAGE
@@ -93,14 +90,16 @@ docker system prune -a
 docker tag APP:latest AWS_ACCT_NO.dkr.ecr.REGION.amazonaws.com/APP:latest
 docker tag ORIG_IMAGE:TAG NEW_IMAGE:TAG
 du -hsx * | sort -rh | head -10
+echo -e "protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get
+echo -e protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com
 echo "SELECT * FROM ls_hotelconfig WHERE parameter like '%mail%'"|dbaccess dev
 echo "SELECT hotelnum,banklive FROM bank_parms"|dbaccess dev
 echo "SELECT hotelnum,intnum,intcode,connectiontype,portname,intlive FROM gsi_header ORDER BY hotelnum"|dbaccess dev
-echo -e "protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com" | aws codecommit credential-helper get
-echo -e protocol=https\npath=/v1/repos/test\nhost=git-codecommit.us-east-1.amazonaws.com
 echo auth-1207-2015-oct-14|sha512sum|awk '{print $1}' > auth.key
 echo passwd | sha512sum > mikey.bin
 egrep -q '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling resume-processes --auto-scaling-group-name $asgn; done
+ENV=pue; for asgn in $(aws --profile $ENV autoscaling describe-auto-scaling-groups | grep AutoScalingGroupName | cut -d'"' -f4); do echo $asgn ; aws --profile $ENV autoscaling suspend-processes --auto-scaling-group-name $asgn; done
 export ADO_ARTIFACTS_TOKEN=$(keyring -b artifacts_keyring.ArtifactsKeyringBackend get https://pkgs.dev.azure.com/$ADO_COMPANY/$ADO_PROJECT/_packaging/$ADO_FEED/pypi/simple/ VssSessionToken 2> /dev/null)
 export PIP_EXTRA_INDEX_URL="https://rwh:$ADO_ARTIFACTS_TOKEN@pkgs.dev.azure.com/$ADO_COMPANY/$ADO_PROJECT/_packaging/$ADO_FEED/pypi/simple"
 find -exec md5sum {} \; > .md5sum.checklist
@@ -116,24 +115,26 @@ for node in `knl`; do host=`kns -a ifqdn $node|\grep \.net$|awk '{print $NF}'`; 
 for x in www.evideodoc.ie evideodoc.co.uk; do for h in app_nginx{1,2}.eu.example.com; do echo; echo; echo $x : $h; openssl s_client -connect $h:443 -servername $x </dev/null 2>/dev/null | openssl x509 -noout -subject -dates -serial; done; done
 for yaml in `cat ../webapp-yamls`; do echo -n "$yaml: "; aws s3 cp s3://web-builds-devtest/$yaml .;done
 get #guestnum1 $roomnum1 from guest-room-tbl(#i+1)	# Club Data (clbdata.sqr)
+git apply PATH_TO_PATCH
 git diff-tree --no-commit-id --name-only -r 170be5c
+git format-patch -1 COMMIT_HASH
 git log -p FILE
 git pull origin BRANCH
 git push origin BRANCH
 git shortlog -s -n --all --no-merges
+grep "^# eof" /eci/sinbad/.systemrestore.script
 grep "Database Archive" /eci/sinbad/tape.log | awk '/[sS]tarted/ {SL=$0}; /[fF]inished/ {print SL; print $0}' | tail -2
 grep "Database Archive" /eci/sinbad/tape.log | tail -4
 grep "File System Backup" /eci/sinbad/tape.log | awk '/[sS]tarted/ {SL=$0}; /[fF]inished/ {print SL; print $0}' | tail -2
 grep "File System Backup" /eci/sinbad/tape.log | tail -4
-grep "^# eof" /eci/sinbad/.systemrestore.script
-grep LOADERSIZE /etc/sysconfig/galaxy
 grep ^TAPEDEV /opt/informix/etc/tbconfig
+grep LOADERSIZE /etc/sysconfig/galaxy
 grep uid roles/users/vars/*users_present.yml|awk '{print $3}'|sort -n|uniq -d
+hpacucli ctrl all show config | grep -i drive | grep -v OK
 hpacucli ctrl all show config detail | egrep 'Smart|Firm'
 hpacucli ctrl all show config detail | grep Firm
 hpacucli ctrl all show config detail | grep Status
 hpacucli ctrl all show config detail | grep Status | grep -vE 'Status: (OK|Initialization Complete|Disabled|LOCKED)'
-hpacucli ctrl all show config | grep -i drive | grep -v OK
 hpasmcli -s "show server"
 hpasmcli -s "show server" | egrep "ML350|System"
 hplog -v | grep Critical
@@ -171,6 +172,7 @@ nova boot --flavor m1.large --image 64470276-fec7-4b6c-84e5-7556b76f07d3 --secur
 nova force-delete 458795c7-a296-4476-954d-8a0c2382b051
 nova reset-state 458795c7-a296-4476-954d-8a0c2382b051
 npm list PACKAGE --depth=0 --json
+npm view PKG versions
 ntpdate ntphost1.star
 open -n -a "Google Chrome" --args "--new-window" "--profile-directory=$PROFILE" "$URL"
 openssl ciphers -v 'ALL:eNULL'
@@ -181,8 +183,8 @@ openssl pkcs12 -in PFX_FILE.pfx -out CERT_FILE.crt -nodes -nokeys
 openssl pkcs12 -in PFX_FILE.pfx -out PRIVATE_KEY_FILE.key -nodes -nocerts
 openssl pkcs8 -in AWS_GENERATED.pem -inform PEM -outform DER -topk8 -nocrypt | openssl sha1 -c   # get fingerprint
 openssl rand -base64 24   # generate 32 char password
-openssl req -in DOMAIN_NAME.csr -noout -subject
 openssl req -in consult.firecrackerhealth.com.csr.orig -noout -subject
+openssl req -in DOMAIN_NAME.csr -noout -subject
 openssl req -new -newkey rsa:2048 -nodes -keyout DOMAIN_NAME.key -out DOMAIN_NAME.csr
 openssl req -new -newkey rsa:2048 -nodes -sha256 -keyout DOMAIN_NAME.key -out DOMAIN_NAME.csr -config CSR_CONFIG
 openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout www.example.com.selfsigned.key -out www.example.com.selfsigned.crt -subj /CN=www.example.com -days 3650
@@ -205,6 +207,7 @@ prsetup					# printer setup
 prtlock					# /eci/dev/bin/prtlock
 put &res.guestnum &resrooms.roomnum into guest-room-tbl(#guest-room-index+1)	# Club Data (clbdata.sqr)
 python -c "from passlib.hash import sha512_crypt; print sha512_crypt.encrypt(raw_input('clear-text password: '))"
+RACK_ENV=ENVIRONMENT bundle exec rake db:migrate # run from "/var/apps/APP/current"
 rgn=us-east-1; watch -n1 -d 'awsdasg -r '"$rgn"' -n ASG_NAME +bt; echo "--"; awsdlc -r '"$rgn"' -n LC_NAME; echo "--"; awsdi -r '"$rgn"' -p PROJECT -n log +bt +c'
 rpm -qa | grep MQSeries | grep -v 6.0.0
 rsync -nvcrlDz
@@ -224,10 +227,10 @@ ssh mongo1.shared1.example.com "mongo --quiet --ssl --sslAllowInvalidCertificate
 ssh-add -l
 ssh-copy-id [$USER@]$HOSTNAME
 ssh-keygen -E md5 -lf $pub_key_file                                                              # get fingerprint
-ssh-keygen -R $hostname		          # remove host entries from known_hosts
 ssh-keygen -ef OPEN_SSH_KEY -m PEM | openssl rsa -RSAPublicKey_in -outform DER | openssl md5 -c  # get fingerprint
 ssh-keygen -p -f $key_file	          # add/change passphrase
 ssh-keygen -p -m PEM -f PRIVATE_KEY_FILE  # convert private key to PEM (RSA) format
+ssh-keygen -R $hostname		          # remove host entries from known_hosts
 ssh-keygen -t rsa [-b 4096] [-C "email"]  # generate RSA key-pair (default: 2048)
 ssh-keygen -y -f PRIVATE_KEY              # SSH: generate public from private key
 stacker build -i -r REGION ENV_FILE YAML_FILE
