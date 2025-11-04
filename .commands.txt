@@ -143,6 +143,7 @@ hwclock [-w]
 jq -r '.packages."".dependencies | to_entries[] | .key' package-lock.json
 jq -r '.packages."".devDependencies | to_entries[] | .key' package-lock.json
 jq -r '.packages."node_modules/PACKAGE".version' package-lock.json
+pattern="SEARCH_PATTERN"; jq -r '.EventBuses[] | select(.Rules | any(.[]?; (.Targets // []) | any(.[]?; ((.Id // "") + " " + (.Arn // "") + " " + (.RoleArn // "")) | contains("'"$pattern"'")))) | .Name' FILE | sort -u
 keyring -b artifacts_keyring.ArtifactsKeyringBackend get https://pkgs.dev.azure.com/$ADO_COMPANY/$ADO_PROJECT/_packaging/$ADO_FEED/pypi/simple/ VssSessionToken
 kf openstack server delete game-neweden-1298-02 -y --purge
 kill -[15|6|9] PID				# nice|HUP|force

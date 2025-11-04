@@ -19,7 +19,7 @@ aws cloudformation describe-stacks --stack-name CF_STACK_NAME
 aws cloudformation get-template --stack-name STACK_NAME | jq -r .TemplateBody
 aws cloudformation list-stack-resources --region REGION --stack-name NAME --query "StackResourceSummaries[?ResourceType=='TYPE'].PhysicalResourceId"
 aws cloudformation list-stack-resources --region REGION --stack-name STACK --query "StackResourceSummaries[].[LogicalResourceId,ResourceType,PhysicalResourceId]" --output table
-aws cloudformation list-stacks | jq .StackSummaries[].StackName
+aws cloudformation list-stacks --stack-status-filter UPDATE_COMPLETE UPDATE_IN_PROGRESS UPDATE_COMPLETE_CLEANUP_IN_PROGRESS CREATE_COMPLETE UPDATE_ROLLBACK_COMPLETE --query StackSummaries[].StackName
 aws cloudformation package --template-file TEMPLATE.yaml --output-template-file SAM_TEMPLATE.yaml --s3-bucket BUCKET --s3-prefix KEY
 aws cloudformation update-stack --stack-name CF_STACK_NAME --capabilities CAPABILITY_NAMED_IAM --template-body file://PATH_TO/CF_STACK_TEMPLATE
 aws cloudformation wait stack-create-complete --stack-name CF_STACK_NAME
