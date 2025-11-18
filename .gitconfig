@@ -70,9 +70,8 @@
 	lnc = log --pretty=format:"%h\\ %s\\ [%cn]"
 	lp = log -p # show patch/updates
 	# ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
-	# ls = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
-	ls = "!git lsa -12"  # show last 5 commits
 	# lsa = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
+	ls = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
 	lsa = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --all --abbrev-commit --date=relative
 	# lss = "!git ls -S"  # search logs for PATTERN"
 	# lsf = "!git ls --"  # show logs for files (and directories)
