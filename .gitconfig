@@ -71,13 +71,12 @@
 	lp = log -p # show patch/updates
 	# ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
 	# lsa = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
-	ls = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative
-	lsa = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --all --abbrev-commit --date=relative
+	ls = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --abbrev-commit --date=relative -10
+	lsa = log --pretty=format:'%C(bold)%Cred%h%C(yellow)%d %Creset%C(bold)%s %Cgreen(%cr) %C(bold blue)<%cn>' --all --abbrev-commit --date=relative -20
 	# lss = "!git ls -S"  # search logs for PATTERN"
 	# lsf = "!git ls --"  # show logs for files (and directories)
 	lss = "!git lsa -S"  # search logs for PATTERN"
 	lsf = "!git lsa --"  # show logs for files (and directories)
-	# lsl = "!git ls -5"  # show last 5 commits
 	rso = remote show origin
 
 	# misc stuff
