@@ -1,15 +1,10 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 format = """
-[](color_orange)\
-$os\
-$username\
-[](bg:color_green fg:color_orange)\
-$directory\
-[](fg:color_green bg:color_indigo)\
-$git_branch\
-$git_status\
-[](fg:color_indigo bg:color_blue)\
+[](color_yellow)$os$username[](bg:color_black fg:color_yellow)\
+[](color_green)$directory[](bg:color_black fg:color_green)\
+[](color_indigo)$git_branch$git_status[](bg:color_black fg:color_indigo)\
+[](color_blue)\
 $c\
 $cpp\
 $rust\
@@ -20,15 +15,16 @@ $java\
 $kotlin\
 $haskell\
 $python\
-[](fg:color_blue bg:color_light_gray)\
+[](bg:color_black fg:color_blue)\
+[](color_light_gray)\
 $docker_context\
 $conda\
 $pixi\
-[](fg:color_light_gray bg:color_dark_gray)\
+[](bg:color_black fg:color_light_gray)\
 $line_break\
-$time\
+[](color_dark_gray)$time[](bg:color_black fg:color_dark_gray)\
 ${custom.aws_creds}\
-[ ](fg:color_dark_gray)\
+[ ☯ ](bg:color_black fg:color_white)\
 $character"""
 
 palette = 'dark_colors'
@@ -213,8 +209,7 @@ disabled = false
 command = 'if [ -n "$AWS_DEFAULT_PROFILE" ] && [ -n "$AWS_DEFAULT_REGION" ]; then echo "$AWS_DEFAULT_PROFILE($AWS_DEFAULT_REGION)"; fi'
 when = '[ -n "$AWS_DEFAULT_PROFILE" ]'
 shell = ["sh"]
-format = '[[  $output ](fg:color_white bg:color_red)]($style)'
-style = "bg:color_red"
+format = '[](color_red)[$output](fg:color_white bg:color_red)[](color_red)'
 
 [character]
 disabled = false
