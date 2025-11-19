@@ -1778,7 +1778,12 @@ alias yy='echo y'
 [[ "$COMPANY_SHIT" ]] && source "$COMPANY_SHIT"
 
 # set bash prompt command (and bash prompt)
-export OLD_PROMPT_COMMAND=$PROMPT_COMMAND
-export PROMPT_COMMAND="bash_prompt"
+# OLD: Using custom bash_prompt function (commented out for performance)
+# export OLD_PROMPT_COMMAND=$PROMPT_COMMAND
+# export PROMPT_COMMAND="bash_prompt"
+
+# NEW: Using Starship prompt (much faster with built-in caching)
+#   added this to .bashrc
+# eval "$(starship init bash)"
 
 [[ "$PS1" ]] && echo -en "${RED}$MAIN_BA_FILE${NRM} "
