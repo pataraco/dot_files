@@ -2408,6 +2408,7 @@ function saecm {
         export AWS_DEFAULT_REGION=$(jq -r '.accounts."'"$_PROFILE"'".region' "$_ADSK_ACCTS")
         export AWS_ACCOUNT_ID=$(jq -r '.accounts."'"$_PROFILE"'".id' "$_ADSK_ACCTS")
         export AWS_ENVIRONMENT="$(jq -r '.accounts."'"$_PROFILE"'".aws_account_desc' "$_ADSK_ACCTS") [$AWS_ACCOUNT_ID]"
+        # TODO: fix this someday (AWS_CREDENTIAL_EXPIRATION is not set)
         export AWS_STS_EXPIRES_TS=$(date -jf "%Y-%m-%dT%H:%M:%S-07:00" "$AWS_CREDENTIAL_EXPIRATION" +"%s" 2> /dev/null)
         # environment used for PS_PROMPT (color)
         _set_aws_prompt_colors $(jq -r '.accounts."'"$_PROFILE"'".env_color' "$_ADSK_ACCTS")
