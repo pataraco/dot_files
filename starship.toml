@@ -1,30 +1,28 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+command_timeout = 2000
+
+# other formats
+# [](color_orange)$os[](color_orange)\
+# $username\
+#
+
 format = """
-[](color_yellow)$os$username[](bg:color_black fg:color_yellow)\
-[](color_green)$directory[](bg:color_black fg:color_green)\
-[](color_indigo)$git_branch$git_status[](bg:color_black fg:color_indigo)\
-[](color_blue)\
-$c\
-$cpp\
+$git_branch$git_status\
+([](color_blue)\
 $rust\
 $golang\
 $nodejs\
 $php\
 $java\
-$kotlin\
-$haskell\
 $python\
-[](bg:color_black fg:color_blue)\
-[](color_light_gray)\
+[](bg:color_black fg:color_blue))\
 $docker_context\
-$conda\
-$pixi\
-[](bg:color_black fg:color_light_gray)\
+$directory\
 $line_break\
-[](color_dark_gray)$time[](bg:color_black fg:color_dark_gray)\
+$time\
 ${custom.aws_creds}\
-[ ☯ ](bg:color_black fg:color_white)\
+${custom.random_emoji}\
 $character"""
 
 palette = 'dark_colors'
@@ -36,7 +34,7 @@ color_yellow = '#ffff00'
 color_green = '#00ff00'
 color_blue = '#0000ff'
 color_indigo = '#4B0082'
-color_purple = '#9400ff'
+color_violet = '#9400ff'
 color_white = '#ffffff'
 color_black = '#000000'
 color_dark_gray = '#2d2d2d'
@@ -50,8 +48,8 @@ color_orange = '#603300'
 color_yellow = '#606000'
 color_green = '#006000'
 color_blue = '#000060'
-color_indigo = '#1d0031'
-color_purple = '#380060'
+color_indigo = '#1d0050'
+color_violet = '#380060'
 color_white = '#ffffff'
 color_black = '#000000'
 color_dark_gray = '#2d2d2d'
@@ -65,7 +63,7 @@ color_bright_blue = '#0088ff'
 
 [os]
 disabled = false
-style = "bg:color_yellow fg:color_white"
+style = "bg:color_orange fg:color_white"
 
 [os.symbols]
 Windows = "󰍲"
@@ -95,31 +93,31 @@ Pop = ""
 show_always = true
 style_user = "bg:color_yellow fg:color_white"
 style_root = "bg:color_red fg:color_white"
-format = '[ $user ]($style)'
+format = '[](color_yellow)[ $user ]($style)[](color_yellow)'
 
 [directory]
 style = "fg:color_white bg:color_green"
-format = "[ $path ]($style)"
+format = "[](color_green)[ $path ]($style)[](color_green)"
 truncation_length = 100
 truncation_symbol = "…/"
 truncate_to_repo = false
 fish_style_pwd_dir_length = 0
 
-[directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = "󰝚 "
-"Pictures" = " "
-"Developer" = "󰲋 "
+# [directory.substitutions]
+# "Documents" = "󰈙 "
+# "Downloads" = " "
+# "Music" = "󰝚 "
+# "Pictures" = " "
+# "Developer" = "󰲋 "
 
 [git_branch]
 symbol = ""
-style = "bg:color_indigo"
-format = '[[ $symbol $branch](fg:color_white bg:color_indigo)]($style)'
+style = "bg:color_violet fg:color_white"
+format = '[](color_violet)[$symbol $branch]($style)'
 
 [git_status]
-style = "bg:color_indigo"
-format = '[[(\($all_status$ahead_behind\))](fg:color_white bg:color_indigo)]($style)'
+style = "bg:color_violet fg:color_white"
+format = '[ (\($all_status$ahead_behind\))]($style)[](color_violet)'
 
 # Customize individual status colors
 conflicted = "[=$count](bold fg:color_bright_red bg:color_indigo)"
@@ -136,71 +134,63 @@ deleted = "[✘$count](bold fg:color_bright_red bg:color_indigo)"
 [nodejs]
 symbol = ""
 style = "bg:color_blue"
-format = '[[ $symbol( $version) ](fg:color_white bg:color_blue)]($style)'
+format = '[[$symbol( $version) ](fg:color_white bg:color_blue)]($style)'
 
 [c]
 symbol = " "
 style = "bg:color_blue"
-format = '[[ $symbol( $version) ](fg:color_white bg:color_blue)]($style)'
+format = '[[$symbol( $version) ](fg:color_white bg:color_blue)]($style)'
 
 [cpp]
 symbol = " "
 style = "bg:color_blue"
-format = '[[ $symbol( $version) ](fg:color_white bg:color_blue)]($style)'
+format = '[[$symbol( $version) ](fg:color_white bg:color_blue)]($style)'
 
 [rust]
 symbol = ""
 style = "bg:color_blue"
-format = '[[ $symbol( $version) ](fg:color_white bg:color_blue)]($style)'
+format = '[[$symbol( $version) ](fg:color_white bg:color_blue)]($style)'
 
 [golang]
 symbol = ""
 style = "bg:color_blue"
-format = '[[ $symbol( $version) ](fg:color_white bg:color_blue)]($style)'
+format = '[[$symbol( $version) ](fg:color_white bg:color_blue)]($style)'
 
 [php]
 symbol = ""
 style = "bg:color_blue"
-format = '[[ $symbol( $version) ](fg:color_white bg:color_blue)]($style)'
+format = '[[$symbol( $version) ](fg:color_white bg:color_blue)]($style)'
 
 [java]
 symbol = ""
 style = "bg:color_blue"
-format = '[[ $symbol( $version) ](fg:color_white bg:color_blue)]($style)'
+format = '[[$symbol( $version) ](fg:color_white bg:color_blue)]($style)'
 
 [kotlin]
 symbol = ""
 style = "bg:color_blue"
-format = '[[ $symbol( $version) ](fg:color_white bg:color_blue)]($style)'
+format = '[[$symbol( $version) ](fg:color_white bg:color_blue)]($style)'
 
 [haskell]
 symbol = ""
 style = "bg:color_blue"
-format = '[[ $symbol( $version) ](fg:color_white bg:color_blue)]($style)'
+format = '[[$symbol( $version) ](fg:color_white bg:color_blue)]($style)'
 
 [python]
 symbol = ""
 style = "bg:color_blue"
-format = '[[ $symbol( $version) ](fg:color_white bg:color_blue)]($style)'
+format = '[[$symbol( $version) ](fg:color_white bg:color_blue)]($style)'
 
 [docker_context]
 symbol = ""
-style = "bg:color_light_gray"
-format = '[[ $symbol( $context) ](fg:#83a598 bg:color_light_gray)]($style)'
-
-[conda]
-style = "bg:color_light_gray"
-format = '[[ $symbol( $environment) ](fg:#83a598 bg:color_light_gray)]($style)'
-
-[pixi]
-style = "bg:color_light_gray"
-format = '[[ $symbol( $version)( $environment) ](fg:color_white bg:color_light_gray)]($style)'
+style = "bg:color_light_gray fg:color_white"
+format = '[](color_light_gray)[$symbol( $context) ](($style)[](color_light_gray)'
 
 [time]
 disabled = false
-time_format = "%R"
-style = "bg:color_dark_gray"
-format = '[[  $time ](fg:color_white bg:color_dark_gray)]($style)'
+time_format = "%d-%m-%Y (%R)"
+style = "bg:color_dark_gray fg:color_white"
+format = '[](color_dark_gray)[$time]($style)[](color_dark_gray)'
 
 [line_break]
 disabled = false
@@ -211,11 +201,37 @@ when = '[ -n "$AWS_DEFAULT_PROFILE" ]'
 shell = ["sh"]
 format = '[](color_red)[$output](fg:color_white bg:color_red)[](color_red)'
 
+[custom.aws_creds_valid]
+command = 'if [ -n "$AWS_DEFAULT_PROFILE" ] && [ -n "$AWS_DEFAULT_REGION" ]; then echo "$AWS_DEFAULT_PROFILE($AWS_DEFAULT_REGION)"; fi'
+when = '[ -n "$AWS_DEFAULT_PROFILE" ] && aws sts get-caller-identity &>/dev/null'
+shell = ["sh"]
+format = '[](color_red)[$output](fg:color_white bg:color_red)[](color_red)'
+
+[custom.aws_creds_expired]
+command = 'if [ -n "$AWS_DEFAULT_PROFILE" ] && [ -n "$AWS_DEFAULT_REGION" ]; then echo "$AWS_DEFAULT_PROFILE($AWS_DEFAULT_REGION)"; fi'
+when = '[ -n "$AWS_DEFAULT_PROFILE" ] && ! aws sts get-caller-identity &>/dev/null'
+shell = ["sh"]
+format = '[](color_light_gray)[$output](fg:color_white bg:color_red)[](color_light_gray)'
+
+# Starship doesn't have direct access to the last command's exit status in custom modules the way bash does with $?.
+# However, you can use Starship's built-in status module which is designed for this.
+# The $status variable in the command will be replaced by Starship with the actual exit code of the last
+# command, and then it gets passed as $0 to the bash command.
+[custom.random_emoji]
+# TODO: this doesn't work as expected - $status not available in custom module
+# command = '''bash -c 'if [ "$0" = "0" ]; then emojis=(😀 😃 😄 😁 😆 😊 🙃 😋 😛 😝 😍 😜 🤗 😬 😎); else emojis=(😡 👿 🤔 😵 😥 😰 👎 😱 😭 😢 🖕 🤢 😤 💩 💀); fi; echo ${emojis[RANDOM % ${#emojis[@]}]}' "$status"'''
+# So, just generate a random emoji without checking status
+command = 'emojis=(😀 😃 😄 😁 😆 😊 🙃 😋 😛 😝 😍 😜 🤗 😬 😎 😡 👿 🤔 😵 😥 😰 👎 😱 😭 😢 🖕 🤢 😤 💩 💀); echo ${emojis[RANDOM % ${#emojis[@]}]}'
+when = "true"
+format = "[ $output ](color_white)"
+
 [character]
 disabled = false
-success_symbol = '[](bold fg:color_bright_green)'
-error_symbol = '[](bold fg:color_bright_red)'
+# success_symbol = '☯ [▶](bold fg:color_bright_green)'
+# error_symbol = '☯ [▶](bold fg:color_bright_red)'
+success_symbol = '[▶](bold fg:color_bright_green)'
+error_symbol = '[▶](bold fg:color_bright_red)'
 vimcmd_symbol = '[](bold fg:color_bright_green)'
-vimcmd_replace_one_symbol = '[](bold fg:color_purple)'
-vimcmd_replace_symbol = '[](bold fg:color_purple)'
+vimcmd_replace_one_symbol = '[](bold fg:color_violet)'
+vimcmd_replace_symbol = '[](bold fg:color_violet)'
 vimcmd_visual_symbol = '[](bold fg:color_green)'
