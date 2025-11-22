@@ -112,12 +112,12 @@ fish_style_pwd_dir_length = 0
 
 [git_branch]
 symbol = ""
-style = "bg:color_violet fg:color_white"
-format = '[](color_violet)[$symbol $branch]($style)'
+style = "bg:color_indigo fg:color_white"
+format = '[](color_indigo)[$symbol $branch]($style)'
 
 [git_status]
-style = "bg:color_violet fg:color_white"
-format = '[ (\($all_status$ahead_behind\))]($style)[](color_violet)'
+style = "bg:color_indigo fg:color_white"
+format = '[ (\($all_status$ahead_behind\))]($style)[](color_indigo)'
 
 # Customize individual status colors
 conflicted = "[=$count](bold fg:color_bright_red bg:color_indigo)"
