@@ -116,7 +116,7 @@
       echo '   Commit or stash them before running this.'; \
       exit 1; \
     fi; \
-    echo \"📌 Default branch detected: $default_branch\"; \
+    echo \"✅ Default branch detected: $default_branch\"; \
     echo \"🔄 Switching to $default_branch\"; \
     git switch \"$default_branch\" || exit 1; \
     echo \"🚀 Fetching & resetting $default_branch from $remote/$default_branch\"; \
