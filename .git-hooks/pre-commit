@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+#
+# GLOBAL PRE-COMMIT HOOK with CHAINING to repo's own .git/hooks/pre-commit
+#
+
+# Detect repo root; empty if not in a Git repo
+repo_root="$(git rev-parse --show-toplevel 2> /dev/null)"
+
+if [[ -z "$repo_root" ]]; then
+  # Not a Git repo — do nothing
+  exit 0
+fi
+
+# Current branch
+branch="$(git rev-parse --abbrev-ref HEAD 2> /dev/null || echo "")"
+
+# If in detached HEAD (rebasing, etc.), do nothing
+if [[ "$branch" == "HEAD" || -z "$branch" ]]; then
+  :
+else
+  # Determine primary (default) branch of the repo dynamically
+  # Determine default remote, prefer origin
+  default_remote="$(git config --get core.defaultRemote)"
+  if [[ -z "$default_remote" ]]; then
+    default_remote="origin"
+  fi
+
+  # Try to find remote HEAD reference, e.g. refs/remotes/origin/main
+  remote_head_ref="$(git symbolic-ref -q "refs/remotes/$default_remote/HEAD" 2> /dev/null || true)"
+
+  if [[ -n "$remote_head_ref" ]]; then
+    # Extract branch name from refs/remotes/origin/main
+    default_branch="${remote_head_ref#refs/remotes/$default_remote/}"
+  else
+    # Fallback to init.defaultBranch or 'main'
+    default_branch="$(git config --get init.defaultBranch)"
+    if [[ -z "$default_branch" ]]; then
+      default_branch="main"
+    fi
+  fi
+
+  # Block commits on primary branch
+  if [[ "$branch" == "$default_branch" ]]; then
+    echo "🚫 Stop‼ Don't commit on the primary branch '$branch' - Use a feature branch!"
+    echo "  Detected default remote '$default_remote' & primary branch '$default_branch'"
+    exit 1
+  fi
+fi
+
+# Chain to repo-specific pre-commit hook if it exists
+local_hook="$repo_root/.git/hooks/pre-commit"
+
+# Avoid infinite recursion: skip if this hook *is* the local hook
+if [[ -x "$local_hook" && "$0" != "$local_hook" ]]; then
+  echo "🔗 Chaining to local pre-commit hook at '$local_hook'"
+  exec "$local_hook"
+fi
+
+exit 0

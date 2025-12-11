@@ -12,7 +12,7 @@ SRC_REPO="$HOME/repos/pataraco/dot_files"
 #   1. Installs Homebrew
 #   2. Installs the Homebrew packages in the Brewfile
 #   3. Moves existing dot files in $HOME to $HOME/.orig
-#   4. Set up symlinks from $HOME to the files in the $SRC_REPO
+#   4. Set up symlinks from $HOME to the files/dirs in the $SRC_REPO
 #      (excluding this script, the .git directory and the README file, etc.)
 #
 # some other manual steps
@@ -70,23 +70,23 @@ fi
 
 # get list of files to process and create symlinks
 # shellcheck disable=SC2010
-for file in $(ls -1d .[a-z]* | grep -wv .git); do
-  echo -n "processing: $file... "
-  if [ -f "$file" ]; then         # source file is a regular file, create link
-    if [ -L "$HOME/$file" ]; then # existing symlink
+for file_or_dir in $(ls -1d .[a-z]* | grep -wv ".git/"); do
+  echo -n "processing: $file_or_dir... "
+  if [[ -f "$file_or_dir" ]] || [[ -d $file_or_dir ]]; then # source is a regular file or directory
+    if [ -L "$HOME/$file_or_dir" ]; then                    # existing symlink
       echo -n "removing existing symlink... "
-      rm -f "$HOME/$file"
-    elif [ -f "$HOME/$file" ]; then # existing file
-      echo -n "saving original file... "
-      mv "$HOME/$file" "$ORIG_DIR"
+      rm -f "$HOME/$file_or_dir"
+    elif [[ -f "$HOME/$file_or_dir" ]] || [[ -d "$HOME/$file_or_dir" ]]; then # existing file/dir
+      echo -n "saving original file/directory... "
+      mv "$HOME/$file_or_dir" "$ORIG_DIR"
       files_saved=true
     else # not found
-      echo -n "existing file/symlink not found..."
+      echo -n "existing file/directory/symlink not found..."
     fi
     echo -n "creating symlink... "
-    ln -s "$SRC_REPO/$file" "$HOME/$file"
-  else # source file is not a regular file, don't link
-    echo -n "not a regular file, not creating symlink... "
+    ln -s "$SRC_REPO/$file_or_dir" "$HOME/$file_or_dir"
+  else # source file/dir is not a regular file or directory, don't link
+    echo -n "not a regular file or directory, not creating symlink... "
   fi
   echo "done"
 done
