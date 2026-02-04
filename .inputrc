@@ -1,2 +1,9 @@
 set completion-ignore-case on
 set show-all-if-ambiguous on
+
+# Let Starship handle the prompt
+# # Fix vi mode history search with Starship prompt
+# # Disable readline's vi mode indicators to prevent conflicts with Starship
+# set show-mode-in-prompt off
+# set vi-ins-mode-string ""
+# set vi-cmd-mode-string ""

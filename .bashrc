@@ -181,6 +181,9 @@ fi
 [[ -f "${HOME}/Library/Application Support/codewhisperer/shell/bashrc.post.bash" ]] && builtin source "${HOME}/Library/Application Support/codewhisperer/shell/bashrc.post.bash"
 
 # NEW: Using Starship prompt (much faster with built-in caching)
-eval "$(starship init bash)"
+# Skip Starship in Warp terminal (Warp has its own prompt system)
+if [[ "$TERM_PROGRAM" != "WarpTerminal" ]]; then
+  eval "$(starship init bash)"
+fi
 
 [ -n "$PS1" ] && echo -en "${RED}.bashrc${NRM} "
