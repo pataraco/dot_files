@@ -12,6 +12,8 @@
 .ansible*
 .bash_history
 .cache
+.claude
+.claude_cache
 .chef
 .config
 .docker

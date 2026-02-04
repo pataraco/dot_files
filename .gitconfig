@@ -93,6 +93,53 @@
 	# not sure about "up"
 	# up = !git pull --rebase --prune $@ && git submodule update --init --recursive
 	# bdone = "!f() { git checkout ${1-master} && git up && git bclean ${1-master}; }; f"
+
+  # sick stuff
+  #
+  # Resolve conflicts: take base side (ours) or origin/replayed commit (theirs)
+  take-ours = "!f() { git checkout --ours \"$1\" && git add \"$1\"; }; f"
+  take-theirs = "!f() { git checkout --theirs \"$1\" && git add \"$1\"; }; f"
+
+  # Safely update the default branch (main/develop/etc.) to match remote
+  # - Detects default branch from remote HEAD
+  # - Refuses to run if you have uncommitted changes
+  update-default = "!f() { \
+    remote=${1:-origin}; \
+    head_ref=$(git symbolic-ref -q refs/remotes/$remote/HEAD 2>/dev/null); \
+    if [ -n \"$head_ref\" ]; then \
+      default_branch=${head_ref#refs/remotes/$remote/}; \
+    else \
+      default_branch=$(git config --get init.defaultBranch || echo main); \
+    fi; \
+    if ! git diff --quiet || ! git diff --cached --quiet; then \
+      echo '🚫 You have uncommitted changes (staged or unstaged).'; \
+      echo '   Commit or stash them before running this.'; \
+      exit 1; \
+    fi; \
+    echo \"✅ Default branch detected: $default_branch\"; \
+    echo \"🔄 Switching to $default_branch\"; \
+    git switch \"$default_branch\" || exit 1; \
+    echo \"🚀 Fetching & resetting $default_branch from $remote/$default_branch\"; \
+    git fetch --prune \"$remote\" && git reset --hard \"$remote/$default_branch\"; \
+  }; f"
+
+  # Update current feature branch with any remote changes (rebases onto origin/branch)
+  update-feature = "!f() { \
+    branch=$(git rev-parse --abbrev-ref HEAD); \
+    remote=${1:-origin}; \
+    echo \"🚀 Rebasing $branch onto $remote/$branch\"; \
+    git fetch --prune \"$remote\" && git rebase \"$remote/$branch\"; \
+  }; f"
+
+  # Show the definition of another alias
+  show-alias = "!f() { \
+    val=$(git config --get alias.$1); \
+    if [ -z \"$val\" ]; then \
+      echo \"No alias named '$1' found\"; \
+      exit 1; \
+    fi; \
+    echo \"alias $1 = $val\"; \
+  }; f"
 [core]
 	excludesfile = /home/praco/.gitignore
 	hooksPath = /Users/racop/.git-hooks

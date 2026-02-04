@@ -82,7 +82,7 @@ eb_bin="${HOME}/.ebcli-virtual-env/executables"
 # export GEM_HOME=$GEM_PATH
 
 # this is to remove the nvm path from the PATH so that homebrew installation dirs are not first
-nvm deactivate &> /dev/null
+command -v nvm &> /dev/null && nvm deactivate &> /dev/null
 
 # set Homebrew environment and add brew installtion dirs to PATH
 # (sets HOMEBREW_REPOSITORY, HOMEBREW_PREFIX, HOMEBREW_CELLAR)
