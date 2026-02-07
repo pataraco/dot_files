@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Bash(bash:git status*)",
+      "Bash(bash:git log*)",
+      "Bash(bash:git diff*)",
+      "Bash(bash:git fetch*)",
+      "Bash(bash:git branch --show*)",
+      "Bash(bash:ls*)",
+      "Bash(bash:pwd*)",
+      "Bash(bash:which*)",
+      "Bash(bash:gh pr view*)",
+      "Bash(bash:gh pr list*)",
+      "Bash(bash:gh pr checks*)",
+      "Bash(bash:gh issue view*)",
+      "Bash(bash:gh issue list*)",
+      "Bash(bash:gh repo view*)"
+    ]
+  }
+}
