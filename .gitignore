@@ -9,10 +9,10 @@
 .*.orig
 .*.save
 .*.swp
+.DS_Store
 .ansible*
 .bash_history
 .cache
-.claude
 .claude_cache
 .chef
 .config
