@@ -1625,6 +1625,7 @@ alias a="alias | grep -v ^declare | cut -d= -f1 | sort | awk -v c=5 'BEGIN{print
 # alias aws="/usr/local/bin/aws"
 alias c="clear"
 alias cc="tsend clear"
+alias ccyolo="claude --dangerously-skip-permissions"
 alias ccr2bn="awk -v ORS='\\\\n' '1'" # converts carriage returns to '\n'
 alias cdh="cd ~; cd"
 alias cd-ia="cd ~/repos/infrastructure-automation/exercises/auto_website"

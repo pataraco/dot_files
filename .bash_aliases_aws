@@ -70,15 +70,19 @@ function _set_aws_prompt_colors {
 
 function _show_aws_environment {
   # show AWS environment [variables]
-  echo -n "--- AWS Environment "
-  [[ -n "$AWS_DEFAULT_PROFILE" ]] || { [[ -n "$AWS_ACCESS_KEY_ID" ]] && [[ -n "$AWS_SECRET_ACCESS_KEY" ]]; } && echo "Settings ---" || echo "(NOT set) ---"
+  local _is_set=false
+  [[ -n "$AWS_DEFAULT_PROFILE" ]] || [[ -n "$AWS_PROFILE" ]] && _is_set=true
+  if $_is_set; then
+    echo -e "${BLD}${GRN}◀ AWS Configure ▶${NRM}"
+    aws configure list --profile "$AWS_DEFAULT_PROFILE"
+    echo -e "${BLD}${GRN}◀ AWS Environment ▶${NRM}"
+  else
+    echo -e "${BLD}${RED}◀ AWS Environment (not set) ▶${NRM}"
+  fi
   echo "AWS_ENVIRONMENT       = ${AWS_ENVIRONMENT:-N/A}"
   echo "AWS_DEFAULT_PROFILE   = ${AWS_DEFAULT_PROFILE:-N/A}"
+  echo "AWS_PROFILE           = ${AWS_PROFILE:-N/A}"
   echo "AWS_ACCOUNT_ID        = ${AWS_ACCOUNT_ID:-N/A}"
-  # obfuscate the KEYs with some *'s
-  echo "AWS_ACCESS_KEY_ID     = ${AWS_ACCESS_KEY_ID:-N/A}" | sed 's:[F-HO-QT-V3-8]:*:g'
-  echo "AWS_SECRET_ACCESS_KEY = ${AWS_SECRET_ACCESS_KEY:-N/A}" | sed 's:[d-np-zF-HO-QU-V4-9+]:*:g'
-  echo "AWS_DEFAULT_REGION    = ${AWS_DEFAULT_REGION:-N/A}"
 }
 
 function _unset_aws_environment {
@@ -88,6 +92,7 @@ function _unset_aws_environment {
   unset AWS_ACCOUNT
   unset AWS_CREDENTIAL_EXPIRATION
   unset AWS_DEFAULT_PROFILE
+  unset AWS_PROFILE
   unset AWS_DEFAULT_REGION
   unset AWS_ENVIRONMENT
   unset AWS_SECRET_ACCESS_KEY
@@ -162,6 +167,7 @@ function awsconsole {
   # fire up AWS Console if AWS Environment Variables are all set
   local _CONSOLE_LOGIN_SCRIPT="$HOME/repos/pataraco/scripts/aws/aws_sso_console_login.py"
   local _CONSOLE_DEST="$1"
+  local _REGION="${2:-${AWS_DEFAULT_REGION:-us-east-1}}"
   local _aws_signin_url
   if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_SESSION_TOKEN" ]]; then
     if [[ -n "$AWS_DEFAULT_PROFILE" ]]; then
@@ -191,7 +197,7 @@ function awsconsole {
       ssm) _CONSOLE_DEST="systems-manager/parameters" ;;
       sso) _CONSOLE_DEST="singlesignon" ;;
     esac
-    open -n -a "Google Chrome" --args "--new-window" "--profile-directory=${AWS_DEFAULT_PROFILE}" "${_aws_signin_url}${_CONSOLE_DEST}"
+    open -n -a "Google Chrome" --args "--new-window" "--profile-directory=${AWS_DEFAULT_PROFILE}" "${_aws_signin_url}${_CONSOLE_DEST}?region=${_REGION}"
   else
     echo "can't log in to console - could not generate signin URL"
     return 3
@@ -2401,10 +2407,8 @@ function saecm {
       _cm_env=$(jq -r '.accounts."'"$_PROFILE"'".env' "$_ADSK_ACCTS")
       if cloudmate aws auth -e "$_cm_env"; then
         # set AWS environment variables
-        export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI (instead of using --profile)
-        export AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
-        export AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
-        export AWS_SESSION_TOKEN=$(aws configure get aws_session_token)
+        export AWS_DEFAULT_PROFILE=$_PROFILE # for `aws` CLI
+        export AWS_PROFILE=$_PROFILE         # for Terraform / SDKs
         export AWS_DEFAULT_REGION=$(jq -r '.accounts."'"$_PROFILE"'".region' "$_ADSK_ACCTS")
         export AWS_ACCOUNT_ID=$(jq -r '.accounts."'"$_PROFILE"'".id' "$_ADSK_ACCTS")
         export AWS_ENVIRONMENT="$(jq -r '.accounts."'"$_PROFILE"'".aws_account_desc' "$_ADSK_ACCTS") [$AWS_ACCOUNT_ID]"
