@@ -1,5 +1,6 @@
 ---
 name: ciao
+model: haiku
 description: End of session wrap-up — summarize work done and optionally add a journal entry. Use this skill whenever the user types /ciao, says "wrap up", "end of session", "i'm done for today", "let's call it", says "i'm signing off", or otherwise signals they're finishing the session.
 allowed-tools: [Read, Bash]
 ---

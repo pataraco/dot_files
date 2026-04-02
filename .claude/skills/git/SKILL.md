@@ -1,5 +1,6 @@
 ---
 name: git
+model: sonnet
 description: Smart git workflow — assess current repo state and do what's needed (sync main, commit, squash, push, update PR, or post-merge cleanup). Use this skill whenever the user types /git, /git commit, /git sync, /git squash, /git push, /git pr, /git slack, /git merged, says "commit my changes", "squash and push", "update my PR", "sync with main", "clean up after merge", "generate the slack message for review", "request a review", or asks about the current git/PR state.
 allowed-tools: [Bash]
 ---

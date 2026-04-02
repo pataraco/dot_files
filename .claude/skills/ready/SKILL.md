@@ -1,5 +1,6 @@
 ---
 name: ready
+model: haiku
 description: Run the session start checklist — load global instructions, display todos, and ask about Jira. Use this skill whenever the user types /ready, says "ready", "let's go", "get started", "initialize", or signals they want to kick off a new session.
 allowed-tools: [Read, Bash]
 ---

@@ -1,5 +1,6 @@
 ---
 name: todo
+model: haiku
 description: Manage personal todo action items. Supports global todos in ~/notes/TODO.txt and local/project todos in .claude/TODO.txt at the git repo root. Use this skill whenever the user types /todo, says "add to my todo", "add this to my todos", "add local todo", "add project todo", "mark X as done", "what's on my todo list", "show my todos", "remove from my todo", "complete this task", or asks about their personal action items. Trigger on any mention of todo, todos, action items, task list management, local todo, or project todo.
 allowed-tools: [Bash]
 ---

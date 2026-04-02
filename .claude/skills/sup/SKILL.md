@@ -1,5 +1,6 @@
 ---
 name: sup
+model: haiku
 description: Provide a brief status update for the current session. Use this skill whenever the user types /sup, asks "what are we working on?", "what were we working on?", wants a quick session summary, or asks for a status check.
 allowed-tools: [Read]
 ---

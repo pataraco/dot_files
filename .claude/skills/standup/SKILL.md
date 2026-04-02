@@ -1,5 +1,6 @@
 ---
 name: standup
+model: sonnet
 description: Summarize work from recent working days for standup. Use this skill whenever the user types /standup, says "standup", "what did I work on?", "generate my standup", "daily standup", or needs a summary of recent work for a team update. Supports /standup, /standup devops, /standup migrations, /standup sdlc.
 allowed-tools: [Bash, mcp__slack__slack_send_message, mcp__slack__slack_search_channels, mcp__slack__slack_search_public_and_private]
 ---
@@ -119,7 +120,7 @@ After displaying the summary, ask:
 > c) Modify
 
 - **a)** Run `pbcopy` with the summary text → confirm "Copied to clipboard."
-- **b)** Send via `slack_send_message` MCP tool to the mode's default channel, unless the user specifies another. Return the message link.
+- **b)** Send via `slack_send_message` MCP tool to the mode's default channel, unless the user specifies another. Use the `message` parameter (NOT `text`). Return the message link.
 - **c)** Ask what changes they'd like, update, display again, re-prompt with a/b/c.
 
 The user may respond with just a letter, number, or short phrase. Handle all naturally.
