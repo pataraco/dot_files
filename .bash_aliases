@@ -636,7 +636,8 @@ function decimal_to_baseN {
 function dj {
   # either add a daily journal entry provided on the command line or edit it
   local _DAILY_JOURNAL_DIR="$HOME/notes"
-  local _DAILY_JOURNAL_FILE="$_DAILY_JOURNAL_DIR/Daily_Journal.txt"
+  local _YEAR=$(date +%Y)
+  local _DAILY_JOURNAL_FILE="$_DAILY_JOURNAL_DIR/Daily_Journal_$_YEAR.txt"
   [[ ! -d "$_DAILY_JOURNAL_DIR" ]] && mkdir "$_DAILY_JOURNAL_DIR"
   if [[ $# -ne 0 ]]; then
     case $1 in

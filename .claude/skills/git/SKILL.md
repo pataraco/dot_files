@@ -88,7 +88,7 @@ If everything is clean and up to date — report current state:
 - Switch to main/master and pull latest
 - Delete remote branch: `git push origin --delete <branch>`
 - Delete local branch: `git branch -D <branch>`
-- Add a journal entry to `~/notes/Daily_Journal.txt` in format: `DD-MM-YYYY: <repo> - <description>`, inserted in chronological order
+- Add a journal entry to `~/notes/Daily_Journal_{YYYY}.txt` in format: `DD-MM-YYYY: <repo> - <description>`, inserted in chronological order
 
 ## Rules (always apply)
 - Never work directly on main/master

@@ -122,7 +122,7 @@ If something looks potentially sensitive but is **not explicitly listed above**,
    - **Step 5 - Check and delete remote first**: Use `git ls-remote --heads origin <feature-branch>` to check if remote branch exists
    - **Only if remote exists**: Delete remotely with `git push origin --delete <feature-branch>`
    - **Step 6 - Delete local branch**: Delete the feature branch locally with `git branch -D <feature-branch>` (use -D since squashed commits won't show as merged)
-2. **Add entry to daily journal**: Insert into `~/notes/Daily_Journal.txt` in chronological order
+2. **Add entry to daily journal**: Insert into `~/notes/Daily_Journal_{YYYY}.txt` in chronological order
 3. **Entry format**: `DD-MM-YYYY: <description>`
    - Use the current date in DD-MM-YYYY format
    - Description should be a concise one-liner explaining what was done to the service/repo

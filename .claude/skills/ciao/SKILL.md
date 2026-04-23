@@ -8,7 +8,7 @@ allowed-tools: [Read, Bash]
 End of session wrap-up:
 
 1. Summarize the work done during the session (brief bullet points)
-2. Ask if they'd like to add an entry to their daily journal (`~/notes/Daily_Journal.txt`)
+2. Ask if they'd like to add an entry to their daily journal (`~/notes/Daily_Journal_{YYYY}.txt`)
 3. If yes: write the entry in `DD-MM-YYYY: <description>` format, inserted in chronological order
 
 Then remind the user to type `/exit` or press `Ctrl+C` to close the session.
