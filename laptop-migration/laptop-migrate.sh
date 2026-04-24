@@ -1,26 +1,27 @@
 #!/usr/bin/env bash
 #
-# migrate.sh — MacBook migration wrapper
+# laptop-migrate.sh — MacBook migration wrapper
 #
-# Subcommands (see: ./migrate.sh help):
-#   refresh-manifest   regenerate Brewfile + migration/*.txt
-#   export-apps        archive ~/Library app settings to ~/.$COMPANY.apps.zip
-#   import-apps ZIP    extract an app-settings archive into ~/
+# Subcommands (see: ./laptop-migrate.sh help):
+#   refresh-manifest   regenerate laptop-migration/Brewfile + *.txt
+#   export-apps        archive ~/Library app settings to ~/.$COMPANY.apps.7z
+#   import-apps ARC    extract an app-settings archive into ~/
 #   new-laptop         fresh-MacBook bootstrap wrapper around setup.sh
-#   reclone            re-clone git repos listed in migration/repos.txt
+#   reclone            re-clone git repos listed in laptop-migration/repos.txt
 #   status             show what's been regenerated and when
 #   help               this message
 #
 # Companion docs:
-#   MIGRATION_MANIFEST.md
-#   .claude/instructions/LAPTOP_MIGRATION.md
+#   LAPTOP_MIGRATION_MANIFEST.md   (alongside this script)
+#   ~/.claude/instructions/LAPTOP_MIGRATION.md
 #
 set -euo pipefail
 
 # ---------- paths ----------
+# This script lives in <repo>/laptop-migration/. Resolve both locations:
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC_REPO="$SCRIPT_DIR"
-MIGRATION_DIR="$SRC_REPO/migration"
+SRC_REPO="$(cd "$SCRIPT_DIR/.." && pwd)"
+MIGRATION_DIR="$SCRIPT_DIR"
 COMPANY="${COMPANY:-}"   # loaded from .bash_profile normally
 
 # ---------- app settings paths (edit to taste) ----------
@@ -77,10 +78,10 @@ cmd_refresh_manifest() {
   need_cmd brew
   mkdir -p "$MIGRATION_DIR"
 
-  log "refreshing Brewfile..."
-  ( cd "$SRC_REPO" && brew bundle dump --force --file=Brewfile )
+  log "refreshing laptop-migration/Brewfile..."
+  brew bundle dump --force --file="$MIGRATION_DIR/Brewfile"
 
-  log "refreshing migration/repos.txt..."
+  log "refreshing laptop-migration/repos.txt..."
   local repos_file="$MIGRATION_DIR/repos.txt"
   : > "$repos_file"
   # find git dirs under ~/repos (cap depth to avoid pathological trees)
@@ -94,7 +95,7 @@ cmd_refresh_manifest() {
   done < <(find "$HOME/repos" -maxdepth 4 -type d -name .git 2>/dev/null | sort)
   log "  $(wc -l < "$repos_file" | tr -d ' ') repos tracked"
 
-  log "refreshing migration/mas.txt..."
+  log "refreshing laptop-migration/mas.txt..."
   if command -v mas >/dev/null 2>&1; then
     mas list 2>/dev/null | sort > "$MIGRATION_DIR/mas.txt" || true
     log "  $(wc -l < "$MIGRATION_DIR/mas.txt" | tr -d ' ') App Store apps"
@@ -102,7 +103,7 @@ cmd_refresh_manifest() {
     warn "  mas not installed — skipping (install with 'brew install mas')"
   fi
 
-  log "refreshing migration/vscode.txt..."
+  log "refreshing laptop-migration/vscode.txt..."
   if command -v code >/dev/null 2>&1; then
     code --list-extensions --show-versions 2>/dev/null | sort > "$MIGRATION_DIR/vscode.txt" || true
     log "  $(wc -l < "$MIGRATION_DIR/vscode.txt" | tr -d ' ') VS Code extensions"
@@ -110,7 +111,7 @@ cmd_refresh_manifest() {
     warn "  code CLI not on PATH — skipping"
   fi
 
-  log "refreshing migration/cursor.txt..."
+  log "refreshing laptop-migration/cursor.txt..."
   if command -v cursor >/dev/null 2>&1; then
     cursor --list-extensions --show-versions 2>/dev/null | sort > "$MIGRATION_DIR/cursor.txt" || true
     log "  $(wc -l < "$MIGRATION_DIR/cursor.txt" | tr -d ' ') Cursor extensions"
@@ -121,12 +122,20 @@ cmd_refresh_manifest() {
   log "done. Review with: git -C '$SRC_REPO' diff --stat"
 }
 
+# Return the 7z binary name (sevenzip ships `7zz`, p7zip ships `7z`)
+find_7z() {
+  if command -v 7zz >/dev/null 2>&1; then echo 7zz; return 0; fi
+  if command -v 7z  >/dev/null 2>&1; then echo 7z;  return 0; fi
+  return 1
+}
+
 cmd_export_apps() {
-  need_cmd zip
+  local sz
+  sz="$(find_7z)" || die "7z not found — install with: brew install sevenzip"
   [[ -n "$COMPANY" ]] || die "\$COMPANY is not set (needed for output filename)"
 
-  local out="$HOME/.${COMPANY}.apps.zip"
-  log "creating $out"
+  local out="$HOME/.${COMPANY}.apps.7z"
+  log "creating $out (AES-256, header-encrypted)"
   log "will include:"
   local p
   for p in "${APP_PATHS[@]}"; do printf '  - %s\n' "$p"; done
@@ -138,40 +147,46 @@ cmd_export_apps() {
 
   local existing=()
   local missing=()
-  ( cd "$HOME" && for p in "${APP_PATHS[@]}"; do
-      # use shell glob expansion
-      # shellcheck disable=SC2086
-      if compgen -G "$p" > /dev/null; then
-        existing+=("$p")
+  local pp
+  ( cd "$HOME" && for pp in "${APP_PATHS[@]}"; do
+      if compgen -G "$pp" > /dev/null; then
+        existing+=("$pp")
       else
-        missing+=("$p")
+        missing+=("$pp")
       fi
     done
     if [[ ${#missing[@]} -gt 0 ]]; then
       printf '[migrate] skipping (not found): %s\n' "${missing[@]}"
     fi
-    # shellcheck disable=SC2086
-    zip --recurse-paths --encrypt "$out" "${existing[@]}" \
-      --exclude "${APP_EXCLUDES[@]}"
+    # build 7z recursive-exclude flags
+    local exc_args=()
+    local ex
+    for ex in "${APP_EXCLUDES[@]}"; do
+      exc_args+=("-xr!$ex")
+    done
+    # -mhe=on = encrypt headers; -p = prompt for password
+    "$sz" a -t7z -mhe=on -mx=5 -p "$out" "${existing[@]}" "${exc_args[@]}"
   )
   log "done: $out"
-  log "copy to USB, then verify with:  unzip -t '$out'"
+  log "copy to USB, then verify with:  $sz t '$out'"
 }
 
 cmd_import_apps() {
-  local zipfile="${1:-}"
-  [[ -n "$zipfile" ]] || die "usage: migrate.sh import-apps <path/to/.apps.zip>"
-  [[ -f "$zipfile" ]] || die "not found: $zipfile"
-  need_cmd unzip
+  local archive="${1:-}"
+  [[ -n "$archive" ]] || die "usage: migrate.sh import-apps <path/to/.apps.7z>"
+  [[ -f "$archive" ]] || die "not found: $archive"
+  local sz
+  sz="$(find_7z)" || die "7z not found — install with: brew install sevenzip"
 
-  log "contents of $zipfile:"
-  unzip -l "$zipfile" | head -40
+  log "contents of $archive:"
+  "$sz" l "$archive" | head -40
   echo "..."
   if ! confirm "extract into \$HOME ($HOME)?"; then
     log "aborted"
     return 1
   fi
-  ( cd "$HOME" && unzip -n "$zipfile" )
+  # -aos = skip existing files on conflict (non-destructive)
+  ( cd "$HOME" && "$sz" x -aos "$archive" )
   log "done. Some apps (iTerm2, Rectangle) need to be closed+reopened to re-read prefs."
   log "You may also need:  defaults read com.googlecode.iterm2  (to force reload)"
 }
@@ -216,13 +231,13 @@ cmd_new_laptop() {
     fi
   fi
 
-  # 5. Run setup.sh
+  # 5. Run setup.sh (lives in the same dir as this script)
   log "running setup.sh..."
-  ( cd "$SRC_REPO" && bash setup.sh )
+  bash "$SCRIPT_DIR/setup.sh"
 
   # 6. Mac App Store apps
   if [[ -f "$MIGRATION_DIR/mas.txt" ]] && command -v mas >/dev/null 2>&1; then
-    log "App Store apps found in migration/mas.txt"
+    log "App Store apps found in laptop-migration/mas.txt"
     if confirm "install them now? (requires App Store sign-in)"; then
       while read -r app_id _rest; do
         [[ -z "$app_id" || "$app_id" =~ ^# ]] && continue
@@ -233,7 +248,7 @@ cmd_new_laptop() {
 
   # 7. VS Code / Cursor extensions
   if command -v code >/dev/null 2>&1 && [[ -f "$MIGRATION_DIR/vscode.txt" ]]; then
-    if confirm "install VS Code extensions from migration/vscode.txt?"; then
+    if confirm "install VS Code extensions from laptop-migration/vscode.txt?"; then
       cut -d@ -f1 "$MIGRATION_DIR/vscode.txt" | while read -r ext; do
         [[ -z "$ext" ]] && continue
         code --install-extension "$ext" --force || warn "vscode ext $ext failed"
@@ -241,7 +256,7 @@ cmd_new_laptop() {
     fi
   fi
   if command -v cursor >/dev/null 2>&1 && [[ -f "$MIGRATION_DIR/cursor.txt" ]]; then
-    if confirm "install Cursor extensions from migration/cursor.txt?"; then
+    if confirm "install Cursor extensions from laptop-migration/cursor.txt?"; then
       cut -d@ -f1 "$MIGRATION_DIR/cursor.txt" | while read -r ext; do
         [[ -z "$ext" ]] && continue
         cursor --install-extension "$ext" --force || warn "cursor ext $ext failed"
@@ -308,18 +323,18 @@ cmd_reclone() {
 cmd_status() {
   log "Manifest freshness:"
   local f
-  for f in Brewfile migration/repos.txt migration/mas.txt migration/vscode.txt migration/cursor.txt; do
-    if [[ -f "$SRC_REPO/$f" ]]; then
+  for f in "$MIGRATION_DIR/Brewfile" "$MIGRATION_DIR/repos.txt" "$MIGRATION_DIR/mas.txt" "$MIGRATION_DIR/vscode.txt" "$MIGRATION_DIR/cursor.txt"; do
+    if [[ -f "$f" ]]; then
       local mtime
-      mtime="$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$SRC_REPO/$f")"
-      printf '  %-26s %s\n' "$f" "$mtime"
+      mtime="$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$f")"
+      printf '  %-36s %s\n' "${f/#$SRC_REPO\//}" "$mtime"
     else
-      printf '  %-26s (missing)\n' "$f"
+      printf '  %-36s (missing)\n' "${f/#$SRC_REPO\//}"
     fi
   done
   echo
   log "Home-dir archives in \$HOME:"
-  ls -lh "$HOME"/.*.stuff.zip "$HOME"/.*.apps.zip 2>/dev/null || echo "  none"
+  ls -lh "$HOME"/.*.stuff.7z "$HOME"/.*.apps.7z "$HOME"/.*.stuff.zip "$HOME"/.*.apps.zip 2>/dev/null || echo "  none"
 }
 
 # ---------- dispatch ----------

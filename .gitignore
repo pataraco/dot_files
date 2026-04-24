@@ -49,8 +49,10 @@
 .env
 .env.*
 *.stuff.zip
+*.stuff.7z
 *.apps.zip
-migration-exports/
+*.apps.7z
+laptop-migration-exports/
 .vagrant.d
 .vim
 .viminfo

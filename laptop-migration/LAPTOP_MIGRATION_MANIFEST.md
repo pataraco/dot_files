@@ -2,9 +2,9 @@
 
 > **Version:** 1.0.0
 > **Last updated:** 22-04-2026
-> **Purpose:** Single source of truth for what gets captured, transferred, and restored when moving to a new MacBook. Edited by hand; machine-readable sections are auto-refreshed by `migrate.sh refresh-manifest`.
+> **Purpose:** Single source of truth for what gets captured, transferred, and restored when moving to a new MacBook. Edited by hand; machine-readable sections are auto-refreshed by `laptop-migrate.sh refresh-manifest`.
 
-This file is **safe to commit**. It contains inventory metadata only — no secrets, no key material, no credentials. The `SENSITIVE — NEVER COMMIT` section below is a deny-list used by `migrate.sh` and by Claude (via `.claude/instructions/LAPTOP_MIGRATION.md`) to prevent accidental commits.
+This file is **safe to commit**. It contains inventory metadata only — no secrets, no key material, no credentials. The `SENSITIVE — NEVER COMMIT` section below is a deny-list used by `laptop-migrate.sh` and by Claude (via `.claude/instructions/LAPTOP_MIGRATION.md`) to prevent accidental commits.
 
 ---
 
@@ -13,11 +13,11 @@ This file is **safe to commit**. It contains inventory metadata only — no secr
 | Category                          | Method                                   | Where it goes |
 |-----------------------------------|------------------------------------------|---------------|
 | Dotfiles + Brewfile + setup.sh    | `git clone` this repo                    | `~/repos/pataraco/dot_files` |
-| Home-dir archive (bash history, ansible, chef, docker, kube, tmux, notes, projects, scripts, Documents, etc.) | `zipstuff` → encrypted `.zip` on **USB flash drive** | USB → `~/` |
-| App settings archive (iTerm2, Cursor, VS Code, Warp, Raycast, etc. under `~/Library/...`) | `migrate.sh export-apps` → encrypted `.zip` on **USB flash drive** | USB → `~/Library/...` |
+| Home-dir archive (bash history, ansible, chef, docker, kube, tmux, notes, projects, scripts, Documents, etc.) | `zipstuff` → 7z AES-256 (header-encrypted) on **USB flash drive** | USB → `~/` |
+| App settings archive (iTerm2, Cursor, VS Code, Warp, Raycast, etc. under `~/Library/...`) | `laptop-migrate.sh export-apps` → 7z AES-256 (header-encrypted) on **USB flash drive** | USB → `~/Library/...` |
 | SSH / GPG / AWS creds / .netrc    | Included in the home-dir archive (zipstuff). Encrypted. **USB only.** | USB → `~/` |
-| Repo re-clones                    | `migrate.sh reclone` reads `migration/repos.txt` from this repo | `~/repos/...` |
-| Mac App Store apps                | `mas install` reads `migration/mas.txt`  | `/Applications` |
+| Repo re-clones                    | `laptop-migrate.sh reclone` reads `laptop-migration/repos.txt` from this repo | `~/repos/...` |
+| Mac App Store apps                | `mas install` reads `laptop-migration/mas.txt`  | `/Applications` |
 | Browser profiles / logged-in sessions | Manual (sync via browser account)     | — |
 | Secrets in password managers      | Manual (1Password / LastPass login)      | — |
 
@@ -29,15 +29,15 @@ Run on the **old laptop** to refresh auto-generated inventories:
 
 ```bash
 cd ~/repos/pataraco/dot_files
-./migrate.sh refresh-manifest
+./laptop-migration/laptop-migrate.sh refresh-manifest
 ```
 
 That regenerates:
-- `Brewfile`               — via `brew bundle dump --force`
-- `migration/repos.txt`    — list of git remotes in `~/repos/**`
-- `migration/mas.txt`      — Mac App Store installed app IDs
-- `migration/vscode.txt`   — VS Code extensions (also in Brewfile today, but here as backup)
-- `migration/cursor.txt`   — Cursor extensions
+- `laptop-migration/Brewfile` — via `brew bundle dump --force`
+- `laptop-migration/repos.txt`    — list of git remotes in `~/repos/**`
+- `laptop-migration/mas.txt`      — Mac App Store installed app IDs
+- `laptop-migration/vscode.txt`   — VS Code extensions (also in Brewfile today, but here as backup)
+- `laptop-migration/cursor.txt`   — Cursor extensions
 
 Review the diff, commit, push.
 
@@ -75,11 +75,11 @@ Excluded:
 *.DS_Store, *.git*, *.hg*, *.terraform*, *.zip, scripts/*.zip
 ```
 
-**Output:** `$HOME/.${COMPANY}.stuff.zip` — AES (legacy ZIP) encrypted, prompts for password on create.
+**Output:** `$HOME/.${COMPANY}.stuff.7z` — AES-256 with **header encryption** (filenames invisible without password), prompts for password on create. Requires `brew install sevenzip`.
 
 ---
 
-## App settings archived by `migrate.sh export-apps`
+## App settings archived by `laptop-migrate.sh export-apps`
 
 Not in dotfiles, not in zipstuff — these live under `~/Library/`:
 
@@ -96,9 +96,9 @@ Not in dotfiles, not in zipstuff — these live under `~/Library/`:
 | tmux plugins | `~/.tmux/plugins/` (if used) |
 | Neovim (Lazy)| `~/.local/share/nvim/lazy/` (lockfile is in repo; plugins auto-install) |
 
-Edit the APP_PATHS array in `migrate.sh` to add/remove apps.
+Edit the APP_PATHS array in `laptop-migrate.sh` to add/remove apps.
 
-**Output:** `$HOME/.${COMPANY}.apps.zip` — AES encrypted.
+**Output:** `$HOME/.${COMPANY}.apps.7z` — AES-256 with header encryption.
 
 ---
 
@@ -124,8 +124,10 @@ These paths are **blocked** by `.gitignore` in this repo and must never be stage
 .config/gh/hosts.yml
 .kube/config
 .vault-token
-*.stuff.zip            # zipstuff output
-*.apps.zip             # migrate.sh export-apps output
+*.stuff.7z             # zipstuff output (7z AES-256)
+*.stuff.zip            # legacy zipstuff output (pre-7z)
+*.apps.7z              # laptop-migrate.sh export-apps output
+*.apps.zip             # legacy export-apps output (pre-7z)
 migration-exports/
 .env
 .env.*
@@ -152,19 +154,19 @@ You'll redo these by hand on the new laptop:
 - **GitHub CLI auth** (`gh auth login`) — don't copy `.config/gh/hosts.yml`, re-auth is safer
 - **AWS SSO sessions** (`aws sso login`) — don't copy `.aws/sso/cache`
 - **Saml2aws sessions** (re-auth)
-- **Xcode / CLT** (`xcode-select --install`) — `migrate.sh new-laptop` prompts this first
+- **Xcode / CLT** (`xcode-select --install`) — `laptop-migrate.sh new-laptop` prompts this first
 - **Printer setup**, **Wi-Fi passwords** (iCloud Keychain handles most if signed in)
 
 ---
 
 ## Machine-readable sections
 
-These are regenerated by `migrate.sh refresh-manifest`. Hand-editing is fine; next refresh will overwrite. The files live under `migration/` (see `.gitignore` — these are whitelisted).
+These are regenerated by `laptop-migrate.sh refresh-manifest`. Hand-editing is fine; next refresh will overwrite. The files live alongside this manifest under `laptop-migration/` (see `.gitignore` — these are whitelisted).
 
-- `migration/repos.txt` — `<path>\t<remote-url>` for every `.git` dir under `~/repos`
-- `migration/mas.txt`   — `<app-id>\t<app-name>` from `mas list`
-- `migration/vscode.txt`— `code --list-extensions` output
-- `migration/cursor.txt`— `cursor --list-extensions` output
+- `laptop-migration/repos.txt` — `<path>\t<remote-url>` for every `.git` dir under `~/repos`
+- `laptop-migration/mas.txt`   — `<app-id>\t<app-name>` from `mas list`
+- `laptop-migration/vscode.txt`— `code --list-extensions` output
+- `laptop-migration/cursor.txt`— `cursor --list-extensions` output
 
 ---
 

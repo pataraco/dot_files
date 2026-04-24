@@ -1541,11 +1541,22 @@ function y2j {
 }
 
 function zipstuff {
-  # zip up specified files for backup
-  local _ZIP_FILE_NAME="$HOME/.$COMPANY.stuff.zip"
+  # encrypted backup of specified files/dirs for migration
+  # (7z with AES-256 + header encryption — filenames hidden without password)
+  # install: brew install sevenzip
+  local _ARCHIVE="$HOME/.$COMPANY.stuff.7z"
   local _CWD
-  local _found_zip_files
   _CWD=$(pwd)
+  # sevenzip ships the `7zz` binary; older p7zip ships `7z`
+  local _7z
+  if command -v 7zz >/dev/null 2>&1; then
+    _7z=7zz
+  elif command -v 7z >/dev/null 2>&1; then
+    _7z=7z
+  else
+    echo "zipstuff: no 7z binary found — install with: brew install sevenzip"
+    return 1
+  fi
   local _FILES=(
     .*rc
     .ansible
@@ -1568,53 +1579,47 @@ function zipstuff {
     projects
     scripts
   )
-  # for some reason '*.zip' does not work to exclude all *.zip files
-  # like other exclude patterns e.g. '*.sh' to exclude all *.sh files
-  # have to specify each sub directory with an extra '*/'
-  local _EXCLUDE_FILES=(
-    *.DS_Store
-    *.git*
-    *.hg*
-    *.terraform*
-    *.zip
-    scripts/*.zip
+  # 7z's -xr! is recursive, so one pattern covers all depths
+  local _EXCLUDES=(
+    '*.DS_Store'
+    '*.git*'
+    '*.hg*'
+    '*.terraform*'
+    '*.zip'
+    '*.7z'
   )
   cd || return
-  echo -e "\nziping these files/directories:"
+  echo -e "\narchiving these files/directories:"
   echo -en "\n   "
-  # paste -sd ',' - <<< "$_FILES" | sed -E 's/(^, +|, +$)//g;s/, +/, /g'
   # shellcheck disable=SC2001
   echo "${_FILES[@]}" | sed 's/ /, /g'
-  echo -e "\nexcluding these files/directories:"
+  echo -e "\nexcluding these patterns:"
   echo -en "\n   "
   # shellcheck disable=SC2001
-  echo "${_EXCLUDE_FILES[@]}" | sed 's/ /, /g'
-  # paste -sd ',' - <<< "$_EXCLUDE_FILES" | sed -E 's/(^, +|, +$)//g;s/, +/, /g'
-  # shellcheck disable=SC2086
-  if
-    _found_zip_files=$(
-      zip \
-        --show-files -ru "$_ZIP_FILE_NAME" "${_FILES[@]}" \
-        -x "${_EXCLUDE_FILES[@]}" |
-        grep "\.zip$"
-    )
-  then
-    echo -e "\n[warning] the following zip files would be added to the archieve"
-    echo "$_found_zip_files"
-    echo -e "\nplease add them to the 'exclude files' list!"
-    echo "exiting"
-    return
+  echo "${_EXCLUDES[@]}" | sed 's/ /, /g'
+  echo
+  # build recursive exclude flags
+  local _exc_args=()
+  local _pat
+  for _pat in "${_EXCLUDES[@]}"; do
+    _exc_args+=("-xr!$_pat")
+  done
+  # 7z flags:
+  #   a        = add (creates new; updates if exists)
+  #   -t7z     = 7z format
+  #   -mhe=on  = encrypt headers (filenames invisible without password)
+  #   -mx=5    = medium compression (9 is slow; 5 is plenty for dotfiles)
+  #   -p       = password prompt (interactive — no password in shell history)
+  "$_7z" a -t7z -mhe=on -mx=5 -p "$_ARCHIVE" "${_FILES[@]}" "${_exc_args[@]}"
+  local _rc=$?
+  if [[ $_rc -eq 0 ]]; then
+    echo "done - created file: '$_ARCHIVE'"
+    echo "verify with:  $_7z t '$_ARCHIVE'"
   else
-    echo
-    local _files
-    local _exclude_files
-    zip \
-      --recurse-paths --update --encrypt \
-      "$_ZIP_FILE_NAME" "${_FILES[@]}" \
-      --exclude "${_EXCLUDE_FILES[@]}"
+    echo "failed - $_7z exited with code $_rc"
   fi
-  echo "done - created file: '$_ZIP_FILE_NAME'"
   cd "$_CWD" || return
+  return $_rc
 }
 
 # -------------------- define aliases --------------------

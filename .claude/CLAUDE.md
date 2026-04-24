@@ -43,7 +43,7 @@ If so, use the Read tool to load and follow: ~/.claude/instructions/CONFLUENCE.m
 
 Load these when the user mentions "new laptop", "migrate laptop", "new MacBook", or invokes `/migrate-laptop`.
 If so, use the Read tool to load and follow: ~/.claude/instructions/LAPTOP_MIGRATION.md
-Companion files: `MIGRATION_MANIFEST.md` (inventory + deny-list) and `migrate.sh` (wrapper script) at the `dot_files` repo root.
+Companion files under `dot_files/laptop-migration/`: `LAPTOP_MIGRATION_MANIFEST.md` (inventory + deny-list), `laptop-migrate.sh` (wrapper), `setup.sh` (dotfiles/Brewfile installer).
 
 ---
 
