@@ -5,121 +5,162 @@ When they refer to "project instructions" they mean a project-specific .claude/C
 
 ---
 
-# IMPORTANT: Git Workflow - OVERRIDE DEFAULT BEHAVIOR
+# Git Workflow Instructions
 
-These instructions OVERRIDE Claude's default git behavior. Follow these workflows WITHOUT asking for additional confirmation unless explicitly stated below.
+Only load these instructions if the current working directory is a git repository.
+If so, use the Read tool to load and follow: ~/.claude/instructions/GIT.md
 
-## MANDATORY: Before ANY Git Operations
-1. **MUST fetch first**: Run `git fetch origin` and check if current branch is behind `origin/main` or `origin/master`
-2. **MUST sync with main**:
-   - If on main/master: pull latest changes
-   - If on feature branch: rebase onto latest main/master
-3. **MUST use feature branches**: Never work directly on main/master. Create/verify feature branch with descriptive naming:
-   - `feature/add-user-auth`
-   - `fix/login-validation`
-   - `refactor/api-endpoints`
+---
 
-## MANDATORY: Committing Changes
-1. **Create meaningful commits** during development (no confirmation needed)
-2. **Push commits immediately** after creating them (no confirmation needed)
-3. **Before creating PR OR before each push to existing PR**: Check commit count
-   - If multiple commits exist: Rebase and squash into a single commit with clear message
-   - Command sequence:
-     - `git rebase -i origin/main` (or origin/master)
-     - Squash all commits into one
-     - Use conventional commits format (feat/fix/chore/refactor/docs/style/test)
-     - Force push with `git push --force-origin`
+# Git Non-Negotiables
 
-## MANDATORY: Creating Pull Requests
-1. **MUST check for PR template**: Look for `.github/PULL_REQUEST_TEMPLATE.md` or `.github/pull_request_template.md`
-2. **MUST use the template**: If found, structure PR description according to template
-3. **MUST ask before creating PR**: Confirm before creating or updating the pull request (note: regular pushes to feature branches don't need confirmation)
-4. **Update PR title/description if needed**: After creating the PR or when updating with new commits:
-   - Check if the PR title and description accurately reflect all changes made
-   - If additional commits expanded the scope beyond the original PR, update the title using `gh pr edit <pr-number> --title "new title"`
-   - Update the description if needed to reflect the full scope of changes
-   - The title should summarize all changes, not just the initial change
-5. **After PR creation or update**: Display summary in this exact format:
-   ```
-   PR Details:
-   - Title: <pr-title>
-   - Number: #<number>
-   - Status: <pr-status> (Open/Closed/Merged/Draft)
-   - Commits: <count> (squashed as per your git workflow / or actual count)
-   - Changes: <files-changed> files changed, <insertions>+ insertions, <deletions>- deletions
-   - Reviewers: <reviewer-list> (already requested / or state if none)
-   - URL: <full-pr-url>
+These rules apply every time git operations are performed — even in long sessions where full instructions may have been compressed:
 
-   The PR is ready for the team to review! 🚀
-   ```
+- **Never commit to main/master** — always use a feature branch
+- **Squash to a single commit before every PR push** — `git rebase -i origin/main` → squash → `git push --force-with-lease`
+- **Sanitize before pushing to `pataraco` repos** — block internal URLs, Jira keys, tokens, secrets
+- **After PR merge** — delete remote + local branch, add journal entry to `~/notes/Daily_Journal_{YYYY}.txt`
+- **Ask before**: creating/updating PRs, force-pushing to remote
 
-## MANDATORY: After PR Creation (GitHub/GitHub Enterprise repos only)
-1. **Check if repo is GitHub or GitHub Enterprise**: Skip this workflow if repo is ADO (Azure DevOps)
-   - ADO repos contain "azure.com" in the git remote URL (e.g., dev.azure.com)
-   - GitHub and GitHub Enterprise repos do NOT contain "azure.com"
-2. **Monitor CI Pipeline**: Watch Jenkins CI pipeline (check) progress
-   - Use `gh pr checks <pr-number> --watch` or poll with `gh pr checks <pr-number>`
-   - Wait for all checks to complete
-3. **Report CI Status**: When checks finish, report status (passed/failed)
-4. **Generate Slack Message**: If CI passed, create a Slack message in this format:
-   ```
-   :git-pull-request: `<git-org>/<git-repo>` :github: [<pr-title>](<pr-url>)
-   ```
-   Where:
-   - `<git-org>/<git-repo>` is the GitHub organization and repository name, formatted as code (surrounded by backticks)
-   - `[<pr-title>](<pr-url>)` is the Markdown link format making the PR title clickable
-   - Include a brief summary of the PR changes above the formatted line (1-2 sentences as necessary)
+---
 
-   Example format:
+# Jira Workflow Instructions
 
-   Brief summary of changes here
+At the start of each session, ask the user: "Are you working on a Jira ticket for this session?"
+- If yes (even a vague answer): find the ticket using `jirapi` or context clues, then use the Read tool to load and follow ~/.claude/instructions/JIRA.md
+- If no: skip loading Jira instructions
 
-   :git-pull-request: `my-org/my-repo` :github: [chore: upgrade to Node 24.x and Serverless 4.x](https://github.com/my-org/my-repo/pull/123)
+---
 
-   **Workflow:**
-   - First, show the Slack message in plain text for user verification
-   - If user approves, automatically copy it to clipboard using `pbcopy` (macOS) or `xclip` (Linux) WITHOUT asking for confirmation
-   - Use a heredoc with the copy command to preserve exact formatting and prevent line breaks
-   - Note: The clipboard copy command should not require user permission prompts
+# Confluence Workflow Instructions
 
-   **IMPORTANT:**
-   - The formatted line with :git-pull-request: MUST be on a single continuous line with NO line breaks anywhere in it
-   - Ensure the markdown link `[<pr-title>](<pr-url>)` stays intact on one line
-   - If the summary is 2 sentences, put each sentence on a separate line (one sentence per line)
+Only load these instructions when the user explicitly mentions updating or creating wiki/Confluence pages.
+If so, use the Read tool to load and follow: ~/.claude/instructions/CONFLUENCE.md
 
-## MANDATORY: After PR is Closed/Merged
-1. **Verify merge status and cleanup branches**:
-   - **Step 1 - Verify PR was merged**: Use `gh pr view <pr-number> --json state,mergedAt` to confirm state is "MERGED"
-   - **Step 2 - Verify feature branch was merged**: Check that the feature branch commits are in main/master
-   - **Step 3 - Confirm safety**: Report to user that the branch has been merged and it's safe to delete
-   - **Step 4 - Only if PR state is MERGED**: Proceed with branch cleanup
-   - Switch to main/master branch
-   - Run `git fetch origin` and pull latest changes from origin/main (or origin/master)
-   - **Step 5 - Check and delete remote first**: Use `git ls-remote --heads origin <feature-branch>` to check if remote branch exists
-   - **Only if remote exists**: Delete remotely with `git push origin --delete <feature-branch>`
-   - **Step 6 - Delete local branch**: Delete the feature branch locally with `git branch -D <feature-branch>` (use -D since squashed commits won't show as merged)
-2. **Add entry to daily journal**: Insert into `~/notes/Daily_Journal.txt` in chronological order
-3. **Entry format**: `DD-MM-YYYY: <description>`
-   - Use the current date in DD-MM-YYYY format
-   - Description should be a concise one-liner explaining what was done to the service/repo
-   - Example: `10-02-2026: my-service - upgraded to Node 24.x and Serverless 4.x`
-4. **Insert in chronological order**:
-   - Read the file and parse existing dates
-   - Find the correct chronological position for the new entry
-   - Insert the new entry maintaining chronological order (oldest to newest)
-   - If multiple entries exist for the same date, append after the last entry for that date
+---
 
-## Confirmation Points (ONLY ask for confirmation on these)
-- Force-pushing to remote
-- Creating/updating pull requests
-- Squashing commits
-- Multi-step git operations (show the plan first)
+# Laptop Migration Instructions
 
-## No Confirmation Needed For
-- Running git fetch
-- Creating feature branches
-- Regular commits on feature branches
-- Pushing commits to feature branches (including force-push after squashing)
-- Checking git status or log
-- Reading files or templates
-- Read-only PR/issue commands (gh pr view, gh pr list, gh issue view, etc.)
+Load these when the user mentions "new laptop", "migrate laptop", "new MacBook", or invokes `/migrate-laptop`.
+If so, use the Read tool to load and follow: ~/.claude/instructions/LAPTOP_MIGRATION.md
+Companion files under `dot_files/laptop-migration/`: `LAPTOP_MIGRATION_MANIFEST.md` (inventory + deny-list), `laptop-migrate.sh` (wrapper), `setup.sh` (dotfiles/Brewfile installer).
+
+---
+
+# Command Execution Policy
+
+**Never ask for confirmation before running non-destructive (read-only) commands.** These include but are not limited to:
+
+- AWS read-only calls: `aws sts get-caller-identity`, `aws s3 ls`, `aws cloudfront list-*`, `aws dynamodb get-item`, etc.
+- Health/connectivity checks: `curl` to API endpoints, VPN checks
+- Tool/version checks: `terraform version`, `tfenv`, `command -v`, `which`
+- `terraform plan` (never modifies state)
+- `terraform state list` / `terraform state show`
+- `git status`, `git log`, `git diff`, `git fetch`, `git ls-remote`
+- `jirapi view`, `jirapi list` (read-only Jira operations)
+- `gh pr view`, `gh pr list`, `gh pr checks` (read-only GitHub operations)
+- Any `ls`, `cat`, `echo`, `grep`, `jq` pipeline
+
+Only ask for confirmation before **destructive or irreversible** actions (deleting resources, force-pushing, writing to external systems, etc.).
+
+---
+
+# Account & Credential Reference
+
+`~/.adsk-accounts.json` contains account metadata — consult it when you need:
+- AWS account IDs
+- AWS credential/profile names
+- HashiCorp Vault addresses
+
+---
+
+# Instruction File Map
+
+Quick reference for all instruction files — no need to search:
+- Git workflow: `~/.claude/instructions/GIT.md`
+- Jira workflow: `~/.claude/instructions/JIRA.md`
+- Confluence workflow: `~/.claude/instructions/CONFLUENCE.md`
+- Git repo sync: `~/.claude/instructions/GIT_REPOS_SYNC.md`
+- Laptop migration: `~/.claude/instructions/LAPTOP_MIGRATION.md`
+
+Skills (slash commands):
+- `/git` — smart git workflow (sync, commit/squash, PR update, post-merge cleanup)
+- `/sup` — session status update
+- `/standup` — standup summary from daily journal
+- `/ciao` — end of session wrap-up
+- `/migrate-laptop` — MacBook migration workflow (inventory → export → bootstrap → import → reconnect)
+
+---
+
+# Instruction File Maintenance
+
+Whenever any instruction file (`~/.claude/instructions/*.md` or `~/.claude/CLAUDE.md`) is updated:
+- Bump the version number: patch (x.x.**1**) for minor edits, minor (x.**1**.0) for new behavior
+- Update the `Last updated` date using **DD-MM-YYYY** format
+
+---
+
+# Date Format
+
+Always use `DD-MM-YYYY` format for dates in:
+- Journal entries
+- Version history in instruction files
+- Any other date references unless the user specifies otherwise
+
+---
+
+# Session Start Checklist
+
+At the start of each session:
+1. Check if the current working directory is a git repo → if so, load `~/.claude/instructions/GIT.md`
+2. Display todos — run these checks and always show results:
+   - **If in a git repo**: check for `.claude/TODO.txt` at the repo root (`git rev-parse --show-toplevel`). If it exists and has active items (⬜️ 🚧 ⏳ 🚫), display them under **"Local Todos"**
+   - **Always**: check `~/notes/TODO.txt` for active items. If any exist, display them under **"Global Todos"**
+   - Active items use emojis: ⬜️ pending, 🚧 in progress, ⏳ waiting, 🚫 blocked
+   - If no todos anywhere, say "No open todos."
+3. Ask: "Are you working on a Jira ticket for this session?"
+
+---
+
+# Tmux Orchestration
+
+When running parallel or long-running tasks, use tmux panes so the user can see everything live.
+
+## Rules
+- Always work within the **current tmux session and current window** — never create a new session
+- **Always capture the current window reference FIRST** before any splits:
+  ```bash
+  CURRENT_PANE=$(tmux display-message -p '#{session_name}:#{window_index}.#{pane_index}')
+  CURRENT_WINDOW=$(tmux display-message -p '#{session_name}:#{window_index}')
+  ```
+- Split panes using the captured `$CURRENT_PANE` as the target — never use just the session name, as that resolves to whichever window happens to be active:
+  - Vertical split (side-by-side): `tmux split-window -h -t "$CURRENT_PANE"`
+  - Horizontal split (top/bottom): `tmux split-window -v -t "$CURRENT_PANE"`
+- Send commands to a new pane using `tmux send-keys -t <pane> "<command>" Enter`
+- After creating a pane, always set its title: `tmux select-pane -t <pane> -T "<short task description>"`
+  - Format: descriptive and concise, e.g. `"agent: auth analysis"`, `"build: api service"`, `"test: unit suite"`
+- Use tmux panes for: shell commands, builds, tests, scripts, and anything with meaningful visible output
+
+## When to split panes
+- When running 2+ independent tasks in parallel (shell or agent)
+- When a task will produce output the user should watch live
+- When explicitly asked to parallelize work
+
+## Agent tasks in panes (claude -p)
+For tasks that require AI reasoning (analyzing code, making decisions, writing code), run `claude` in a tmux pane instead of using the internal Task tool:
+
+```
+claude -p "<prompt>" > /tmp/claude-task-<name>.txt 2>&1
+```
+
+- Write output to `/tmp/claude-task-<name>.txt` so results can be read back for coordination
+- Use a descriptive `<name>` (e.g., `claude-task-auth-analysis.txt`)
+- Multiple agent tasks can run in parallel across multiple panes
+- After all panes complete, read the output files to synthesize and summarize results
+- Only fall back to the internal `Task` tool when spawning a tmux pane is not practical
+
+## After parallel work completes
+- Read output files from agent panes and synthesize results
+- Report a summary in the main pane: what ran, what succeeded/failed, key outputs
+- Leave panes open so the user can inspect them; do not close them automatically
+

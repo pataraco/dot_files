@@ -17,7 +17,11 @@
       "Bash(bash:gh pr checks*)",
       "Bash(bash:gh issue view*)",
       "Bash(bash:gh issue list*)",
-      "Bash(bash:gh repo view*)"
+      "Bash(bash:gh repo view*)",
+      "Bash(gh pr view:*)",
+      "WebFetch(domain:docs.slack.dev)",
+      "Bash(jirapi view:*)",
+      "Read(//Users/racop/.local/share/claude/versions/**)"
     ]
   }
 }

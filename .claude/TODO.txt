@@ -1,0 +1,6 @@
+✅ setup.sh: add `mas install` step using laptop-migration/mas.txt
+✅ setup.sh: register Homebrew bash in /etc/shells before chsh (Apple Silicon fix)
+✅ setup.sh: apply macOS `defaults write` tweaks (Finder hidden files, Dock autohide, key repeat, etc.)
+✅ setup.sh: tee output to ~/.laptop-setup.log for post-run review
+✅ zipstuff: switched to 7z AES-256 with header encryption
+⬜️ Run `./laptop-migration/laptop-migrate.sh refresh-manifest` on current laptop to populate laptop-migration/*.txt before first commit

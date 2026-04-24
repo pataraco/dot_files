@@ -62,8 +62,14 @@ In order to run it, you need to:
 ```
 $ git --version   # if git not installed, should be prompted to install it
 $ git clone https://github.com/pataraco/dot_files.git
-$ vi setup.sh     # make desired changes: e.g. repo path, date/time format, login shell
-$ bash setup.sh
+$ cd dot_files
+$ vi laptop-migration/setup.sh     # edit repo path, date/time format, login shell, etc.
+$ bash laptop-migration/setup.sh
+```
+
+For full laptop migration (new MacBook bootstrap, app-settings export, repo re-clone, etc.), see [laptop-migration/README.md](laptop-migration/README.md) and [laptop-migration/LAPTOP_MIGRATION_MANIFEST.md](laptop-migration/LAPTOP_MIGRATION_MANIFEST.md). Or run:
+```
+$ ./laptop-migration/laptop-migrate.sh help
 ```
 
 ### "Show Aliases" and "Show Functions"

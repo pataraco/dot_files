@@ -8,6 +8,8 @@ command_timeout = 2000
 #
 
 format = """
+$directory\
+$line_break\
 $git_branch$git_status\
 ([](color_blue)\
 $rust\
@@ -16,9 +18,8 @@ $nodejs\
 $php\
 $java\
 $python\
-[](bg:color_black fg:color_blue))\
+[](fg:color_blue bg:color_black))\
 $docker_context\
-$directory\
 $line_break\
 $time\
 ${custom.aws_creds}\
