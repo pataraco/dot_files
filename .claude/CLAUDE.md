@@ -39,6 +39,14 @@ If so, use the Read tool to load and follow: ~/.claude/instructions/CONFLUENCE.m
 
 ---
 
+# Laptop Migration Instructions
+
+Load these when the user mentions "new laptop", "migrate laptop", "new MacBook", or invokes `/migrate-laptop`.
+If so, use the Read tool to load and follow: ~/.claude/instructions/LAPTOP_MIGRATION.md
+Companion files: `MIGRATION_MANIFEST.md` (inventory + deny-list) and `migrate.sh` (wrapper script) at the `dot_files` repo root.
+
+---
+
 # Command Execution Policy
 
 **Never ask for confirmation before running non-destructive (read-only) commands.** These include but are not limited to:
@@ -73,12 +81,14 @@ Quick reference for all instruction files — no need to search:
 - Jira workflow: `~/.claude/instructions/JIRA.md`
 - Confluence workflow: `~/.claude/instructions/CONFLUENCE.md`
 - Git repo sync: `~/.claude/instructions/GIT_REPOS_SYNC.md`
+- Laptop migration: `~/.claude/instructions/LAPTOP_MIGRATION.md`
 
 Skills (slash commands):
 - `/git` — smart git workflow (sync, commit/squash, PR update, post-merge cleanup)
 - `/sup` — session status update
 - `/standup` — standup summary from daily journal
 - `/ciao` — end of session wrap-up
+- `/migrate-laptop` — MacBook migration workflow (inventory → export → bootstrap → import → reconnect)
 
 ---
 

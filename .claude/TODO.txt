@@ -1,0 +1,6 @@
+⬜️ setup.sh: add `mas install` step using migration/mas.txt
+⬜️ setup.sh: register Homebrew bash in /etc/shells before chsh (Apple Silicon fix)
+⬜️ setup.sh: apply macOS `defaults write` tweaks (Finder hidden files, Dock autohide, key repeat, etc.)
+⬜️ setup.sh: tee output to ~/.setup.log for post-run review
+⬜️ zipstuff: decide whether to switch from legacy ZIP encryption to 7z AES-256
+⬜️ Run `./migrate.sh refresh-manifest` on current laptop to populate migration/*.txt before first commit

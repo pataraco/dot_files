@@ -23,11 +23,18 @@ SRC_REPO="$HOME/repos/pataraco/dot_files"
 # set up global variables
 ORIG_DIR="$HOME/.orig"
 DESIRED_SHELL="/bin/bash"
+files_saved=false
 
 # make sure running on MacBook
 if [ "$(uname)" != "Darwin" ]; then
   echo "Kindof only supported on MacBooks"
   exit
+fi
+
+# make sure the repo actually exists before we cd into it
+if [ ! -d "$SRC_REPO" ]; then
+  echo "ERROR: SRC_REPO '$SRC_REPO' does not exist. Edit this script or clone the repo first."
+  exit 1
 fi
 
 # set date/time format in menu bar
@@ -69,8 +76,9 @@ else
 fi
 
 # get list of files to process and create symlinks
+# (exclude .git — the grep had a trailing slash bug that made it a no-op)
 # shellcheck disable=SC2010
-for file_or_dir in $(ls -1d .[a-z]* | grep -wv ".git/"); do
+for file_or_dir in $(ls -1d .[a-z]* | grep -v '^\.git$'); do
   echo -n "processing: $file_or_dir... "
   if [[ -f "$file_or_dir" ]] || [[ -d $file_or_dir ]]; then # source is a regular file or directory
     if [ -L "$HOME/$file_or_dir" ]; then                    # existing symlink
@@ -95,19 +103,22 @@ done
 $files_saved && echo "original dot files saved to ${ORIG_DIR/$HOME/\$HOME}"
 
 # set up & configure 'neovim' (with Lua and LazyVim)
+# (idempotent: skip if the LazyVim starter is already present — re-running this
+#  script previously clobbered customized configs to $NEOVIM_CONFIG.orig)
 NEOVIM_CONFIG="$HOME/.config/nvim"
 LAZYVIM_URL="https://github.com/LazyVim/starter"
 LUA_SRC="$SRC_REPO/config/nvim/lua"
 echo "Setting up Neovim"
 if [[ -d "$NEOVIM_CONFIG" ]]; then
-  echo "Neovim config already exists at '$NEOVIM_CONFIG' - saving original as '$NEOVIM_CONFIG.orig'"
-  mv "$NEOVIM_CONFIG" "$NEOVIM_CONFIG.orig"
+  echo "Neovim config already exists at '$NEOVIM_CONFIG' - leaving it alone"
+  echo "  (to re-bootstrap: rm -rf '$NEOVIM_CONFIG' and re-run setup.sh)"
+else
+  echo "Cloning LazyVim (Starter) [$LAZYVIM_URL] into '$NEOVIM_CONFIG'"
+  git clone "$LAZYVIM_URL" "$NEOVIM_CONFIG"
+  rm -rf "$NEOVIM_CONFIG/.git"
+  echo "Copying Lua configs from '$LUA_SRC' into '$NEOVIM_CONFIG'"
+  cp -Rv "$LUA_SRC" "$NEOVIM_CONFIG"
 fi
-echo "Cloning LazyVim (Starter) [$LAZYVIM_URL] into Neovim config directory [$NEOVIM_CONFIG]"
-git clone "$LAZYVIM_URL" "$NEOVIM_CONFIG"
-rm -rf "$NEOVIM_CONFIG/.git"
-echo "Copying Lua configs from '$LUA_SRC' into '$NEOVIM_CONFIG'"
-cp -Rv "$LUA_SRC" "$NEOVIM_CONFIG"
 
 # restore current working directory location
 cd "$OWD" || exit
