@@ -2398,6 +2398,16 @@ function saecm {
   if [[ -n "$_PROFILE" ]]; then
     if [[ "$_PROFILE" == "unset" ]]; then
       _unset_aws_environment
+    elif [[ "$_PROFILE" =~ ^(dev|stg|prd|all)$ ]]; then
+      # Authenticate via cloudmate only; do not set AWS env vars
+      if [[ "$_PROFILE" == "all" ]]; then
+        for _cm_env in dev stg prd; do
+          echo "Authenticating with cloudmate (env: $_cm_env)..."
+          cloudmate aws auth -e "$_cm_env" || return $?
+        done
+      else
+        cloudmate aws auth -e "$_PROFILE"
+      fi
     else
       if [[ "$_PROFILE" == "renew" ]]; then
         _PROFILE=$AWS_DEFAULT_PROFILE
