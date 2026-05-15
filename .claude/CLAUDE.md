@@ -19,6 +19,7 @@ These rules apply every time git operations are performed — even in long sessi
 - **Never commit to main/master** — always use a feature branch
 - **Squash to a single commit before every PR push** — `git rebase -i origin/main` → squash → `git push --force-with-lease`
 - **Sanitize before pushing to `pataraco` repos** — block internal URLs, Jira keys, tokens, secrets
+- **Always use the repo's PR template when creating/updating a PR** — check for `.github/PULL_REQUEST_TEMPLATE.md` or `.github/pull_request_template.md` (also `docs/` and `.github/PULL_REQUEST_TEMPLATE/*`); if found, structure the PR body to match it. Never create a PR freely when a template exists.
 - **After PR merge** — delete remote + local branch, add journal entry to `~/notes/Daily_Journal_{YYYY}.txt`
 - **Ask before**: creating/updating PRs, force-pushing to remote
 
