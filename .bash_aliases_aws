@@ -166,11 +166,13 @@ function awsacct {
 function awsconsole {
   # fire up AWS Console if AWS Environment Variables are all set
   local _CONSOLE_LOGIN_SCRIPT="$HOME/repos/pataraco/scripts/aws/aws_sso_console_login.py"
+  local _CONSOLE_LOGIN_CMD="cloudmate -q aws console -a $AWS_DEFAULT_PROFILE --url"
   local _CONSOLE_DEST="$1"
   local _REGION="${2:-${AWS_DEFAULT_REGION:-us-east-1}}"
   local _aws_signin_url
   if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]] || [[ -z "$AWS_SESSION_TOKEN" ]]; then
     if [[ -n "$AWS_DEFAULT_PROFILE" ]]; then
+      # true
       # Set the environment variables
       export AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
       export AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
@@ -186,6 +188,12 @@ function awsconsole {
     echo "can't log in to console - console login script doesn't exist: $_CONSOLE_LOGIN_SCRIPT"
     return
   fi
+  # if command -V ${_CONSOLE_LOGIN_CMD%% *} > /dev/null; then
+  #   _aws_signin_url=$($_CONSOLE_LOGIN_CMD)
+  # else
+  #   echo "can't log in to console - console login script doesn't exist: $_CONSOLE_LOGIN_SCRIPT"
+  #   return
+  # fi
   if [[ -n "$_aws_signin_url" ]]; then
     case $_CONSOLE_DEST in
       api) _CONSOLE_DEST="apigateway" ;;
