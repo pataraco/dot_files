@@ -55,16 +55,24 @@ If something looks potentially sensitive but is **not explicitly listed above**,
 4. **If unsure**: ask first, push later
 
 ## MANDATORY: Creating Pull Requests
-1. **MUST check for PR template**: Look for `.github/PULL_REQUEST_TEMPLATE.md` or `.github/pull_request_template.md`
-2. **MUST use the template**: If found, structure PR description according to template
-3. **MUST ask before creating PR**: Confirm before creating or updating the pull request (note: regular pushes to feature branches don't need confirmation)
-4. **PR title length**: Keep PR titles between 72-75 characters (recommended limit)
-5. **Update PR title/description if needed**: After creating the PR or when updating with new commits:
+1. **MUST check for PR template — NON-NEGOTIABLE**: Before drafting any PR body, look for a template at:
+   - `.github/PULL_REQUEST_TEMPLATE.md`
+   - `.github/pull_request_template.md`
+   - `.github/PULL_REQUEST_TEMPLATE/*.md` (multi-template directory — pick the best match, or ask the user if ambiguous)
+   - `docs/PULL_REQUEST_TEMPLATE.md` / `docs/pull_request_template.md`
+   - `PULL_REQUEST_TEMPLATE.md` at the repo root
+2. **MUST use the template if one exists**: Structure the PR body to match the template's sections, headings, and checkboxes exactly. Do NOT skip sections — fill them in or mark them N/A. Do NOT invent your own structure when a template is present.
+   - This applies to **updating** an existing PR as well, not just creation. Preserve template sections; only edit content within them.
+   - If a section asks for info you don't have (e.g. ticket number, screenshots), leave a clear placeholder and tell the user what's missing — do not silently drop the section.
+3. **If NO template is found**: report that to the user before drafting, then use a sensible default (Summary / Test plan / Notes). Do not assume a missing template means freeform is preferred.
+4. **MUST ask before creating PR**: Confirm before creating or updating the pull request (note: regular pushes to feature branches don't need confirmation)
+5. **PR title length**: Keep PR titles between 72-75 characters (recommended limit)
+6. **Update PR title/description if needed**: After creating the PR or when updating with new commits:
    - Check if the PR title and description accurately reflect all changes made
    - If additional commits expanded the scope beyond the original PR, update the title using `gh pr edit <pr-number> --title "new title"`
    - Update the description if needed to reflect the full scope of changes
    - The title should summarize all changes, not just the initial change
-6. **After PR creation or update ONLY**: Display summary in this exact format. Do NOT use this format during post-merge cleanup — the PR is already merged at that point.
+7. **After PR creation or update ONLY**: Display summary in this exact format. Do NOT use this format during post-merge cleanup — the PR is already merged at that point.
    ```
    PR Details:
    - Title: <pr-title>
@@ -151,5 +159,5 @@ If something looks potentially sensitive but is **not explicitly listed above**,
 
 ## Version
 
-Instructions version: 1.4.1
-Last updated: 24-03-2026
+Instructions version: 1.5.0
+Last updated: 15-05-2026

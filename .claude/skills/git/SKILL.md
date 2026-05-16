@@ -1,7 +1,7 @@
 ---
 name: git
 model: sonnet
-description: Smart git workflow — assess current repo state and do what's needed (sync main, commit, squash, push, update PR, or post-merge cleanup). Use this skill whenever the user types /git, /git commit, /git sync, /git squash, /git push, /git pr, /git slack, /git merged, says "commit my changes", "squash and push", "update my PR", "sync with main", "clean up after merge", "generate the slack message for review", "request a review", or asks about the current git/PR state.
+description: Smart git workflow — assess current repo state and do what's needed (sync main, commit, squash, push, update PR, repo cleanup, or post-merge cleanup). Use this skill whenever the user types /git, /git commit, /git sync, /git squash, /git push, /git pr, /git slack, /git merged, /git cleanup, says "commit my changes", "squash and push", "update my PR", "sync with main", "clean up after merge", "prune stale branches", "git gc", "generate the slack message for review", "request a review", or asks about the current git/PR state.
 allowed-tools: [Bash]
 ---
 
@@ -19,6 +19,7 @@ You are running the /git skill. Assess the current repo state and take the appro
 | `/git pr` | Check if PR title/description is stale vs. recent commits; suggest updates; report CI + review status |
 | `/git slack` | Generate Slack PR review message — prompts to squash first if >1 commit (see PR Review Flow below) |
 | `/git merged` | Detect merged PR → switch to main, pull, delete remote + local branch, add journal entry |
+| `/git cleanup` | Query merged PRs + prune refs: delete stale feature branches, checkout and fast-forward the repo default branch (`main` / `master` / `develop`, etc.), `git gc` (see Cleanup Flow below) |
 
 ## Step 1 — Gather state (run all in parallel)
 
@@ -90,8 +91,65 @@ If everything is clean and up to date — report current state:
 - Delete local branch: `git branch -D <branch>`
 - Add a journal entry to `~/notes/Daily_Journal_{YYYY}.txt` in format: `DD-MM-YYYY: <repo> - <description>`, inserted in chronological order
 
+## Cleanup Flow (`/git cleanup`)
+Repo housekeeping: align with GitHub merged PRs, drop stale feature branches, sync the default branch, then tidy. Broader than `/git merged` (which handles one merged PR, journal, etc.).
+
+### 0. Preconditions
+- Repo should be a Git checkout with `origin`. If `gh` is available, use it for default branch and merged PRs; if not, fall back to git-only steps and say what `gh` would add.
+- If there are uncommitted changes, do not delete branches or checkout until the user commits, stashes, or discards — summarize `git status` and pause.
+
+### 1. Resolve the default branch (`<default>`)
+Use the first that works:
+1. `gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name'` (authoritative for GitHub)
+2. `git symbolic-ref --short refs/remotes/origin/HEAD` → strip `origin/` if present
+3. Try `main`, then `master`, then `develop` if `refs/remotes/origin/<name>` exists
+
+Never assume the integration branch is named `main`.
+
+### 2. Fetch and prune
+Run `git fetch origin --prune` so remote-tracking refs match the server.
+
+### 3. Merged PRs → stale head branches (GitHub)
+Use `gh` when available:
+
+1. List recent merged PRs and collect unique head branch names, e.g.  
+   `gh pr list --state merged --limit 100 --json headRefName,number,mergedAt`  
+   (raise limit if the user wants a deeper sweep.)
+
+2. Build a candidate list: each `headRefName` that is **not** `<default>` and not empty. Skip odd cases (e.g. fork refs) per `gh` output — if `headRefName` looks like `user:branch`, resolve only what applies to this clone.
+
+3. For each candidate, check whether it still exists:
+   - **Remote:** `refs/remotes/origin/<branch>` (branch names may contain `/`)
+   - **Local:** local branch with that name
+
+4. Present a compact table to the user: PR-linked branch name, still on remote?, still local?. Ask for confirmation before any delete.
+
+5. After confirmation, for each agreed branch:
+   - If it exists on **origin**: `git push origin --delete <branch>`
+   - If it exists **locally**: `git branch -d <branch>` first; if Git refuses because it is not fully merged locally, explain and offer `git branch -D <branch>` only if the user explicitly accepts force-delete for that branch.
+
+Re-fetch or rely on prior `--prune` so deleted remotes disappear from the list.
+
+### 4. Update `<default>` locally
+1. Ask to confirm checkout of `<default>` (required so the local default branch fast-forwards cleanly).
+2. `git checkout <default>` then `git pull origin <default>` (prefer fast-forward; if diverged, stop and report — do not merge or rebase without explicit user instruction).
+
+### 5. Other safe merged locals (git-only sweep)
+After `<default>` is current and up to date:
+
+1. List locals merged into `origin/<default>`: `git branch --merged origin/<default>`
+2. Exclude `<default>` and the current branch from deletion candidates.
+3. Show the list; delete only with confirmation (`git branch -d` per branch).
+
+### 6. Garbage collect
+Run `git gc`.
+
+**Rules for cleanup:** never delete branches without the user confirming the merged-PR list and/or the `--merged` list; never `git branch -D` unless the user explicitly opts in for a named branch; do not merge/rebase away divergence on `<default>` without explicit instructions.
+
+**Note:** Checking out and pulling `<default>` is allowed here even though general workflow avoids feature work on the default branch — this step only syncs it during cleanup.
+
 ## Rules (always apply)
-- Never work directly on main/master
+- Never do feature work or commits directly on the repo default branch (`main` / `master` / `develop`, etc.) — exception: `/git cleanup` may checkout and pull that branch only to sync it after the user confirms
 - Squash only when explicitly requested, prompted during `/git`, or before a PR review (`/git slack`) — never automatically
 - Sanitize before pushing to `pataraco` repos: no internal URLs, Jira keys, tokens, or secrets
 - Ask before creating or updating a PR
